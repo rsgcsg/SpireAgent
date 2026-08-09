@@ -1,57 +1,60 @@
 # Human-Equivalent Connector Roadmap
 
-## HE-0: Architecture And Current Truth
+## HE-0: Architecture And Cutover
 
-Status: complete.
+Status: complete. ADR-0008 is canonical; V3 is rollback/comparison only.
 
-ADR-0008 is canonical; V3 is explicit rollback/comparison only.
+## HE-1: Clean C -> A Wire
 
-## HE-1: Executable Structured UI Core
+Status: source/test complete; exact-runtime pending.
 
-Status: baseline Live-exercised; replacement source/test complete and
-replacement load/Live pending.
+- `preview.2` pure C observation with no mode, D annotation or fake frame;
+- opaque state-bound affordances; exact operands stay C-local;
+- generic action verbs in A rather than affordance IDs;
+- delivery receipt plus `SuccessorWatcher` readiness;
+- HE cycle identity excludes transport tokens and affordance IDs.
 
-- `HumanSnapshot`, exact owner/entities/controls and current affordances;
-- generic state/frame-bound delivery and successor;
-- source-free one-of-N and deck-card selection mechanics;
-- direct Re consumer with `he_assisted` and `he_pure`;
-- HE CLI preflight without V2 permission/qualification gates.
+Exit: build/install/cold-load exact `preview.2` and complete the shortest
+ordinary regression without the proven shop open/close loop.
 
-Baseline HE exercised menu, combat, reward, card reward, map, rest, event and
-treasure. Exit still pending: cold-load the receipt/combat-pile replacement and
-complete an ordinary Live journey without hidden V3 execution.
+## HE-2: Positive UI Facts And Native Ownership
 
-## HE-2: Adaptation Holdouts
+Status: positive HE projection complete; native ownership migration ongoing.
+
+Known Surface families now use positive HE fact projection rather than
+business-key deletion. Move useful family providers/adapters under neutral
+`NativeUi` ownership as each path is touched; do not add shims, source
+authority or a second executor.
+
+## HE-3: Adaptation Holdouts
 
 Status: pending exact runtime.
 
-Exercise source-free combat-pile selection, both unknown-source selector
-holdouts, stale replacement, duplicate request, unknown delivery, multi-stage
-selection and `he_pure`. A new source preserving known UI mechanics should
-require no wire, Re or Gateway-core change.
+Exercise source-free combat-pile, unknown-source one-of-N/deck selectors,
+stale replacement, duplicate request, unknown delivery, multi-stage selection
+and `he_pure`. Known UI mechanics with a new source should need no wire, Re or
+C-core change.
 
-## HE-3: Human Information Parity
+## HE-4: Human Information Parity
 
 Status: partial.
 
-Add hover/focus/tooltip/scroll and native page open/read/return to normal Agent
-flow. Keep semantic accessibility default and human page transitions optional.
+Add truthful hover/focus/tooltip/scroll and native page open/read/return. Keep
+semantic accessibility default; page transitions are optional evidence
+profiles. Test a visual fallback only after a real unsupported custom-drawn UI.
 
-## HE-4: Run Lifecycle Governance
+## HE-5: Run Lifecycle Governance
 
-Status: pending.
+Status: pending. Support abandon and return-menu as gameplay while denying
+destructive profile/save/Mod management and quit unless explicitly configured.
 
-Support abandon and return-menu as gameplay. Deny destructive profile/save,
-Mod/global management and quit application unless explicitly configured.
+## A Mainline
 
-## HE-5: A Improvement
+Status: ready to become the main effort after HE-1 exact-runtime regression.
 
-Status: next mainline after HE-1/2 evidence.
+Improve decision-lossless projection, previous transition context, planning,
+cycle recovery and long-run quality. Do not move legality, hidden game rules or
+business completion into A.
 
-Improve compact observation, previous-action/surface diff, planning and
-recovery. Do not move legality, execution or hidden game rules into A.
-
-## Later, Separate Work
-
-Bounded visual fallback, public binary packaging, Companion, Workshop, SDK,
-Headless and learning require their own evidence and are not C freeze blockers.
+Learning, arbitrary Mod compatibility, Companion, Workshop, Headless and SDK
+work are separate programs and not C short-freeze blockers.

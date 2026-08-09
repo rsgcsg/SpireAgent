@@ -107,7 +107,9 @@ export function semanticActionHash(action: AllowedAction): string {
     ? { kind: action.action.kind, bridgeActionKind: action.action.bridgeActionKind }
     : action.action.kind === "connector_v3_command"
       ? { kind: action.action.kind, operation: action.action.operation }
-    : action.action;
+      : action.action.kind === "human_ui_action"
+        ? { kind: action.action.kind, affordance: action.kind }
+        : action.action;
   return stateHash({
     kind: action.kind,
     label: action.label,

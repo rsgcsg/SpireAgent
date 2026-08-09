@@ -14,7 +14,7 @@ The branch target is a Human-Equivalent UI-first Connector:
 Native STS2 UI
 -> Human-Reachable Observation
 -> Current UI Affordance Catalog
--> State/Frame-Bound Input Executor
+-> State-Bound Input Executor with C-local native binding
 -> Delivery Ledger
 -> Successor Observation Stream
 -> Re-SpireAgent
@@ -61,10 +61,10 @@ Observation is not restricted to zero-side-effect reads. Hover, scroll, opening 
 Every transition is recorded as:
 
 ```text
-before state/frame/owner
-+ exact target and action
+before state token and current owner
++ opaque target/action identity (exact native operands remain C-local)
 + delivery result
-+ after state/frame/owner
++ after state token/current owner
 ```
 
 The distinction that matters is not read versus write, but human-equivalent UI transition versus non-UI engine mutation.
@@ -124,8 +124,18 @@ reuse, not a second production executor.
 
 ## Evidence Boundary
 
-Protocol `1.0-preview.1` implements the structured-UI core, generic affordance
-delivery, successor and direct Re consumer. Exact-runtime baseline HE evidence
-exists for ordinary surfaces, but replacement source/tests/build remain
-separate from install/load/Live. Broad Human information parity, `he_pure`
-Live evidence and durable qualification remain pending.
+Protocol `1.0-preview.2` is the canonical clean wire. It removes D mode and
+annotations, fabricated rendered frame, and client-visible native operands.
+`he_pure` and `he_assisted` are A composition modes over one pure C truth.
+Exact-runtime `preview.1` evidence exists for ordinary surfaces and a complete
+journey, but it does not transfer to `preview.2`. Broad Human information
+parity and `he_pure` Live evidence remain pending.
+
+## Short Freeze Amendment (2026-08-09)
+
+The short freeze accepts the macro architecture and rejects the migration
+wire as a final contract. C must naturally expose UI truth and affordances,
+not serialize a business command and ask A to echo exact parameters. A owns
+semantic action labels, transition context, cycle recovery and strategy. D is
+outside C. The remaining legacy `surface.facts` deny-list and V3-owned adapter
+implementation seams are tracked migration debt, not accepted target design.

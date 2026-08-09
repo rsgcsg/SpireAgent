@@ -34,6 +34,7 @@ requireText(humanClient, "/api/he/actions", "HE action route");
 requireText(humanClient, "/api/he/controller", "HE controller route");
 forbidText(humanClient, "/api/v3/", "V3 transport fallback");
 forbidText(humanClient, "connectorV3Protocol", "V3 controller/wire schema dependency");
+forbidText(humanClient, "?mode=", "C observation mode query");
 for (const retired of [
   "Re-SpireAgent/src/integrations/sts2mcp/connectorV3Adapter.ts",
   "Re-SpireAgent/src/integrations/sts2mcp/connectorV3Client.ts"
@@ -52,11 +53,69 @@ requireText(
   'settlementAuthority: "adapter_confirmed"',
   "HE delivery-authoritative settlement boundary"
 );
+requireText(
+  "Re-SpireAgent/src/integrations/sts2mcp/humanEquivalentAdapter.ts",
+  'legalActionAuthority: "current_human_ui"',
+  "HE adapter authority name"
+);
+forbidText(
+  "Re-SpireAgent/src/integrations/sts2mcp/humanEquivalentAdapter.ts",
+  'legalActionAuthority: "bridge_advertised"',
+  "legacy Bridge authority name"
+);
+
+const pythonMcp = "STS2MCP/mcp/server.py";
+requireText(pythonMcp, '_CONTROL_PROTOCOL = "1.0-preview.2"', "HE MCP control protocol");
+for (const legacyMcpInput of [
+  "expected_frame_id",
+  "expected_owner_id",
+  "parameters_json",
+  "?mode=",
+  "sts2.connector.v3/control-1"
+]) {
+  forbidText(pythonMcp, legacyMcpInput, `legacy MCP input ${legacyMcpInput}`);
+}
+
+const humanProtocol = "Re-SpireAgent/src/integrations/sts2mcp/humanEquivalentProtocol.ts";
+for (const legacyWireField of [
+  "optional_annotations",
+  "expected_frame_id",
+  "expected_owner_id",
+  "parameter_domains",
+  "frame_bound"
+]) {
+  forbidText(humanProtocol, legacyWireField, `legacy HE wire field ${legacyWireField}`);
+}
+forbidText(
+  "Re-SpireAgent/src/domain/state/surfaces.ts",
+  "authorizationEffect",
+  "D annotation embedded in the C/A UI surface"
+);
+if (existsSync(path.join(workspace, "Re-SpireAgent/src/runtime/settlementWatcher.ts"))) {
+  failures.push("Re-SpireAgent/src/runtime/settlementWatcher.ts: legacy business-settlement owner remains");
+}
+requireText(
+  "Re-SpireAgent/src/runtime/successorWatcher.ts",
+  "waitForReadySuccessor",
+  "A successor-readiness owner"
+);
 
 const runtime = read("STS2MCP/HumanEquivalent/Runtime/HumanEquivalentRuntime.cs");
 if (/partial class ConnectorV3Runtime/u.test(runtime)
     || /namespace STS2_MCP\.ConnectorV3\.Runtime/u.test(runtime)) {
   failures.push("HumanEquivalentRuntime.cs: HE remains owned by ConnectorV3Runtime");
+}
+const contract = read("STS2MCP/HumanEquivalent/Protocol/HumanEquivalentContracts.cs");
+for (const legacyContractName of [
+  "HumanEquivalentFrame",
+  "HumanEquivalentAnnotationEnvelope",
+  "ExpectedFrameId",
+  "ExpectedOwnerId",
+  "ParameterDomains"
+]) {
+  if (contract.includes(legacyContractName)) {
+    failures.push(`HumanEquivalentContracts.cs: contains retired ${legacyContractName}`);
+  }
 }
 if (/EventDeckRemovalSelection\.TryBuild/u.test(runtime)) {
   failures.push("HumanEquivalentRuntime.cs: source-specific event-removal publication remains active");
@@ -75,6 +134,12 @@ if (/CombatPileSelectionSourceBinding|CombatPileSourceContractRegistry/u.test(
 if (!/CandidateAdmission\s*=\s*"human_ui"/u.test(runtime)) {
   failures.push("HumanEquivalentRuntime.cs: HE UI admission marker is missing");
 }
+if (/RemoveBusinessKeys/u.test(runtime)) {
+  failures.push("HumanEquivalentRuntime.cs: legacy business-key deny-list defines C facts");
+}
+if (!/ProjectHumanFacts/u.test(runtime)) {
+  failures.push("HumanEquivalentRuntime.cs: positive HE fact projection is missing");
+}
 const connectorV3Seams = [...runtime.matchAll(/ConnectorV3Runtime\.(\w+)/gu)]
   .map((match) => match[1])
   .sort();
@@ -83,8 +148,7 @@ const expectedConnectorV3Seams = [
   "BuildNativeBinding",
   "BuildSnapshot",
   "StartNativeUiInput",
-  "SuppressForNativePageEvidence",
-  "SurfaceCards"
+  "SuppressForNativePageEvidence"
 ].sort();
 if (connectorV3Seams.join("\n") !== expectedConnectorV3Seams.join("\n")) {
   failures.push([

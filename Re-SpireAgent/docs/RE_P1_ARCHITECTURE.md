@@ -64,7 +64,7 @@ surface-specific.
 ## Action Authority
 
 The action builder is deterministic but not strategic. Current execution
-imports only state/frame/owner-bound Human-Equivalent affordances as local
+imports only state-bound Human-Equivalent affordances as local
 opaque choices. Direct historical v1 records
 remain replay-readable as stored evidence, but a Bridge wrapper containing a
 `legacy_v1_state` sidecar is invalid and receives no action authority.

@@ -11,8 +11,8 @@ export async function runConnectorCanary(config: RuntimeConfig, requestedActionI
     if (pre.diagnostics.status === "invalid" || pre.currentState.stability !== "actionable") {
       throw new Error(`Connector canary requires an actionable valid state; observed ${pre.currentState.stability}`);
     }
-    if (pre.currentState.actionAuthority !== "bridge_advertised") {
-      throw new Error(`Connector canary requires bridge_advertised authority; observed ${pre.currentState.actionAuthority}`);
+    if (pre.currentState.actionAuthority !== "current_human_ui") {
+      throw new Error(`Connector canary requires current_human_ui authority; observed ${pre.currentState.actionAuthority}`);
     }
 
     const allowedActions = buildAllowedActions(pre.currentState, pre.stateHash);

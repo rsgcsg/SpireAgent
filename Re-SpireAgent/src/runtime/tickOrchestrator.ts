@@ -10,14 +10,14 @@ import type { DecisionOutcome, DecisionRecord, DecisionRecorder, RecordedState }
 import type { JsonValue } from "../shared/json.js";
 import { ProgressCycleGuard } from "./progressCycleGuard.js";
 import { executeAdvertisedAction } from "./advertisedActionExecutor.js";
-import type { SettlementWatcher } from "./settlementWatcher.js";
+import type { SuccessorWatcher } from "./successorWatcher.js";
 
 export interface TickOrchestratorDependencies {
   adapter: GameAdapter<RawGameState, ExecutableGameAction, GameExecutionResult>;
   normalize: (raw: unknown) => StateEnvelope;
   buildAllowedActions: (state: StateEnvelope["currentState"], sourceStateHash: string) => AllowedAction[];
   llm: LlmDecisionProvider;
-  settlement: SettlementWatcher;
+  settlement: SuccessorWatcher;
   recorder: DecisionRecorder;
 }
 
@@ -125,7 +125,9 @@ export class TickOrchestrator {
           stopReason: "run_boundary"
         });
       }
-      if (options.allowRunEntry && pre.currentState.actionAuthority !== "bridge_advertised") {
+      if (options.allowRunEntry
+          && pre.currentState.actionAuthority !== "current_human_ui"
+          && pre.currentState.actionAuthority !== "bridge_advertised") {
         return this.recordWithoutDecision({
           decisionId,
           tick,
@@ -133,7 +135,7 @@ export class TickOrchestrator {
           pre,
           allowedActions,
           outcome: "not_executed_invalid_state",
-          error: "Run entry requires bridge_advertised action authority; local reconstruction cannot cross the run boundary",
+          error: "Run entry requires current connector action authority; local reconstruction cannot cross the run boundary",
           shouldStopRun: true
         });
       }

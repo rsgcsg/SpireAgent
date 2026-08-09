@@ -39,36 +39,27 @@ export function normalizeHumanEquivalentCurrentState(
   const legalActions = observation?.affordances.map((affordance) => ({
     actionId: affordance.affordance_id,
     stateId: observation.state_token,
-    kind: affordance.affordance_id,
+    kind: affordance.action,
     label: affordance.label,
     authority: "current_human_ui",
     evidenceCode: `human_ui:${affordance.action}`,
-    entityBindings: affordance.entity_bindings.map((binding) => ({
-      role: binding.role,
-      entityId: binding.entity_id
-    })),
+    entityBindings: [{ role: "target", entityId: affordance.target_id }],
     category: affordance.action
   })) ?? [];
   const facts = observation?.surface.facts;
   const currentState: NormalizedCurrentState = {
     normalizedSchemaVersion: NORMALIZED_STATE_SCHEMA_VERSION,
     sourceStateType: observation
-      ? `human_equivalent:${observation.mode}:${observation.surface.kind}`
+      ? `human_equivalent:${observation.surface.kind}`
       : "human_equivalent:invalid",
     stability: built.status === "invalid"
       ? "invalid"
       : observation?.status === "settling"
         ? "settling"
         : actionable ? "actionable" : "non_actionable",
-    actionAuthority: actionable ? "bridge_advertised" : "none",
+    actionAuthority: actionable ? "current_human_ui" : "none",
     ...(persistent?.run ? { run: persistent.run } : {}),
     ...(persistent?.player ? { player: persistent.player } : {}),
-    bridgeLegacyWarnings: observation
-      ? [
-          ...observation.warnings,
-          "Human-Equivalent C exposes UI facts and delivery affordances; A owns flow interpretation."
-        ]
-      : [],
     context: observation ? contextFor(observation.surface.kind, facts) : invalidContext(rawState),
     surface: observation && built.status !== "invalid"
       ? {
@@ -94,20 +85,11 @@ export function normalizeHumanEquivalentCurrentState(
             ...(control.label ? { label: control.label } : {}),
             visible: control.visible,
             enabled: control.enabled,
-            selected: control.selected,
-            focused: control.focused,
+            ...(control.selected !== null ? { selected: control.selected } : {}),
+            ...(control.focused !== null ? { focused: control.focused } : {}),
             actions: [...control.actions]
           })),
-          legalActions,
-          ...(observation.optional_annotations ? {
-            annotations: {
-              ...(observation.optional_annotations.scene_hint ? { sceneHint: observation.optional_annotations.scene_hint } : {}),
-              ...(observation.optional_annotations.purpose_hint ? { purposeHint: observation.optional_annotations.purpose_hint } : {}),
-              ...(observation.optional_annotations.phase_hint ? { phaseHint: observation.optional_annotations.phase_hint } : {}),
-              ...(observation.optional_annotations.expected_transition ? { expectedTransition: observation.optional_annotations.expected_transition } : {}),
-              authorizationEffect: "none" as const
-            }
-          } : {})
+          legalActions
         }
       : {
           kind: "unsupported",
@@ -125,7 +107,6 @@ export function normalizeHumanEquivalentCurrentState(
     diagnostics: built,
     stateHash: stateHash({
       stateToken: observation?.state_token ?? null,
-      frameId: observation?.frame.frame_id ?? null,
       ownerId: observation?.owner.owner_id ?? null,
       affordances: observation?.affordances.map((item) => item.affordance_id) ?? []
     }),

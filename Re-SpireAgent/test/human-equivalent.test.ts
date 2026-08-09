@@ -19,21 +19,19 @@ const SOURCE: AdapterDescriptor = {
     canExecuteActions: true,
     canListLegalActions: true,
     actionResults: "partial",
-    legalActionAuthority: "bridge_advertised",
+    legalActionAuthority: "current_human_ui",
     protocols: ["human_equivalent"]
   }
 };
 
-function snapshot(mode: "he_assisted" | "he_pure" = "he_pure"): JsonObject {
+function snapshot(): JsonObject {
   return {
-    protocol_version: "1.0-preview.1",
-    schema: "sts2.connector.human-ui/observation-1",
-    mode,
+    protocol_version: "1.0-preview.2",
+    schema: "sts2.connector.human-ui/observation-2",
     state_token: "state-he-1",
     sequence: 1,
     observed_at: "2026-08-04T00:00:00Z",
     status: "actionable",
-    frame: { frame_id: "frame-he-1", width: 1920, height: 1080, provenance: "native_structured_ui" },
     owner: { owner_id: "screen-current", kind: "generated_card_choice" },
     persistent_state: null,
     surface: {
@@ -53,14 +51,8 @@ function snapshot(mode: "he_assisted" | "he_pure" = "he_pure"): JsonObject {
       target_id: "card-1",
       owner_id: "screen-current",
       label: "Choose Visible card",
-      parameters: { screen_id: "screen-current", card_id: "card-1" },
-      parameter_domains: {},
-      entity_bindings: [{ role: "screen", entity_id: "screen-current" }, { role: "card", entity_id: "card-1" }],
       provenance: "native_ui_adapter"
     }],
-    optional_annotations: mode === "he_assisted"
-      ? { scene_hint: "unclassified", purpose_hint: "choose", phase_hint: "ready", expected_transition: null, teacher_generated: false, authorization_effect: "none" }
-      : null,
     completeness: { player_visible_semantics: "complete_current_structured_ui", legal_actions: "derived_from_current_visible_enabled_controls", sources: ["native UI"], missing: [] },
     bridge: { id: "sts2_human_equivalent_connector", name: "STS2 Human-Equivalent Connector", version: "fixture", upstream_commit: "fixture", module_version_id: "fixture-mvid", assembly_file_sha256: "a".repeat(64), runtime_instance_id: "fixture-runtime" },
     game: { version: "v0.109.1", commit: "fixture", main_assembly_hash: 1, compatibility: { state_observation_allowed: true }, modset: { status: "exact_bridge_only", fingerprint: "fixture-modset" } },
@@ -73,18 +65,16 @@ function snapshot(mode: "he_assisted" | "he_pure" = "he_pure"): JsonObject {
 function capabilities(): JsonObject {
   const value = snapshot();
   return {
-    protocol_version: "1.0-preview.1",
-    observation_schema: "sts2.connector.human-ui/observation-1",
-    action_schema: "sts2.connector.human-ui/action-1",
-    receipt_schema: "sts2.connector.human-ui/receipt-1",
+    protocol_version: "1.0-preview.2",
+    observation_schema: "sts2.connector.human-ui/observation-2",
+    action_schema: "sts2.connector.human-ui/action-2",
+    receipt_schema: "sts2.connector.human-ui/receipt-2",
     control_schema: "sts2.connector.human-ui/control-1",
     status: "ready",
     bridge: value.bridge!,
     game: value.game!,
-    modes: ["he_assisted", "he_pure"],
     actions: ["select"],
     state_bound: true,
-    frame_bound: true,
     single_controller: true,
     business_source_required: false,
     business_outcome_required: false,
@@ -108,9 +98,9 @@ describe("Human-Equivalent C", () => {
     expect(decoded.surface.facts).not.toHaveProperty("source_kind");
   });
 
-  it("enforces that he_pure has no D annotation envelope", () => {
+  it("rejects D annotations in the pure C observation contract", () => {
     expect(() => decodeHumanObservation({ ...snapshot(), optional_annotations: { scene_hint: "event", purpose_hint: null, phase_hint: "ready", expected_transition: null, teacher_generated: false, authorization_effect: "none" } }))
-      .toThrow("he_pure must not contain D annotations");
+      .toThrow();
   });
 
   it("projects current UI affordances to opaque Re choices without V2 legal_actions wire data", () => {
@@ -119,6 +109,7 @@ describe("Human-Equivalent C", () => {
     expect(normalized.currentState.surface.kind).toBe("human_ui");
     const actions = buildAllowedActions(normalized.currentState, normalized.stateHash);
     expect(actions).toHaveLength(1);
+    expect(actions[0]).toMatchObject({ kind: "select" });
     expect(actions[0]?.action).toEqual({
       kind: "human_ui_action",
       choiceId: "affordance-card-1",
@@ -129,14 +120,14 @@ describe("Human-Equivalent C", () => {
 
   it("uses the Human-Equivalent control schema without a V3 wire dependency", () => {
     const registration = decodeHumanClientRegistration({
-      protocol_version: "1.0-preview.1",
+      protocol_version: "1.0-preview.2",
       schema: "sts2.connector.human-ui/control-1",
       runtime_instance_id: "runtime-he",
       client: { client_session_id: "client-session", client_instance_id: "client-instance" },
       controller: null
     }).data;
     const lease = decodeHumanControllerLeaseResponse({
-      protocol_version: "1.0-preview.1",
+      protocol_version: "1.0-preview.2",
       schema: "sts2.connector.human-ui/control-1",
       runtime_instance_id: "runtime-he",
       status: "controller_acquired",
@@ -162,6 +153,7 @@ describe("Human-Equivalent C", () => {
       sequence: 2,
       status: "settling"
     } satisfies JsonObject;
+    let submittedBody: Record<string, unknown> | undefined;
     const adapter = new Sts2HumanEquivalentAdapter(
       "http://fixture.invalid",
       1_000,
@@ -169,11 +161,11 @@ describe("Human-Equivalent C", () => {
       async (input, init) => {
         const url = String(input);
         if (url.endsWith("/api/he/capabilities")) return json(capabilities());
-        if (url.endsWith("/api/he/observation?mode=he_pure")) return json(current);
+        if (url.endsWith("/api/he/observation")) return json(current);
         if (url.endsWith("/api/he/clients/register")) {
           const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
           return json({
-            protocol_version: "1.0-preview.1",
+            protocol_version: "1.0-preview.2",
             schema: "sts2.connector.human-ui/control-1",
             runtime_instance_id: "fixture-runtime",
             client: {
@@ -185,7 +177,7 @@ describe("Human-Equivalent C", () => {
         }
         if (url.endsWith("/api/he/controller/acquire")) {
           return json({
-            protocol_version: "1.0-preview.1",
+            protocol_version: "1.0-preview.2",
             schema: "sts2.connector.human-ui/control-1",
             runtime_instance_id: "fixture-runtime",
             status: "controller_acquired",
@@ -204,17 +196,17 @@ describe("Human-Equivalent C", () => {
         }
         if (url.endsWith("/api/he/actions")) {
           const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+          submittedBody = body;
           return json({
-            protocol_version: "1.0-preview.1",
-            schema: "sts2.connector.human-ui/receipt-1",
+            protocol_version: "1.0-preview.2",
+            schema: "sts2.connector.human-ui/receipt-2",
             request_id: String(body.request_id),
             status: "applied",
             delivery: "applied",
             action: {
               affordance_id: "affordance-card-1",
               action: "select",
-              target_id: "card-1",
-              parameters: { screen_id: "screen-current", card_id: "card-1" }
+              target_id: "card-1"
             },
             reason_code: null,
             detail: "native input delivered",
@@ -248,5 +240,13 @@ describe("Human-Equivalent C", () => {
       settlementAuthority: "adapter_confirmed",
       confirmedStateToken: "state-he-2"
     });
+    expect(submittedBody).toMatchObject({
+      expected_state_token: "state-he-1",
+      affordance_id: "affordance-card-1"
+    });
+    expect(submittedBody).not.toHaveProperty("mode");
+    expect(submittedBody).not.toHaveProperty("parameters");
+    expect(submittedBody).not.toHaveProperty("expected_owner_id");
+    expect(submittedBody).not.toHaveProperty("expected_frame_id");
   });
 });

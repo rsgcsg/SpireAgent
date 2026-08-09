@@ -9,7 +9,7 @@ import type { Sts2McpRawState } from "../src/integrations/sts2mcp/rawState.js";
 import type { LlmDecisionProvider, LlmDecisionSession } from "../src/llm/types.js";
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
 import type { DecisionRecord, DecisionRecorder, PreparedEvidence } from "../src/recording/types.js";
-import { SettlementWatcher } from "../src/runtime/settlementWatcher.js";
+import { SuccessorWatcher } from "../src/runtime/successorWatcher.js";
 import { TickOrchestrator } from "../src/runtime/tickOrchestrator.js";
 import { fixture, TEST_ADAPTER } from "./helpers.js";
 
@@ -116,14 +116,14 @@ describe("TickOrchestrator", () => {
     const postRaw = structuredClone(preRaw);
     if (typeof postRaw.player === "object" && postRaw.player && !Array.isArray(postRaw.player)) postRaw.player.energy = 2;
     const adapter = new FakeAdapter([postRaw, postRaw]);
-    const watcher = new SettlementWatcher(adapter, (raw) => normalizeCurrentState(raw, TEST_ADAPTER), {
+    const watcher = new SuccessorWatcher(adapter, (raw) => normalizeCurrentState(raw, TEST_ADAPTER), {
       pollMs: 1,
       defaultTimeoutMs: -1,
       endTurnTimeoutMs: 20,
       roomTransitionTimeoutMs: -1
     }, async () => {});
 
-    const result = await watcher.waitForNextState(
+    const result = await watcher.waitForReadySuccessor(
       normalizeCurrentState(preRaw, TEST_ADAPTER),
       {
         kind: "bridge_v2_action",
@@ -139,14 +139,14 @@ describe("TickOrchestrator", () => {
   it("requires a repeatable actionable checkpoint without re-proving an adapter-confirmed command", async () => {
     const preRaw = await fixture("combat") as Sts2McpRawState;
     const adapter = new FakeAdapter([preRaw, preRaw]);
-    const watcher = new SettlementWatcher(adapter, (raw) => normalizeCurrentState(raw, TEST_ADAPTER), {
+    const watcher = new SuccessorWatcher(adapter, (raw) => normalizeCurrentState(raw, TEST_ADAPTER), {
       pollMs: 1,
       defaultTimeoutMs: 20,
       endTurnTimeoutMs: 20,
       roomTransitionTimeoutMs: 20
     }, async () => {});
 
-    const result = await watcher.waitForNextState(
+    const result = await watcher.waitForReadySuccessor(
       normalizeCurrentState(preRaw, TEST_ADAPTER),
       {
         kind: "bridge_v2_action",
@@ -166,7 +166,7 @@ describe("TickOrchestrator", () => {
       { token: "state-final" },
       { token: "state-final" }
     ]);
-    const watcher = new SettlementWatcher(adapter, (raw) => {
+    const watcher = new SuccessorWatcher(adapter, (raw) => {
       const token = typeof raw === "object" && raw && "token" in raw ? String(raw.token) : "missing";
       return bridgeEnvelope(token);
     }, {
@@ -176,7 +176,7 @@ describe("TickOrchestrator", () => {
       roomTransitionTimeoutMs: 20
     }, async () => {});
 
-    const result = await watcher.waitForNextState(
+    const result = await watcher.waitForReadySuccessor(
       bridgeEnvelope("state-before"),
       {
         kind: "bridge_v2_action",
@@ -197,7 +197,7 @@ describe("TickOrchestrator", () => {
 
   it("does not accept an action-preceding Bridge token after the command confirmed a newer state", async () => {
     const adapter = new FakeAdapter([{ token: "state-old" }, { token: "state-new" }, { token: "state-new" }]);
-    const watcher = new SettlementWatcher(adapter, (raw) => {
+    const watcher = new SuccessorWatcher(adapter, (raw) => {
       const token = typeof raw === "object" && raw && "token" in raw ? String(raw.token) : "missing";
       return bridgeEnvelope(token);
     }, {
@@ -207,7 +207,7 @@ describe("TickOrchestrator", () => {
       roomTransitionTimeoutMs: 20
     }, async () => {});
 
-    const result = await watcher.waitForNextState(
+    const result = await watcher.waitForReadySuccessor(
       bridgeEnvelope("state-old"),
       {
         kind: "bridge_v2_action",
@@ -227,7 +227,7 @@ describe("TickOrchestrator", () => {
     const transient = bridgeEnvelope("state-transient", "unknown");
     const final = bridgeEnvelope("state-final");
     const adapter = new FakeAdapter([{ token: "state-transient" }, { token: "state-final" }]);
-    const watcher = new SettlementWatcher(adapter, (raw) => {
+    const watcher = new SuccessorWatcher(adapter, (raw) => {
       const token = typeof raw === "object" && raw && "token" in raw ? String(raw.token) : "missing";
       return token === "state-transient" ? transient : final;
     }, {
@@ -237,7 +237,7 @@ describe("TickOrchestrator", () => {
       roomTransitionTimeoutMs: 20
     }, async () => {});
 
-    const result = await watcher.waitForNextState(
+    const result = await watcher.waitForReadySuccessor(
       bridgeEnvelope("state-before"),
       {
         kind: "bridge_v2_action",
@@ -278,14 +278,14 @@ describe("TickOrchestrator", () => {
       }
     };
     const adapter = new FakeAdapter([{ token: "state-after" }]);
-    const watcher = new SettlementWatcher(adapter, () => successor, {
+    const watcher = new SuccessorWatcher(adapter, () => successor, {
       pollMs: 1,
       defaultTimeoutMs: 20,
       endTurnTimeoutMs: 20,
       roomTransitionTimeoutMs: 20
     }, async () => {});
 
-    const result = await watcher.waitForNextState(
+    const result = await watcher.waitForReadySuccessor(
       bridgeEnvelope("state-before"),
       {
         kind: "bridge_v2_action",
@@ -316,14 +316,14 @@ describe("TickOrchestrator", () => {
     loadingRaw.combat = { turn: "enemy", is_play_phase: false, enemies: [] };
     const postRaw = await fixture("combat") as Sts2McpRawState;
     const adapter = new FakeAdapter([loadingRaw, postRaw, postRaw]);
-    const watcher = new SettlementWatcher(adapter, (raw) => normalizeCurrentState(raw, TEST_ADAPTER), {
+    const watcher = new SuccessorWatcher(adapter, (raw) => normalizeCurrentState(raw, TEST_ADAPTER), {
       pollMs: 1,
       defaultTimeoutMs: -1,
       endTurnTimeoutMs: -1,
       roomTransitionTimeoutMs: 20
     }, async () => {});
 
-    const result = await watcher.waitForNextState(
+    const result = await watcher.waitForReadySuccessor(
       normalizeCurrentState(preRaw, TEST_ADAPTER),
       { kind: "choose_map_node", index: 0 }
     );
@@ -335,14 +335,14 @@ describe("TickOrchestrator", () => {
     const preRaw = await fixture("map") as Sts2McpRawState;
     const postRaw = await fixture("combat") as Sts2McpRawState;
     const adapter = new FakeAdapter([postRaw, postRaw]);
-    const watcher = new SettlementWatcher(adapter, (raw) => normalizeCurrentState(raw, TEST_ADAPTER), {
+    const watcher = new SuccessorWatcher(adapter, (raw) => normalizeCurrentState(raw, TEST_ADAPTER), {
       pollMs: 1,
       defaultTimeoutMs: -1,
       endTurnTimeoutMs: -1,
       roomTransitionTimeoutMs: 20
     }, async () => {});
 
-    const result = await watcher.waitForNextState(
+    const result = await watcher.waitForReadySuccessor(
       normalizeCurrentState(preRaw, TEST_ADAPTER),
       {
         kind: "bridge_v2_action",
@@ -359,7 +359,7 @@ describe("TickOrchestrator", () => {
     "uses the long-transition budget for the opaque Bridge v2 %s action",
     async (bridgeActionKind) => {
       const adapter = new FakeAdapter([{ token: "state-after" }, { token: "state-after" }]);
-      const watcher = new SettlementWatcher(adapter, (raw) => {
+      const watcher = new SuccessorWatcher(adapter, (raw) => {
         const token = typeof raw === "object" && raw && "token" in raw ? String(raw.token) : "missing";
         return bridgeEnvelope(token);
       }, {
@@ -369,7 +369,7 @@ describe("TickOrchestrator", () => {
         roomTransitionTimeoutMs: 20
       }, async () => {});
 
-      const result = await watcher.waitForNextState(
+      const result = await watcher.waitForReadySuccessor(
         bridgeEnvelope("state-before"),
         {
           kind: "bridge_v2_action",
@@ -450,7 +450,7 @@ describe("TickOrchestrator", () => {
     });
     const recorder = new MemoryRecorder();
     const normalize = (raw: unknown) => normalizeCurrentState(raw, adapter.describe());
-    const settlement = new SettlementWatcher(adapter, normalize, {
+    const settlement = new SuccessorWatcher(adapter, normalize, {
       pollMs: 1,
       defaultTimeoutMs: 20,
       endTurnTimeoutMs: 20,
@@ -729,7 +729,7 @@ describe("TickOrchestrator", () => {
     });
     expect(calls).toBe(0);
     expect(adapter.executed).toEqual([]);
-    expect(recorder.records[0]?.error).toContain("bridge_advertised");
+    expect(recorder.records[0]?.error).toContain("current connector action authority");
   });
 });
 
@@ -824,7 +824,7 @@ function fixedProvider(selectedActionId: string, beforeDecision?: () => void): L
 
 function makeOrchestrator(adapter: FakeAdapter, provider: LlmDecisionProvider, recorder: MemoryRecorder): TickOrchestrator {
   const normalize = (raw: unknown) => normalizeCurrentState(raw, adapter.describe());
-  const settlement = new SettlementWatcher(adapter, normalize, {
+  const settlement = new SuccessorWatcher(adapter, normalize, {
     pollMs: 1,
     // The injected no-op sleep makes these fixture polls deterministic; the
     // wider wall-clock guard prevents parallel test load from expiring the

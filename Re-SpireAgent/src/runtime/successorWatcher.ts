@@ -3,7 +3,7 @@ import type { StateEnvelope } from "../domain/state/index.js";
 import type { GameAdapter, GameExecutionResult, RawGameState } from "../game-io/adapter.js";
 import { TransientObservationError } from "../game-io/observationError.js";
 
-export interface SettlementResult {
+export interface SuccessorObservationResult {
   status: "settled" | "timeout" | "read_error";
   polls: number;
   elapsedMs: number;
@@ -16,7 +16,7 @@ export interface SettlementResult {
   };
 }
 
-export class SettlementWatcher {
+export class SuccessorWatcher {
   constructor(
     private readonly adapter: GameAdapter<RawGameState, ExecutableGameAction, GameExecutionResult>,
     private readonly normalize: (raw: unknown) => StateEnvelope,
@@ -29,12 +29,12 @@ export class SettlementWatcher {
     private readonly sleep: (ms: number) => Promise<void> = defaultSleep
   ) {}
 
-  async waitForNextState(
+  async waitForReadySuccessor(
     before: StateEnvelope,
     action: ExecutableGameAction,
     settlementAuthority: GameExecutionResult["settlementAuthority"] = "client_observation_required",
     confirmedStateToken?: string
-  ): Promise<SettlementResult> {
+  ): Promise<SuccessorObservationResult> {
     const started = Date.now();
     const timeoutMs = isEndTurn(action)
       ? this.config.endTurnTimeoutMs
@@ -46,7 +46,7 @@ export class SettlementWatcher {
     let lastChanged: StateEnvelope | undefined;
     let stableCandidate: StateEnvelope | undefined;
     let transientObservationErrors = 0;
-    let lastTransientObservationError: SettlementResult["lastTransientObservationError"];
+    let lastTransientObservationError: SuccessorObservationResult["lastTransientObservationError"];
 
     while (Date.now() - started < timeoutMs) {
       await this.sleep(this.config.pollMs);
@@ -129,8 +129,8 @@ function settled(
   polls: number,
   started: number,
   transientObservationErrors: number,
-  lastTransientObservationError: SettlementResult["lastTransientObservationError"]
-): SettlementResult {
+  lastTransientObservationError: SuccessorObservationResult["lastTransientObservationError"]
+): SuccessorObservationResult {
   return {
     status: "settled",
     polls,
@@ -186,8 +186,8 @@ function isSemanticCheckpoint(envelope: StateEnvelope): boolean {
 
 function transientTelemetry(
   count: number,
-  last: SettlementResult["lastTransientObservationError"]
-): Pick<SettlementResult, "transientObservationErrors" | "lastTransientObservationError"> {
+  last: SuccessorObservationResult["lastTransientObservationError"]
+): Pick<SuccessorObservationResult, "transientObservationErrors" | "lastTransientObservationError"> {
   return count > 0
     ? { transientObservationErrors: count, ...(last ? { lastTransientObservationError: last } : {}) }
     : {};

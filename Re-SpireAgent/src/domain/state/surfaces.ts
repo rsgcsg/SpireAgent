@@ -172,18 +172,11 @@ export interface HumanUiSurface {
     label?: string;
     visible: boolean;
     enabled: boolean;
-    selected: boolean;
-    focused: boolean;
+    selected?: boolean;
+    focused?: boolean;
     actions: string[];
   }>;
   legalActions: BridgeLegalActionSnapshot[];
-  annotations?: {
-    sceneHint?: string;
-    purposeHint?: string;
-    phaseHint?: string;
-    expectedTransition?: string;
-    authorizationEffect: "none";
-  };
 }
 
 export interface BridgeSurfaceCompleteness {

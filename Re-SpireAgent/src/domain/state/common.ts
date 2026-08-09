@@ -11,7 +11,7 @@ export type StateStability =
   | "invalid"
   | "unknown";
 
-export type ActionAuthority = "local_reconstruction" | "bridge_advertised" | "none";
+export type ActionAuthority = "current_human_ui" | "local_reconstruction" | "bridge_advertised" | "none";
 export type BridgeInspectionKind = "run_deck" | "combat_piles" | "shop_catalog";
 
 export interface BridgeDiagnosticSnapshot {

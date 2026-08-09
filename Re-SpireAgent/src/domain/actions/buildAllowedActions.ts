@@ -9,6 +9,9 @@ import type { AllowedAction } from "./allowedAction.js";
 export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHash: string): AllowedAction[] {
   if (state.stability !== "actionable") return [];
   if (state.actionAuthority === "none") return [];
+  if (state.actionAuthority === "current_human_ui") {
+    return humanUiActions(state, sourceStateHash);
+  }
   if (state.actionAuthority === "bridge_advertised") {
     return bridgeActions(state, sourceStateHash);
   }
@@ -88,7 +91,6 @@ export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHa
 function bridgeActions(state: NormalizedCurrentState, sourceStateHash: string): AllowedAction[] {
   const legalActions = "legalActions" in state.surface ? state.surface.legalActions : undefined;
   if (!legalActions) return [];
-  const humanEquivalent = state.sourceStateType.startsWith("human_equivalent:");
   const connectorV3 = state.sourceStateType.startsWith("connector_v3:");
   return legalActions.map((action) => ({
     id: action.actionId,
@@ -96,14 +98,7 @@ function bridgeActions(state: NormalizedCurrentState, sourceStateHash: string): 
     label: action.label,
     description: `Bridge-validated ${action.evidenceCode}`,
     ...(action.entityBindings.length > 0 ? { entityBindings: action.entityBindings } : {}),
-    action: humanEquivalent
-      ? {
-          kind: "human_ui_action",
-          choiceId: action.actionId,
-          expectedStateToken: action.stateId,
-          affordanceId: action.kind
-        }
-      : connectorV3
+    action: connectorV3
       ? {
           kind: "connector_v3_command",
           choiceId: action.actionId,
@@ -116,6 +111,24 @@ function bridgeActions(state: NormalizedCurrentState, sourceStateHash: string): 
           expectedStateId: action.stateId,
           bridgeActionKind: action.kind
         },
+    sourceStateHash
+  }));
+}
+
+function humanUiActions(state: NormalizedCurrentState, sourceStateHash: string): AllowedAction[] {
+  if (state.surface.kind !== "human_ui") return [];
+  return state.surface.legalActions.map((action) => ({
+    id: action.actionId,
+    kind: action.kind,
+    label: action.label,
+    description: `Current human UI: ${action.kind}`,
+    ...(action.entityBindings.length > 0 ? { entityBindings: action.entityBindings } : {}),
+    action: {
+      kind: "human_ui_action",
+      choiceId: action.actionId,
+      expectedStateToken: action.stateId,
+      affordanceId: action.actionId
+    },
     sourceStateHash
   }));
 }

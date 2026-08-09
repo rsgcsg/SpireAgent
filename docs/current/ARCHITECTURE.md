@@ -1,103 +1,92 @@
-# Current Architecture - Human-Equivalent C
+# Current Architecture - Human-Equivalent C -> A -> LLM
 
 Authority: [ADR-0008](decisions/ADR-0008-human-equivalent-ui-first-connector.md)
 
-## Live Path
+## Canonical Path
 
 ```text
-Native STS2 UI and structured controls
--> HumanSnapshot
--> current UI affordance catalog
--> state/frame/owner-bound native input delivery
--> delivery receipt + successor snapshot
--> REST or thin MCP
--> Re-SpireAgent
+Native STS2 UI
+-> C HumanSnapshot (player-visible facts + current affordances)
+-> A normalization + previous transition context
+-> finite opaque model choices
+-> LLM selects one choice ID
+-> A submits state token + affordance ID
+-> C rebuilds and revalidates its local native binding
+-> native UI callback
+-> delivery receipt + successor
+-> A interprets readiness, flow and strategy
 ```
 
-## Responsibilities
+## Ownership
 
-**STS2** owns rules, RNG, UI state, native actions and effects.
+**STS2** owns rules, RNG, UI state, actionability and effects.
 
-**C/Gateway** owns player-visible UI facts, one current UI owner, stable entity
-and control identities, current affordance discovery, exact input admission,
-single-writer coordination, native delivery and honest delivery uncertainty.
+**C/Gateway** owns player-visible UI facts, one current owner, entity/control
+identity, current affordance discovery, exact C-local input binding,
+single-writer coordination, native delivery and honest uncertainty.
 
-**A/Re** strictly decodes C, projects finite opaque choices, selects one,
-submits once, observes the successor, interprets flow and business meaning,
-and owns strategy and recovery. It does not reconstruct native legality.
+**A/Re** decodes C, creates finite opaque choices, asks the model to select
+one, submits once, observes the successor, interprets flow and owns strategy
+and recovery. It does not reconstruct native legality or business completion.
 
-**D** may supply an `OptionalAnnotationEnvelope` in `he_assisted`; its
-`authorization_effect` is always `none`. `he_pure` proves A+C works without it.
+**D** may provide optional hints to A on a separate input plane. C contains no
+D envelope or mode. D cannot create, remove or authorize an affordance and
+cannot execute.
 
-**REST/MCP** are transports. **P** owns deployment, persistent configuration
-and rollback; this migration does not expand it.
+**P** owns deployment, persistent configuration and rollback. REST/MCP are
+transports only.
 
-## Contracts
+## C Contract
 
-`HumanSnapshot` separates persistent visible run facts, mapped current UI
-surface/context facts, entities, controls, current affordances and optional D
-annotations. Assisted and pure snapshots share the same state token and
-affordance authority. “Mapped” is deliberate: hover/scroll and unknown custom
-drawn controls are not yet complete and remain explicit coverage gaps.
+`HumanSnapshot` separates persistent visible facts, current UI Surface facts,
+entities, controls, current affordances and explicit coverage gaps. Unknown
+control state is omitted rather than invented. `he_pure` and `he_assisted`
+consume the same C truth; they are A composition modes.
 
-An action binds request ID, mode, expected state token, frame ID, owner ID,
-affordance ID, exact parameters and controller generation. The Gateway
-re-observes and checks the current target immediately before calling a bounded
-native UI adapter. No action ID, index, coordinate, node path or arbitrary
-method is accepted.
+An action request binds request ID, expected state token, opaque affordance ID
+and controller generation. Exact owner, target and native operands never leave
+C. C re-observes and validates the local binding immediately before a bounded
+native UI callback.
 
-Receipts mean input delivery only:
+Receipts mean delivery only:
 
 ```text
-not_applied  -> safe refusal; obtain a fresh snapshot
-applied      -> input delivered; use included successor or read a fresh one
-unknown      -> delivery may have happened; never retry
+not_applied -> safe refusal; obtain a fresh snapshot
+applied     -> input delivered; inspect successor or read again
+unknown     -> delivery may have happened; never retry
 ```
 
-An immediate successor read failure does not relabel known delivery as
-`unknown`; delivery and observation remain separate facts.
+Successor readiness in A is distinct from business settlement. A may wait for
+a repeatable decision checkpoint but may not overwrite an applied delivery or
+reconstruct the native effect.
 
 ## V3 Decomposition
 
-Retained: observation policy, identity, owner/entity registry, native adapters,
-main-thread execution, single-controller lease, Inspection facts and evidence.
+Retained infrastructure: observation policy, runtime identity, owner/entity
+registry, bounded native adapters, main-thread execution, controller lease,
+Inspection and evidence recording.
 
-Moved out of C authority: source labels, SourceContract explanations,
-transaction phase, expected business transition, business Outcome grader,
-compatibility/qualification analysis. They belong to optional D/P evidence.
+Removed from C authority: source labels, SourceContract, transaction phase,
+business Outcome, compatibility qualification and per-source permission.
+Unknown source cannot suppress an otherwise exact human-operable UI.
 
-Closed for HE: unknown-source action suppression, source permission as the
-default gate, business Outcome blocking successor, Re source whitelists and
-silent V3 executor fallback.
+HE has its own wire, controller contract, publication and receipt. Re has one
+live HE client/executor. Historical V3 protocol and normalization remain
+read-only replay/comparison assets. Six checked calls into inherited adapter
+implementations remain; no new HE family may add another V3-owned authority
+path.
 
-## Code Ownership
+## Current Freeze Gaps
 
-`HumanEquivalent/Protocol`, `Observation`, `Runtime` and `Transport` own the HE
-contract and lifecycle. `NativeUi/NativeUiRuntime` owns the process-wide entity
-registry and is authority-neutral. Re contains one live HE client/adapter;
-the retired V3 client, executor and public wire export have been deleted.
-Historical V3 protocol, normalization and fixtures remain internal read-only
-replay/comparison assets.
+- several native provider/adapter implementations remain V3-owned internally;
+- hover/focus/tooltip/scroll and native-page open/read/return are incomplete;
+- source-free combat-pile and unknown-source selector paths need exact-runtime
+  regression on the final artifact.
 
-The remaining implementation dependency is deliberately one-way:
+These gaps do not justify source authority, business Outcome, arbitrary
+reflection, coordinates or a second game engine.
 
-```text
-HumanEquivalentRuntime
--> six checked ConnectorV3 bounded adapter-library seams
--> native STS2 controls
-```
-
-Those seams may observe or deliver an already published native UI operation;
-they do not run V3 permission, qualification, SourceContract or business
-Outcome admission. New HE code may not add another seam. Subsequent family
-migration moves useful implementations under `NativeUi` and deletes the old
-owner, rather than wrapping it.
-
-## Current Limits
-
-Structured UI coverage reuses bounded native adapters already proven in V3,
-but HE supplies its own wire, controller contract, publication and delivery
-receipt. Source-free adapters cover native one-of-N card choices and the shared
-deck-card selector lifecycle. Complete generic structured-tree discovery,
-hover/focus/tooltip/scroll and bounded visual fallback remain pending; unmapped
-visible UI is explicit rather than guessed.
+`surface.facts` now uses a positive type switch. Known HE/native UI Surface
+families project visible mechanics; source, destination, mutation, Commit and
+evidence fields are never copied and unknown shapes receive only an explicit
+unprojected marker.

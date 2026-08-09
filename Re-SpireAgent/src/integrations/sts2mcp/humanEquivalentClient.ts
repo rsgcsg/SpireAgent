@@ -31,30 +31,22 @@ export class HumanEquivalentRestClient {
     return decodeHumanCapabilities(await this.get("/api/he/capabilities"));
   }
 
-  async observation(mode: "he_assisted" | "he_pure"): Promise<DecodedHumanPayload<HumanEquivalentObservation>> {
-    return decodeHumanObservation(await this.get(`/api/he/observation?mode=${mode}`));
+  async observation(): Promise<DecodedHumanPayload<HumanEquivalentObservation>> {
+    return decodeHumanObservation(await this.get("/api/he/observation"));
   }
 
   async submit(input: {
     requestId: string;
-    mode: "he_assisted" | "he_pure";
     expectedStateToken: string;
-    expectedFrameId: string;
-    expectedOwnerId: string;
     affordanceId: string;
-    parameters: Record<string, string>;
     clientSessionId: string;
     controllerLeaseId: string;
     controllerGeneration: number;
   }): Promise<DecodedHumanPayload<HumanEquivalentReceipt>> {
     return decodeHumanReceipt(await this.post("/api/he/actions", {
       request_id: input.requestId,
-      mode: input.mode,
       expected_state_token: input.expectedStateToken,
-      expected_frame_id: input.expectedFrameId,
-      expected_owner_id: input.expectedOwnerId,
       affordance_id: input.affordanceId,
-      parameters: input.parameters,
       client_session_id: input.clientSessionId,
       controller_lease_id: input.controllerLeaseId,
       controller_generation: input.controllerGeneration

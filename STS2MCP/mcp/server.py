@@ -7,7 +7,6 @@ affordances. It owns no game rules, source semantics, authority or completion.
 import argparse
 import asyncio
 from datetime import datetime
-import json
 import time
 from typing import Literal
 from urllib.parse import quote
@@ -23,8 +22,8 @@ _trust_env: bool = True
 _http: httpx.AsyncClient | None = None
 _control_lock: asyncio.Lock | None = None
 _control: dict | None = None
-_CONTROL_PROTOCOL = "3.0-preview.12"
-_CONTROL_SCHEMA = "sts2.connector.v3/control-1"
+_CONTROL_PROTOCOL = "1.0-preview.2"
+_CONTROL_SCHEMA = "sts2.connector.human-ui/control-1"
 
 
 def _he_url(path: str) -> str:
@@ -162,12 +161,10 @@ async def get_sts2_human_capabilities() -> str:
 
 
 @mcp.tool()
-async def get_sts2_human_snapshot(
-    mode: Literal["he_assisted", "he_pure"] = "he_assisted",
-) -> str:
+async def get_sts2_human_snapshot() -> str:
     """Read current player-visible UI facts and exact finite affordances."""
     try:
-        return await _he_get(f"observation?mode={quote(mode, safe='')}")
+        return await _he_get("observation")
     except Exception as error:
         return _handle_error(error)
 
@@ -176,15 +173,13 @@ async def get_sts2_human_snapshot(
 async def inspect_sts2_visible_state(
     kind: Literal["run_deck", "combat_piles", "shop_catalog"],
     expected_state_token: str,
-    mode: Literal["he_assisted", "he_pure"] = "he_assisted",
 ) -> str:
     """Read one catalogued, state-bound player-visible detail without authority."""
     try:
         encoded_kind = quote(kind, safe="")
         encoded_token = quote(expected_state_token, safe="")
-        encoded_mode = quote(mode, safe="")
         return await _he_get(
-            f"inspections/{encoded_kind}?expected_state_token={encoded_token}&mode={encoded_mode}"
+            f"inspections/{encoded_kind}?expected_state_token={encoded_token}"
         )
     except Exception as error:
         return _handle_error(error)
@@ -194,15 +189,13 @@ async def inspect_sts2_visible_state(
 async def get_sts2_surface_card_detail(
     entity_id: str,
     expected_state_token: str,
-    mode: Literal["he_assisted", "he_pure"] = "he_assisted",
 ) -> str:
     """Read one current catalogued card detail; never accepts arbitrary fields."""
     try:
         encoded_entity = quote(entity_id, safe="")
         encoded_token = quote(expected_state_token, safe="")
-        encoded_mode = quote(mode, safe="")
         return await _he_get(
-            f"linked-details/{encoded_entity}?expected_state_token={encoded_token}&mode={encoded_mode}"
+            f"linked-details/{encoded_entity}?expected_state_token={encoded_token}"
         )
     except Exception as error:
         return _handle_error(error)
@@ -211,25 +204,14 @@ async def get_sts2_surface_card_detail(
 @mcp.tool()
 async def apply_sts2_ui_affordance(
     request_id: str,
-    mode: Literal["he_assisted", "he_pure"],
     expected_state_token: str,
-    expected_frame_id: str,
-    expected_owner_id: str,
     affordance_id: str,
-    parameters_json: str = "{}",
 ) -> str:
     """Deliver one exact affordance advertised by the same HumanSnapshot.
 
-    Parameters must exactly match the advertised finite binding. An unknown
-    delivery must never be retried.
+    Native operands stay inside C. An unknown delivery must never be retried.
     """
     try:
-        parameters = json.loads(parameters_json)
-        if not isinstance(parameters, dict) or any(
-            not isinstance(key, str) or not isinstance(value, str)
-            for key, value in parameters.items()
-        ):
-            raise ValueError("parameters_json must be an object of string values")
         control = await _ensure_controller()
         lease = control["lease"]
         return await _he_protocol_request(
@@ -237,12 +219,8 @@ async def apply_sts2_ui_affordance(
             "actions",
             {
                 "request_id": request_id,
-                "mode": mode,
                 "expected_state_token": expected_state_token,
-                "expected_frame_id": expected_frame_id,
-                "expected_owner_id": expected_owner_id,
                 "affordance_id": affordance_id,
-                "parameters": parameters,
                 "client_session_id": control["client_session_id"],
                 "controller_lease_id": lease["controller_lease_id"],
                 "controller_generation": lease["controller_generation"],

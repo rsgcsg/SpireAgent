@@ -555,7 +555,7 @@ export async function waitForAgentObservation({
   let lastError = "not_attempted";
   while (Date.now() - startedAt <= timeoutMs) {
     attempts += 1;
-    const result = await readJsonResult(endpoint, "/api/he/observation?mode=he_assisted");
+    const result = await readJsonResult(endpoint, "/api/he/observation");
     if (result.ok && !isTransientAgentObservation(result.value)) {
       return {
         ready: true,
@@ -810,7 +810,7 @@ async function inspect(options, requireLoaded = false) {
     qualification_status: null,
     semantic_state_id: null,
     authority_projection_id: null,
-    note: "Human-Equivalent C is the default path. It binds current UI affordances to state/frame/owner and returns delivery plus successor; V3 is explicit rollback only."
+    note: "Human-Equivalent C is the default path. It binds current UI affordances to an exact state and C-local owner/target/operands, then returns delivery plus successor; V3 is explicit rollback only."
   };
 }
 
@@ -1072,7 +1072,7 @@ async function collectEvidence(options) {
     throw new Error(`Gateway did not become ready within ${waited.waited_ms}ms: ${waited.error}`);
   }
   const capabilities = waited.capabilities;
-  const state = await readJson(endpoint, "/api/he/observation?mode=he_assisted", true);
+  const state = await readJson(endpoint, "/api/he/observation", true);
   const controller = await readJsonResult(endpoint, "/api/he/controller");
   const partialFailures = [
     ...(controller.ok ? [] : [{ route: "/api/he/controller", error: controller.error }])

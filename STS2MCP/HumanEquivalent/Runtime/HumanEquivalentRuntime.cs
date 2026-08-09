@@ -17,7 +17,11 @@ namespace STS2_MCP.HumanEquivalent.Runtime;
 internal sealed record HumanEquivalentRuntimeSnapshot(
     HumanEquivalentObservationResponse Observation,
     BridgeObservationDraft Draft,
-    IReadOnlyDictionary<string, ConnectorV3BoundCommand> Bindings);
+    IReadOnlyDictionary<string, HumanEquivalentNativeBinding> Bindings);
+
+internal sealed record HumanEquivalentNativeBinding(
+    ConnectorV3BoundCommand Command,
+    IReadOnlyDictionary<string, string> Parameters);
 
 internal sealed record HumanEquivalentInspectionReadResult(
     HumanEquivalentInspectionResponse? Inspection,
@@ -56,14 +60,12 @@ internal static partial class HumanEquivalentRuntime
             "implemented",
             HumanGatewayIdentity(bridge.Bridge),
             bridge.Game,
-            new[] { HumanEquivalentContract.AssistedMode, HumanEquivalentContract.PureMode },
             new[]
             {
                 "activate", "select", "deselect", "confirm", "cancel", "play",
                 "target", "use", "end_turn", "skip", "open", "close"
             },
             StateBound: true,
-            FrameBound: true,
             SingleController: true,
             BusinessSourceRequired: false,
             BusinessOutcomeRequired: false,
@@ -72,21 +74,20 @@ internal static partial class HumanEquivalentRuntime
             new[]
             {
                 "Applied means native UI input was delivered, not that a business transaction settled.",
-                "Optional annotations never create, remove or authorize affordances.",
+                "D annotations are outside the C observation and never authorize affordances.",
                 "Build or install does not prove this artifact is loaded or Live-exercised."
             });
     }
 
-    public static HumanEquivalentObservationResponse ObserveHumanEquivalent(string? mode) =>
-        BuildHumanEquivalentSnapshot(NormalizeHumanMode(mode)).Observation;
+    public static HumanEquivalentObservationResponse ObserveHumanEquivalent() =>
+        BuildHumanEquivalentSnapshot().Observation;
 
     public static HumanEquivalentActionReceipt SubmitHumanEquivalent(
         HumanEquivalentActionRequest request)
     {
         string requestId = request.RequestId ?? string.Empty;
-        string mode = NormalizeHumanMode(request.Mode);
-        IReadOnlyDictionary<string, string> parameters = request.Parameters
-            ?? new Dictionary<string, string>(StringComparer.Ordinal);
+        IReadOnlyDictionary<string, string> parameters =
+            new Dictionary<string, string>(StringComparer.Ordinal);
         if (string.IsNullOrWhiteSpace(requestId))
         {
             return HumanReceipt(
@@ -94,7 +95,6 @@ internal static partial class HumanEquivalentRuntime
                 request.AffordanceId ?? "invalid",
                 "activate",
                 "invalid",
-                parameters,
                 "not_applied",
                 "not_applied",
                 "invalid_request_id",
@@ -105,11 +105,7 @@ internal static partial class HumanEquivalentRuntime
         string fingerprint = BridgeHash.Object(new
         {
             request.ExpectedStateToken,
-            request.ExpectedFrameId,
-            request.ExpectedOwnerId,
             request.AffordanceId,
-            parameters = parameters.OrderBy(pair => pair.Key, StringComparer.Ordinal).ToArray(),
-            mode,
             request.ClientSessionId,
             request.ControllerLeaseId,
             request.ControllerGeneration
@@ -127,7 +123,6 @@ internal static partial class HumanEquivalentRuntime
                     request.AffordanceId ?? "invalid",
                     "activate",
                     "invalid",
-                    parameters,
                     "not_applied",
                     "not_applied",
                     "request_id_conflict",
@@ -136,17 +131,19 @@ internal static partial class HumanEquivalentRuntime
                     null);
             }
 
-            HumanEquivalentRuntimeSnapshot snapshot = BuildHumanEquivalentSnapshot(mode);
+            HumanEquivalentRuntimeSnapshot snapshot = BuildHumanEquivalentSnapshot();
             string affordanceId = request.AffordanceId ?? string.Empty;
             HumanEquivalentAffordance? affordance = snapshot.Observation.Affordances
                 .SingleOrDefault(candidate => string.Equals(
                     candidate.AffordanceId,
                     affordanceId,
                     StringComparison.Ordinal));
-            ConnectorV3BoundCommand? binding = affordance == null
-                || !snapshot.Bindings.TryGetValue(affordanceId, out ConnectorV3BoundCommand? found)
+            HumanEquivalentNativeBinding? binding = affordance == null
+                || !snapshot.Bindings.TryGetValue(affordanceId, out HumanEquivalentNativeBinding? found)
                     ? null
                     : found;
+            parameters = binding?.Parameters
+                ?? new Dictionary<string, string>(StringComparer.Ordinal);
             string action = affordance?.Action ?? "activate";
             string targetId = affordance?.TargetId ?? "invalid";
 
@@ -158,7 +155,6 @@ internal static partial class HumanEquivalentRuntime
                     affordanceId,
                     action,
                     targetId,
-                    parameters,
                     "not_applied",
                     "not_applied",
                     code,
@@ -169,15 +165,13 @@ internal static partial class HumanEquivalentRuntime
                 return failed;
             }
 
-            if (!string.Equals(snapshot.Observation.StateToken, request.ExpectedStateToken, StringComparison.Ordinal)
-                || !string.Equals(snapshot.Observation.Frame.FrameId, request.ExpectedFrameId, StringComparison.Ordinal)
-                || !string.Equals(snapshot.Observation.Owner.OwnerId, request.ExpectedOwnerId, StringComparison.Ordinal))
+            if (!string.Equals(snapshot.Observation.StateToken, request.ExpectedStateToken, StringComparison.Ordinal))
             {
                 return Fail(
                     "stale_snapshot",
-                    "The exact state, frame or current UI owner changed; obtain a fresh snapshot.");
+                    "The exact Human-Equivalent snapshot changed; obtain a fresh observation.");
             }
-            if (affordance == null || binding == null || !DictionaryEqual(affordance.Parameters, parameters))
+            if (affordance == null || binding == null)
                 return Fail("affordance_not_current", "The exact advertised affordance is no longer current.");
             if (!snapshot.Observation.Game.Compatibility.StateObservationAllowed)
                 return Fail("observation_unavailable", "The current UI cannot be observed exactly enough to deliver input.");
@@ -197,7 +191,7 @@ internal static partial class HumanEquivalentRuntime
             {
                 started = StartHumanEquivalentInput(
                     snapshot,
-                    binding,
+                    binding.Command,
                     parameters);
             }
             catch (Exception exception)
@@ -207,7 +201,6 @@ internal static partial class HumanEquivalentRuntime
                     affordanceId,
                     action,
                     targetId,
-                    parameters,
                     "unknown",
                     "unknown",
                     "input_delivery_unknown",
@@ -226,7 +219,7 @@ internal static partial class HumanEquivalentRuntime
             string detail = "Native UI input was delivered; inspect successor for game progress.";
             try
             {
-                successor = ObserveHumanEquivalent(mode);
+                successor = ObserveHumanEquivalent();
             }
             catch (Exception exception)
             {
@@ -239,7 +232,6 @@ internal static partial class HumanEquivalentRuntime
                 affordanceId,
                 action,
                 targetId,
-                parameters,
                 "applied",
                 "applied",
                 successor == null ? "successor_observation_unavailable" : null,
@@ -258,11 +250,10 @@ internal static partial class HumanEquivalentRuntime
 
     public static HumanEquivalentInspectionReadResult InspectHumanEquivalent(
         string kind,
-        string expectedStateToken,
-        string? mode)
+        string expectedStateToken)
     {
         HumanEquivalentRuntimeSnapshot snapshot =
-            BuildHumanEquivalentSnapshot(NormalizeHumanMode(mode));
+            BuildHumanEquivalentSnapshot();
         HumanEquivalentObservationResponse observation = snapshot.Observation;
         if (!string.Equals(observation.StateToken, expectedStateToken, StringComparison.Ordinal))
         {
@@ -318,11 +309,10 @@ internal static partial class HumanEquivalentRuntime
 
     public static HumanEquivalentLinkedDetailReadResult ReadHumanEquivalentLinkedDetail(
         string entityId,
-        string expectedStateToken,
-        string? mode)
+        string expectedStateToken)
     {
         HumanEquivalentRuntimeSnapshot snapshot =
-            BuildHumanEquivalentSnapshot(NormalizeHumanMode(mode));
+            BuildHumanEquivalentSnapshot();
         HumanEquivalentObservationResponse observation = snapshot.Observation;
         if (!string.Equals(observation.StateToken, expectedStateToken, StringComparison.Ordinal))
         {
@@ -378,7 +368,7 @@ internal static partial class HumanEquivalentRuntime
             null);
     }
 
-    private static HumanEquivalentRuntimeSnapshot BuildHumanEquivalentSnapshot(string mode)
+    private static HumanEquivalentRuntimeSnapshot BuildHumanEquivalentSnapshot()
     {
         GameBuildIdentity game = BridgeV2Runtime.ReadCurrentGameIdentity();
         BridgeObservationDraft? sourceFreeSurface =
@@ -435,23 +425,11 @@ internal static partial class HumanEquivalentRuntime
             ?? nativeBindings.SelectMany(item => item.Candidate.EntityBindings)
                 .FirstOrDefault(entity => IsOwnerRole(entity.Role))?.EntityId
             ?? "owner_" + BridgeHash.Object(new { draft.Surface.Kind, draft.Signature })[..20];
-        IReadOnlyList<(HumanEquivalentAffordance Affordance, ConnectorV3BoundCommand Binding)> projected =
+        IReadOnlyList<(HumanEquivalentAffordance Affordance, HumanEquivalentNativeBinding Binding)> projected =
             ProjectHumanAffordances(nativeBindings, ownerId);
         string stage = ReadFirstString(rawSurface, "stage") ?? draft.Readiness;
         string? prompt = ReadFirstString(rawSurface, "prompt", "body", "message");
-        HumanEquivalentAnnotationEnvelope? annotations = mode == HumanEquivalentContract.AssistedMode
-            ? BuildOptionalAnnotations(rawSurface, stage)
-            : null;
-        JsonNode rawContext = JsonSerializer.SerializeToNode(
-            draft.Context,
-            draft.Context.GetType(),
-            McpMod._jsonOptions) ?? new JsonObject();
-        var surfaceFacts = new JsonObject
-        {
-            ["surface"] = rawSurface.DeepClone(),
-            ["context"] = rawContext
-        };
-        RemoveBusinessKeys(surfaceFacts);
+        JsonNode surfaceFacts = ProjectHumanFacts(draft.Surface, draft.Context);
 
         IReadOnlyList<HumanEquivalentUiEntity> entities = HumanSurfaceCards(draft.Surface)
             .GroupBy(card => card.EntityId, StringComparer.Ordinal)
@@ -473,8 +451,8 @@ internal static partial class HumanEquivalentRuntime
                 item.Affordance.Label,
                 Visible: true,
                 Enabled: true,
-                Selected: false,
-                Focused: false,
+                Selected: null,
+                Focused: null,
                 Actions: new[] { item.Affordance.Action }))
             .GroupBy(control => control.ControlId, StringComparer.Ordinal)
             .Select(group => group.First())
@@ -494,7 +472,6 @@ internal static partial class HumanEquivalentRuntime
             visibility
         });
         (string stateToken, long sequence) = HumanStateIdentity.Observe(signature);
-        string frameId = "frame_" + BridgeHash.Text($"{stateToken}|{ownerId}|{draft.Surface.Kind}")[..20];
         bool visibleUnsupported = draft.Surface is UnsupportedSurface;
         string status = projected.Count > 0
             ? "actionable"
@@ -502,19 +479,16 @@ internal static partial class HumanEquivalentRuntime
         var observation = new HumanEquivalentObservationResponse(
             HumanEquivalentContract.ProtocolVersion,
             HumanEquivalentContract.ObservationSchema,
-            mode,
             stateToken,
             sequence,
             DateTimeOffset.UtcNow,
             status,
-            new HumanEquivalentFrame(frameId, 0, 0, "native_structured_ui"),
             new HumanEquivalentOwner(ownerId, draft.Surface.Kind),
             shared.State,
             new HumanEquivalentUiSurface(draft.Surface.Kind, stage, prompt, surfaceFacts),
             entities,
             controls,
             projected.Select(item => item.Affordance).ToArray(),
-            annotations,
             draft.Completeness,
             HumanGatewayIdentity(BridgeV2Runtime.ReadBridgeIdentity()),
             game,
@@ -674,15 +648,26 @@ internal static partial class HumanEquivalentRuntime
         {
             HumanDeckCardSelectionSurface deckSelection => deckSelection.Cards,
             HumanCombatPileSelectionSurface combatPileSelection => combatPileSelection.Cards,
-            _ => ConnectorV3Runtime.SurfaceCards(surface)
+            DeckEnchantSelectionSurface value => value.Cards,
+            DeckRemovalSelectionSurface value => value.Cards,
+            EventDeckRemovalSelectionSurface value => value.Cards,
+            DeckUpgradeSelectionSurface value => value.Cards.Concat(value.PreviewCards),
+            DeckTransformSelectionSurface value => value.Cards,
+            WoodCarvingsReplacementSelectionSurface value => value.Cards,
+            CombatPileCardSelectionSurface value => value.Cards,
+            CombatHandCardSelectionSurface value => value.Cards,
+            EventCardAcquisitionSurface value => value.Cards,
+            CardRewardSelectionSurface value => value.Cards,
+            GeneratedCardChoiceSurface value => value.Cards,
+            _ => Array.Empty<VisibleCard>()
         };
 
-    private static IReadOnlyList<(HumanEquivalentAffordance, ConnectorV3BoundCommand)>
+    private static IReadOnlyList<(HumanEquivalentAffordance, HumanEquivalentNativeBinding)>
         ProjectHumanAffordances(
             IReadOnlyList<ConnectorV3BoundCommand> bindings,
             string ownerId)
     {
-        var result = new List<(HumanEquivalentAffordance, ConnectorV3BoundCommand)>();
+        var result = new List<(HumanEquivalentAffordance, HumanEquivalentNativeBinding)>();
         foreach (ConnectorV3BoundCommand binding in bindings)
         {
             foreach (IReadOnlyDictionary<string, string> parameters in ExpandParameters(binding.Candidate))
@@ -708,11 +693,8 @@ internal static partial class HumanEquivalentRuntime
                         targetId,
                         ownerId,
                         binding.Candidate.Label,
-                        parameters,
-                        new Dictionary<string, HumanEquivalentParameterDomain>(),
-                        binding.Candidate.EntityBindings,
                         "native_ui_adapter"),
-                    binding));
+                    new HumanEquivalentNativeBinding(binding, parameters)));
             }
         }
         return result;
@@ -744,7 +726,6 @@ internal static partial class HumanEquivalentRuntime
         string affordanceId,
         string action,
         string targetId,
-        IReadOnlyDictionary<string, string> parameters,
         string status,
         string delivery,
         string? reasonCode,
@@ -757,7 +738,7 @@ internal static partial class HumanEquivalentRuntime
             requestId,
             status,
             delivery,
-            new HumanEquivalentActionSummary(affordanceId, action, targetId, parameters),
+            new HumanEquivalentActionSummary(affordanceId, action, targetId),
             reasonCode,
             detail,
             new HumanEquivalentRetryPolicy(
@@ -772,13 +753,6 @@ internal static partial class HumanEquivalentRuntime
     {
         Id = HumanEquivalentContract.GatewayId,
         Name = HumanEquivalentContract.GatewayName
-    };
-
-    internal static string NormalizeHumanMode(string? mode) => mode switch
-    {
-        null or "" or HumanEquivalentContract.AssistedMode => HumanEquivalentContract.AssistedMode,
-        HumanEquivalentContract.PureMode => HumanEquivalentContract.PureMode,
-        _ => throw new ArgumentException("mode must be he_assisted or he_pure", nameof(mode))
     };
 
     internal static string GenericAction(string command, string operation) => command switch
@@ -796,13 +770,6 @@ internal static partial class HumanEquivalentRuntime
             operation.Contains("open", StringComparison.Ordinal) ? "open" : "activate",
         _ => "activate"
     };
-
-    internal static bool DictionaryEqual(
-        IReadOnlyDictionary<string, string> left,
-        IReadOnlyDictionary<string, string> right) =>
-        left.Count == right.Count && left.All(pair =>
-            right.TryGetValue(pair.Key, out string? value)
-            && string.Equals(pair.Value, value, StringComparison.Ordinal));
 
     private static bool IsOwnerRole(string role) =>
         role.Contains("screen", StringComparison.Ordinal)
@@ -830,39 +797,100 @@ internal static partial class HumanEquivalentRuntime
             && string.Equals(value.GetValue<string>(), entityId, StringComparison.Ordinal));
     }
 
-    private static HumanEquivalentAnnotationEnvelope BuildOptionalAnnotations(
-        JsonNode rawSurface,
-        string stage) => new(
-            ReadFirstString(rawSurface, "source_kind", "event_id"),
-            ReadFirstString(rawSurface, "purpose"),
-            stage,
-            ReadFirstString(rawSurface, "destination", "commit_mode"),
-            TeacherGenerated: false,
-            AuthorizationEffect: "none");
-
-    private static void RemoveBusinessKeys(JsonNode? node)
+    internal static JsonNode ProjectHumanFacts(IBridgeSurface surface, IBridgeContext context)
     {
-        if (node is JsonObject obj)
+        JsonNode visibleSurface = surface switch
         {
-            foreach (string key in new[]
+            DeckEnchantSelectionSurface value => JsonSerializer.SerializeToNode(new
             {
-                "source_kind", "source_entity_kind", "source_entity_id",
-                "source_definition_id", "source_card_entity_id", "source_card_definition_id",
-                "purpose", "destination", "destination_pile", "destination_position",
-                "overflow_destination", "replacement_card_definition_id", "mutation_kind",
-                "commit_mode", "expected_effects", "select_operation", "skip_operation",
-                "select_completion_evidence", "skip_completion_evidence", "binding_evidence"
-            })
+                value.Kind, value.Stage, value.ScreenEntityId, value.Prompt,
+                value.MinSelect, value.MaxSelect, value.SelectedCount,
+                value.SelectedCardEntityIds, value.SelectableCardEntityIds,
+                value.DeselectableCardEntityIds, value.Cancelable,
+                value.Enchantment, value.Cards, value.CanPreview,
+                value.CanCloseSelection, value.CanConfirm, value.CanCancelPreview
+            }, McpMod._jsonOptions)!,
+            DeckTransformSelectionSurface value => JsonSerializer.SerializeToNode(new
             {
-                obj.Remove(key);
+                value.Kind, value.Stage, value.ScreenEntityId, value.Prompt,
+                value.MinSelect, value.MaxSelect, value.SelectedCount,
+                value.SelectedCardEntityIds, value.SelectableCardEntityIds,
+                value.DeselectableCardEntityIds, value.Cancelable,
+                value.UpgradeToggleVisible, value.ShowingUpgradePreviews,
+                value.PreviewKind, value.ReplacementKnown, value.Cards,
+                value.CanPreview, value.CanCancelSelection,
+                value.CanCancelPreview, value.CanConfirm, value.CanToggleUpgradeView
+            }, McpMod._jsonOptions)!,
+            CombatPileCardSelectionSurface value => JsonSerializer.SerializeToNode(new
+            {
+                value.Kind, value.ScreenEntityId, value.Prompt, value.PileType,
+                value.MinSelect, value.MaxSelect, value.SelectedCount,
+                value.SelectedCardEntityIds, value.SelectableCardEntityIds,
+                value.DeselectableCardEntityIds, value.RequireManualConfirmation,
+                value.Cancelable, value.CanConfirm, value.Cards
+            }, McpMod._jsonOptions)!,
+            EventCardAcquisitionSurface value => JsonSerializer.SerializeToNode(new
+            {
+                value.Kind, value.ScreenEntityId, value.Prompt, value.MinSelect,
+                value.MaxSelect, value.SelectedCount, value.SelectedCardEntityIds,
+                value.SelectableCardEntityIds, value.DeselectableCardEntityIds,
+                value.RequireManualConfirmation, value.Cards
+            }, McpMod._jsonOptions)!,
+            EventDeckRemovalSelectionSurface value => JsonSerializer.SerializeToNode(new
+            {
+                value.Kind, value.Stage, value.ScreenEntityId, value.Prompt,
+                value.MinSelect, value.MaxSelect, value.SelectedCount,
+                value.SelectedCardEntityIds, value.SelectableCardEntityIds,
+                value.DeselectableCardEntityIds, value.CanCancelPreview,
+                value.CanConfirm, value.Cards
+            }, McpMod._jsonOptions)!,
+            GeneratedCardChoiceSurface value => JsonSerializer.SerializeToNode(new
+            {
+                value.Kind, value.ScreenEntityId, value.Prompt, value.CanSkip,
+                value.IsPeeking, value.Cards, value.SelectableCardEntityIds,
+                value.SkipAvailable
+            }, McpMod._jsonOptions)!,
+            UnsupportedSurface value => JsonSerializer.SerializeToNode(new
+            {
+                value.Kind, value.Reason
+            }, McpMod._jsonOptions)!,
+            HumanDeckCardSelectionSurface or HumanCombatPileSelectionSurface
+                or EventOptionSurface or EventDialogueSurface or RestSiteSurface
+                or ShopInventorySurface or ShopRoomSurface or TreasureRoomSurface
+                or GameOverSurface or CharacterSelectSurface or MainMenuSurface
+                or SingleplayerMenuSurface or DeckRemovalSelectionSurface
+                or DeckUpgradeSelectionSurface or WoodCarvingsReplacementSelectionSurface
+                or CombatTurnSurface or CombatHandCardSelectionSurface
+                or CardRewardSelectionSurface or CardBundleSelectionSurface
+                or RewardClaimSurface or MapNavigationSurface or NoActionSurface =>
+                SerializeKnownUiValue(surface),
+            _ => new JsonObject
+            {
+                ["kind"] = surface.Kind,
+                ["projection_status"] = "visible_surface_shape_not_projected"
             }
-            foreach (JsonNode? child in obj.Select(pair => pair.Value).ToArray())
-                RemoveBusinessKeys(child);
-        }
-        else if (node is JsonArray array)
+        };
+        JsonNode visibleContext = context switch
         {
-            foreach (JsonNode? child in array)
-                RemoveBusinessKeys(child);
-        }
+            UnknownBridgeContext value => JsonSerializer.SerializeToNode(new
+            {
+                value.Kind, value.Reason
+            }, McpMod._jsonOptions)!,
+            EventBridgeContext or CombatBridgeContext or RewardFlowBridgeContext
+                or RestBridgeContext or TreasureBridgeContext or GameOverBridgeContext
+                or MenuBridgeContext or ShopBridgeContext or MapBridgeContext
+                or CombatTransitionBridgeContext or RunTransitionBridgeContext =>
+                SerializeKnownUiValue(context),
+            _ => new JsonObject { ["kind"] = context.Kind }
+        };
+        return new JsonObject
+        {
+            ["surface"] = visibleSurface,
+            ["context"] = visibleContext
+        };
     }
+
+    private static JsonNode SerializeKnownUiValue(object value) =>
+        JsonSerializer.SerializeToNode(value, value.GetType(), McpMod._jsonOptions)
+        ?? new JsonObject();
 }

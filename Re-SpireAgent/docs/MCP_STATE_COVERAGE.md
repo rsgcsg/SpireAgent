@@ -5,11 +5,10 @@ Gateway implementation and exact-runtime evidence are canonical in
 
 ## Current Contract
 
-Re strictly accepts the current `1.0-preview.1` HumanSnapshot, finite
+Re strictly accepts the current `1.0-preview.2` HumanSnapshot, finite
 affordances and delivery receipts. It preserves exact Gateway/game/Modset/
-runtime identity, state/frame/owner bindings, persistent visible state,
-visible unsupported UI, `he_assisted` annotations and annotation-free
-`he_pure`.
+runtime identity, state/owner binding, persistent visible state and visible
+unsupported UI. C contains no D mode or annotations.
 
 Re emits choices only from the current affordance set. It does not read V2/V3
 state sidecars, add operands, infer native legality, wait for a business
@@ -28,10 +27,11 @@ Outcome or retry unknown delivery.
 
 ## Fail-Closed Rules
 
-- malformed HE schema, identity drift, stale state/frame/owner, replacement
-  target, missing control or exact parameter mismatch produces no input;
+- malformed HE schema, identity drift, stale state, replacement target or
+  missing current control produces no input;
 - unknown delivery and transport uncertainty stop without retry;
 - hidden RNG, true draw order, future rewards/events/moves and arbitrary game
   object reads are unavailable;
-- D annotations cannot create, remove or authorize an affordance;
+- optional D input is composed outside C and cannot create, remove or authorize
+  an affordance;
 - build/install and historical V3 journeys do not prove current HE Live use.

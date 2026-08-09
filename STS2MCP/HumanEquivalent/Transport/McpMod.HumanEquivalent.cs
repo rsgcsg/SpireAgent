@@ -26,21 +26,9 @@ public static partial class McpMod
         HttpListenerRequest request,
         HttpListenerResponse response)
     {
-        string? mode = request.QueryString["mode"];
-        if (mode is not null
-            && mode is not HumanEquivalentContract.AssistedMode
-                and not HumanEquivalentContract.PureMode)
-        {
-            SendConnectorV3Error(
-                response,
-                400,
-                "invalid_human_mode",
-                "mode must be he_assisted or he_pure.");
-            return;
-        }
         try
         {
-            var task = RunOnMainThread(() => HumanEquivalentRuntime.ObserveHumanEquivalent(mode));
+            var task = RunOnMainThread(HumanEquivalentRuntime.ObserveHumanEquivalent);
             SendJson(response, task.GetAwaiter().GetResult());
         }
         catch (Exception exception)
@@ -65,17 +53,15 @@ public static partial class McpMod
             return;
         }
         string? expectedStateToken = request.QueryString["expected_state_token"];
-        string? mode = request.QueryString["mode"];
         if (!IsSafeBridgeIdentifier(kind, 64)
-            || !IsSafeBridgeIdentifier(expectedStateToken, 128)
-            || mode is not null and not HumanEquivalentContract.AssistedMode and not HumanEquivalentContract.PureMode)
+            || !IsSafeBridgeIdentifier(expectedStateToken, 128))
         {
-            SendConnectorV3Error(response, 400, "invalid_inspection_contract", "A current catalog kind, state token and valid HE mode are required.");
+            SendConnectorV3Error(response, 400, "invalid_inspection_contract", "A current catalog kind and state token are required.");
             return;
         }
         try
         {
-            var task = RunOnMainThread(() => HumanEquivalentRuntime.InspectHumanEquivalent(kind, expectedStateToken!, mode));
+            var task = RunOnMainThread(() => HumanEquivalentRuntime.InspectHumanEquivalent(kind, expectedStateToken!));
             HumanEquivalentInspectionReadResult result = task.GetAwaiter().GetResult();
             if (result.Inspection != null)
             {
@@ -110,17 +96,15 @@ public static partial class McpMod
             return;
         }
         string? expectedStateToken = request.QueryString["expected_state_token"];
-        string? mode = request.QueryString["mode"];
         if (!IsSafeBridgeIdentifier(entityId, 128)
-            || !IsSafeBridgeIdentifier(expectedStateToken, 128)
-            || mode is not null and not HumanEquivalentContract.AssistedMode and not HumanEquivalentContract.PureMode)
+            || !IsSafeBridgeIdentifier(expectedStateToken, 128))
         {
-            SendConnectorV3Error(response, 400, "invalid_linked_detail_contract", "A current catalog entity, state token and valid HE mode are required.");
+            SendConnectorV3Error(response, 400, "invalid_linked_detail_contract", "A current catalog entity and state token are required.");
             return;
         }
         try
         {
-            var task = RunOnMainThread(() => HumanEquivalentRuntime.ReadHumanEquivalentLinkedDetail(entityId, expectedStateToken!, mode));
+            var task = RunOnMainThread(() => HumanEquivalentRuntime.ReadHumanEquivalentLinkedDetail(entityId, expectedStateToken!));
             HumanEquivalentLinkedDetailReadResult result = task.GetAwaiter().GetResult();
             if (result.LinkedDetail != null)
             {
@@ -153,16 +137,13 @@ public static partial class McpMod
             return;
         if (!IsSafeBridgeIdentifier(action.RequestId, 128)
             || !IsSafeBridgeIdentifier(action.ExpectedStateToken, 128)
-            || !IsSafeBridgeIdentifier(action.ExpectedFrameId, 128)
-            || !IsSafeBridgeIdentifier(action.ExpectedOwnerId, 128)
-            || !IsSafeBridgeIdentifier(action.AffordanceId, 128)
-            || action.Parameters?.Count > 16)
+            || !IsSafeBridgeIdentifier(action.AffordanceId, 128))
         {
             SendConnectorV3Error(
                 response,
                 400,
                 "invalid_human_action",
-                "Exact request, state, frame, owner and advertised affordance identifiers are required.");
+                "Exact request, snapshot and advertised affordance identifiers are required.");
             return;
         }
         try

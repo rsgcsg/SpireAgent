@@ -1,7 +1,7 @@
 # STS2 Human-Equivalent Connector
 
 `STS2MCP` is the in-game Connector, REST server and optional Python MCP
-transport. Human-Equivalent protocol `1.0-preview.1` is current; Connector V3
+transport. Human-Equivalent protocol `1.0-preview.2` is current; Connector V3
 is explicit rollback/comparison only.
 
 ## Build, Test And Deploy
@@ -40,16 +40,17 @@ See [Human-Equivalent Protocol](docs/human-equivalent/PROTOCOL.md).
 
 ```text
 GET  /api/he/capabilities
-GET  /api/he/observation?mode=he_assisted|he_pure
+GET  /api/he/observation
 GET  /api/he/inspections/{kind}?expected_state_token=...
 GET  /api/he/linked-details/{entity_id}?expected_state_token=...
 POST /api/he/actions
 GET  /api/he/actions/{request_id}
 ```
 
-The Connector accepts only current advertised state/frame/owner-bound UI
-affordances. It never accepts arbitrary methods, paths, coordinates or hidden
-game information. Unknown delivery is never retried.
+The Connector accepts only current advertised state-bound UI affordances. Exact
+owner, target and native operands remain C-local. It never accepts arbitrary
+methods, paths, coordinates or hidden game information. Unknown delivery is
+never retried.
 
 ## Rollback
 

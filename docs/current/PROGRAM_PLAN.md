@@ -8,16 +8,16 @@ boundary; A owns interpretation and strategy; D is optional evidence/hints.
 
 ## Current State
 
-The HE vertical slice has exact-runtime baseline evidence across ordinary UI.
-That evidence exposed and drove fixes for client-side business-settlement
-waiting and source-gated combat-pile selection. The replacement is complete in
-source and tests; the next gate is its exact cold-load and real-game evidence,
-not more source-specific C semantics.
+The HE vertical slice has exact-runtime `preview.1` evidence across ordinary UI
+and one complete journey. It exposed successor-waiting, source-gated selectors
+and an A-side shop cycle. `preview.2` removes the migration wire shapes and
+fixes cycle identity in source/tests; its next gate is exact cold-load and Live
+regression, not more source-specific C semantics.
 
 ## Delivery Order
 
-1. Cold-load and verify the coherent replacement HE artifact.
-2. Regress combat-pile selection and slow end-turn/map delivery, then continue
+1. Build/install/cold-load and verify the coherent `preview.2` artifact.
+2. Regress the HE shop-cycle fix, combat-pile selection and slow end-turn/map delivery, then continue
    an ordinary assisted journey; fix only C facts/input integrity defects.
 3. Exercise one unknown-source native selector and one `he_pure` journey.
 4. Complete Human information parity: hover, focus, tooltip, scroll and native
@@ -32,7 +32,7 @@ not more source-specific C semantics.
 ## Invariants
 
 - STS2 owns rules and effects;
-- exact state/frame/owner/target and one current controller;
+- exact state/owner/target and one current controller; native operands stay C-local;
 - native target/actionability revalidation at delivery;
 - request idempotency and unknown-no-retry;
 - player-visible information only;

@@ -8,7 +8,7 @@ legality, business source, action authorization, strategy or completion rule.
 | Tool | Contract |
 |---|---|
 | `get_sts2_human_capabilities()` | exact loaded Gateway/game/Modset identity |
-| `get_sts2_human_snapshot(mode)` | player-visible UI facts and current finite affordances |
+| `get_sts2_human_snapshot()` | player-visible UI facts and current finite affordances |
 | `inspect_sts2_visible_state(...)` | state-bound run deck, combat pile or shop read |
 | `get_sts2_surface_card_detail(...)` | state-bound linked visible card detail |
 | `apply_sts2_ui_affordance(...)` | deliver one exact advertised affordance |
@@ -16,7 +16,8 @@ legality, business source, action authorization, strategy or completion rule.
 
 `unknown` delivery is terminal and must not be retried. No tool accepts a game
 method, node path, coordinate, index, arbitrary reflection target or hidden
-information request.
+information request. The action tool accepts only request ID, current state
+token and opaque affordance ID; exact native operands remain inside C.
 
 ## Run
 

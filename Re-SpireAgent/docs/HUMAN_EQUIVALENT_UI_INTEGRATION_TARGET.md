@@ -36,7 +36,7 @@ It should not duplicate one business action into source-specific and UI-specific
 
 Re must:
 
-- discard old controls when state/frame changes;
+- discard old controls when the exact C state token changes;
 - never blindly replay `unknown_delivery`;
 - use new observations to determine what happened;
 - recognize settling/animation and wait or reobserve;

@@ -9,10 +9,7 @@ import { wrapHumanEquivalentState, type Sts2McpRawState } from "./rawState.js";
 
 interface HumanInvocation {
   expectedStateToken: string;
-  expectedFrameId: string;
-  expectedOwnerId: string;
   affordanceId: string;
-  parameters: Record<string, string>;
 }
 
 export interface HumanEquivalentAdapterOptions {
@@ -69,7 +66,7 @@ export class Sts2HumanEquivalentAdapter implements GameAdapter<Sts2McpRawState, 
         canExecuteActions: capabilities?.execution_available === true,
         canListLegalActions: Boolean(capabilities),
         actionResults: "partial",
-        legalActionAuthority: "bridge_advertised",
+        legalActionAuthority: "current_human_ui",
         protocols: ["human_equivalent"]
       },
       negotiated: {
@@ -102,7 +99,7 @@ export class Sts2HumanEquivalentAdapter implements GameAdapter<Sts2McpRawState, 
   async readCurrentState(): Promise<Sts2McpRawState> {
     await this.initialize();
     const [observed, capabilities] = await Promise.all([
-      this.connector.observation(this.options.mode),
+      this.connector.observation(),
       this.connector.capabilities()
     ]);
     assertIdentity(observed.data, capabilities.data);
@@ -144,7 +141,6 @@ export class Sts2HumanEquivalentAdapter implements GameAdapter<Sts2McpRawState, 
     try {
       receipt = await this.connector.submit({
         requestId,
-        mode: this.options.mode,
         ...invocation,
         clientSessionId: controller.clientSessionId,
         controllerLeaseId: controller.controllerLeaseId,
@@ -195,15 +191,12 @@ export class Sts2HumanEquivalentAdapter implements GameAdapter<Sts2McpRawState, 
 }
 
 function invocation(
-  observation: { state_token: string; frame: { frame_id: string }; owner: { owner_id: string } },
+  observation: { state_token: string },
   affordance: HumanEquivalentAffordance
 ): HumanInvocation {
   return {
     expectedStateToken: observation.state_token,
-    expectedFrameId: observation.frame.frame_id,
-    expectedOwnerId: observation.owner.owner_id,
-    affordanceId: affordance.affordance_id,
-    parameters: { ...affordance.parameters }
+    affordanceId: affordance.affordance_id
   };
 }
 

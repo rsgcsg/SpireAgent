@@ -1,28 +1,36 @@
 # Re Human-Equivalent Integration
 
-Re strictly accepts `1.0-preview.1`.
+Re strictly accepts `1.0-preview.2`.
 
 The adapter reads `/api/he/observation`, verifies runtime/MVID/SHA/Modset
-coherence, and converts current affordances into finite opaque local choices.
-The model never receives or constructs the exact request binding. Re rejects a
-stale local choice before submission.
+coherence, and normalizes current C facts and affordances. It projects a finite
+choice list whose model-visible kind is the generic UI verb. The model receives
+only opaque IDs; exact native operands never leave C.
 
-Client registration and controller lease coordination also decode the HE
-control schema; the default adapter has no V3 wire-schema dependency.
+The live chain is:
 
-`applied` is adapter-confirmed delivery. Re uses the receipt successor when
-present and otherwise performs a fresh client observation for readiness. A
-readiness timeout becomes `executed_checkpoint_pending` and the next tick
-continues observation; it does not overwrite delivery with a business failure. `not_applied`
-requires a fresh snapshot; `unknown` stops and is never retried.
+```text
+C HumanSnapshot
+-> A normalization and transition context
+-> finite model choices
+-> LLM selects one opaque ID
+-> A submits state token + affordance ID
+-> C revalidates and delivers native UI input
+-> delivery receipt + successor
+-> A successor readiness and flow interpretation
+```
 
-Modes:
+`applied` is adapter-confirmed delivery. `SuccessorWatcher` uses the receipt
+successor when present and otherwise reads C until a repeatable decision
+checkpoint. A readiness timeout becomes `executed_checkpoint_pending`; it does
+not overwrite delivery with a business failure. `not_applied` requires a fresh
+snapshot and `unknown` stops without retry.
 
-- `he_assisted` (default): C+A plus optional non-authorizing D annotations.
-- `he_pure`: C+A only; strict decode rejects any annotation envelope.
+`SPIREAGENT_HE_MODE=he_pure|he_assisted` is an A composition setting, not a C
+mode. Both modes consume the same pure C truth and affordance contract. Pure
+uses A+C only. Assisted may add separately supplied D hints when a D provider
+exists; this repository currently supplies none by default. D cannot authorize
+or execute.
 
-Set `SPIREAGENT_HE_MODE` in `.env.local` or the process environment. V3 is not
-a fallback in either mode. The old V3 Re client/executor is deleted; retained
-V3 schema/normalization code exists only for historical replay and comparison.
-`npm run build` clears `dist/` first, so removed live adapters cannot survive as
-misleading generated JavaScript on another developer's machine.
+V3 is not a fallback. The old V3 Re client/executor is deleted; retained V3
+schema/normalization code exists only for historical replay and comparison.

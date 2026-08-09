@@ -53,7 +53,80 @@ describe("ProgressCycleGuard", () => {
     expect(guard.observe(before, purchaseAction("action-buy-1", "state-shop-1"), afterPurchase)).toBeUndefined();
     expect(guard.observe(laterBefore, purchaseAction("action-buy-3", "state-shop-3"), laterAfter)).toBeUndefined();
   });
+
+  it("suppresses an HE open-close loop despite fresh state tokens and affordance ids", () => {
+    const guard = new ProgressCycleGuard();
+    const room1 = humanShopState("shop_room", "state-room-1", "affordance-open-1", 22);
+    const inventory1 = humanShopState("shop_inventory", "state-inventory-1", "affordance-close-1", 22);
+    const room2 = humanShopState("shop_room", "state-room-2", "affordance-open-2", 22);
+    const inventory2 = humanShopState("shop_inventory", "state-inventory-2", "affordance-close-2", 22);
+    const room3 = humanShopState("shop_room", "state-room-3", "affordance-open-3", 22);
+
+    guard.observe(room1, humanAction("open", "affordance-open-1", "state-room-1"), inventory1);
+    guard.observe(inventory1, humanAction("cancel", "affordance-close-1", "state-inventory-1"), room2);
+    guard.observe(room2, humanAction("open", "affordance-open-2", "state-room-2"), inventory2);
+    expect(guard.observe(
+      inventory2,
+      humanAction("cancel", "affordance-close-2", "state-inventory-2"),
+      room3
+    )).toMatchObject({ recoveryPlanned: true });
+
+    const filtered = guard.filterActions(room3, [
+      humanAction("open", "affordance-open-3", "state-room-3"),
+      humanAction("activate", "affordance-proceed-3", "state-room-3")
+    ]);
+    expect(filtered.actions.map((action) => action.kind)).toEqual(["activate"]);
+  });
 });
+
+function humanShopState(
+  uiKind: "shop_room" | "shop_inventory",
+  stateToken: string,
+  affordanceId: string,
+  gold: number
+): NormalizedCurrentState {
+  const verb = uiKind === "shop_room" ? "open" : "cancel";
+  return {
+    ...shopState(uiKind, stateToken, affordanceId, gold),
+    sourceStateType: `human_equivalent:${uiKind}`,
+    actionAuthority: "current_human_ui",
+    surface: {
+      kind: "human_ui",
+      uiKind,
+      stage: "ready",
+      ownerId: uiKind === "shop_room" ? "room-1" : "screen-1",
+      facts: { uiKind, gold },
+      entities: [],
+      controls: [],
+      legalActions: [{
+        actionId: affordanceId,
+        stateId: stateToken,
+        kind: verb,
+        label: verb,
+        authority: "current_human_ui",
+        evidenceCode: `human_ui:${verb}`,
+        entityBindings: [{ role: "target", entityId: uiKind === "shop_room" ? "room-1" : "screen-1" }],
+        category: verb
+      }]
+    }
+  } as NormalizedCurrentState;
+}
+
+function humanAction(kind: string, affordanceId: string, stateToken: string): AllowedAction {
+  return {
+    id: affordanceId,
+    kind,
+    label: kind,
+    entityBindings: [{ role: "target", entityId: kind === "open" || kind === "activate" ? "room-1" : "screen-1" }],
+    sourceStateHash: `source-${stateToken}`,
+    action: {
+      kind: "human_ui_action",
+      choiceId: affordanceId,
+      expectedStateToken: stateToken,
+      affordanceId
+    }
+  };
+}
 
 function shopState(
   kind: "shop_room" | "shop_inventory",

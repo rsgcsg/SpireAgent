@@ -4,90 +4,94 @@ Baseline date: 2026-08-09
 
 Branch: `human_equivalent_connector`
 
-Current source protocol is `1.0-preview.1`.
+Current source protocol is `1.0-preview.2`.
 
 ## Verdict
 
-Human-Equivalent C is the implemented and Live-exercised default product path.
-Gateway, Re and the operator CLI use the HE contract by default. The latest
-Live evidence belongs to source `250ebc6d`, SHA `693c1689...`, MVID
-`894be927...` and runtime `d00531f2...`; later source/build/install identities
-do not inherit that evidence. No current document may convert a build/install
-into Live proof.
+Human-Equivalent C is the only default product path. Gateway, Re and the
+operator CLI use `/api/he/*`; V3 is explicit rollback/comparison only.
+Protocol `preview.2` is source and test verified in the current worktree and
+does not inherit `preview.1` load or Live evidence.
+
+Freeze verdict is `conditional freeze`. C authority, delivery, positive fact
+projection and A consumption boundaries are fixed. Short-term freeze now
+requires exact-runtime regression of `preview.2`.
 
 ## Implemented
 
-- `HumanSnapshot` with exact state, frame, current owner, persistent visible
-  state, current surface/context facts, entities, controls and affordances;
+- `HumanSnapshot` with exact state token, current owner, persistent visible
+  state, current Surface facts, entities, controls and affordances;
 - generic `activate/select/deselect/confirm/cancel/play/use/end_turn/skip/open/close`;
-- exact state/frame/owner/entity/control and controller binding;
-- execute-time native UI target validation and existing native adapters;
+- exact C-local owner/entity/control/native-operand binding;
+- execute-time native target/actionability validation and bounded UI adapters;
+- positive, type-bounded HE fact projection instead of serializing legacy DTOs
+  and deleting business keys;
 - request idempotency and `applied/not_applied/unknown` delivery receipts;
-- immediate successor snapshot; business Outcome is not awaited;
-- source-free current `NChooseACardSelectionScreen` operation, including an
-  unclassified new source;
-- source-free current `NDeckCardSelectScreen` select/deselect, preview, cancel
-  and confirm delivery, independent of merchant/relic/event/reward source;
-- source-free current `NCombatPileCardSelectScreen` select/deselect, cancel and
-  confirm delivery, independent of its opening card/relic/event source;
-- strict Re decoder, direct opaque affordance choices and successor supervision;
-- `he_assisted` plus mandatory `he_pure` without D annotations;
-- HE-native state-bound run-deck/combat-pile/shop Inspection and current
-  surface-card linked detail;
+- immediate successor; business Outcome is not awaited;
+- source-free one-of-N, deck-card and combat-pile selector mechanics;
+- strict Re decoder, generic-verb opaque choices and successor supervision;
+- one pure C wire; `he_pure` and `he_assisted` are A composition modes;
+- state-bound run-deck/combat-pile/shop Inspection and linked card detail;
 - `/api/he/*` default REST and root deployment/run tooling.
 
-## Retained From V3
+Unknown control `selected`/`focused` state is omitted, not fabricated as
+`false`. C exposes no D mode, annotation, native parameters, V2/V3 action ID,
+index, coordinate, node path or arbitrary method.
 
-Exact runtime/artifact identity, player-visible observation policy,
-`NativeUiRuntime` entity registry, current-owner resolution, native UI adapters, main-thread dispatch,
-single-controller lease, stale checks, read-only Inspection assets and local
-evidence recording remain useful infrastructure.
+## Retained Infrastructure And Debt
 
-V3 source permission, durable qualification, SourceContract and business
-Outcome are not HE admission or completion requirements. `/api/v3/*` is an
-explicit rollback/comparison surface only; HE has no silent V3 action fallback.
-The HE runtime is no longer a `ConnectorV3Runtime` partial. Unmigrated UI
-families still call six explicitly checked bounded V3 adapter-library seams.
-That one-way reuse is not V3 wire or authority, but moving the remaining
-providers/adapters under `NativeUi` remains readability debt.
+Runtime/artifact identity, player-visible observation policy, entity registry,
+owner resolution, bounded native adapters, main-thread dispatch,
+single-controller lease, stale checks, Inspection and local evidence recording
+remain valuable.
 
-## Latest Live Evidence
+V3 source permission, qualification, SourceContract and business Outcome are
+not HE admission or completion. Re's V3 live client/executor is deleted. The
+HE runtime still calls six machine-checked V3 adapter-library seams for
+unmigrated families. This is one-way implementation reuse, not wire or
+authority, but moving those implementations under neutral `NativeUi`
+ownership remains readability debt.
 
-Nine `he_assisted` runs from `run-20260809074101-s34jqz` through
-`run-20260809074935-ck0e2y` used protocol `1.0-preview.1` and the exact loaded
-identity above. Across 85 decisions they recorded 46 settled deliveries, 26
-non-actionable states, seven delivered inputs whose client checkpoint timed
-out, and six safe stale refusals. They exercised menu, combat, rewards, card
-rewards, map, rest, event and treasure.
+## Latest Exact Live Evidence
 
-The seven checkpoint timeouts were a Re receipt-boundary defect: C had already
-returned `applied`, sometimes with a changed transitional successor. Sixteen
-non-actionable decisions were the same visible combat-pile selector being
-suppressed by a business-source binding. Both defects are fixed in source and
-tests but are pending exact-runtime evidence on the replacement artifact.
+Four `he_assisted` runs used source `930941a2`, protocol `1.0-preview.1`, SHA
+`257ccac1...`, MVID `2345552d...`, runtime `da0c602d...`, STS2 `v0.110.1` /
+`db5d3552` and an `additional_loaded_mods` Modset.
+
+- `run-20260809114611-rldlev` reached `completed_run_boundary` after 20
+  decisions and returned from game over to the top menu.
+- `run-20260809083202-4ki7ig` exercised combat, reward, upgrade, event, map,
+  rest, shop and treasure with two safe stale refusals.
+- `run-20260809082509-xi54bi` executed 178 decisions but entered a repeated
+  shop open/close cycle. C delivery remained applied; A exposed changing
+  affordance identity as the semantic kind and its cycle hash retained HE
+  transport identity. Source now projects generic verbs and excludes transport
+  IDs from cycle identity.
+
+These runs are `provenance=unrecorded` and
+`qualificationUse=coverage_only_unless_independently_reviewed`. They are not
+Organic evidence or durable qualification.
 
 ## Pending Exact-Runtime Evidence
 
-- cold-load the replacement HE artifact and verify matching SHA/MVID;
-- one replacement-artifact `he_assisted` ordinary journey and one bounded
-  `he_pure` journey;
-- source-free combat-pile select/deselect/confirm Live regression;
-- actual source-unclassified one-of-N and deck-card selector screens;
-- stale snapshot, duplicate request and unknown-delivery runtime negatives;
-- hover/focus/scroll/native-page operations in normal Agent flow;
+- build/install/cold-load `preview.2` and verify SHA/MVID;
+- one ordinary `preview.2` journey and one bounded `he_pure` journey;
+- source-free combat-pile select/deselect/confirm;
+- unknown-source one-of-N and deck-card selectors;
+- stale, duplicate-request and unknown-delivery runtime negatives;
+- hover/focus/tooltip/scroll/native-page operations;
 - abandon-run/return-menu and persistent-management denial policy.
 
 ## Non-Claims
 
 - all human-reachable UI is complete;
 - arbitrary versions or Mods are compatible;
-- visual pointer fallback exists;
+- a visual pointer fallback exists;
 - HE has Organic or durable qualification;
-- inherited Preview.11/12 evidence transfers to HE.
+- `preview.1` evidence transfers to `preview.2`.
 
 ## Per-Machine Deployment Truth
 
 Run `npm run doctor`, `npm run deploy` with STS2 closed, then after a cold start
-run `npm run verify:loaded`. Those commands are the authority for one machine's
-source/build/install/load tuple; this document intentionally contains no
-mutable local SHA, MVID or runtime instance.
+run `npm run verify:loaded`. Those commands, not this document, are authority
+for one machine's source/build/install/load tuple.

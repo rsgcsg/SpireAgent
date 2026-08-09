@@ -2,8 +2,7 @@ import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 import { sharedVisibleStateSchema } from "./gatewayVisibleStateProtocol.js";
 
-export const SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL = "1.0-preview.1" as const;
-export const HUMAN_EQUIVALENT_MODES = ["he_assisted", "he_pure"] as const;
+export const SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL = "1.0-preview.2" as const;
 
 const identitySchema = z.object({
   id: z.literal("sts2_human_equivalent_connector"),
@@ -62,11 +61,6 @@ const controllerLeaseResponseSchema = z.object({
   controller: controlLeaseSchema.nullable().optional()
 }).strict();
 
-const bindingSchema = z.object({
-  role: z.string().min(1),
-  entity_id: z.string().min(1)
-}).passthrough();
-
 const affordanceSchema: z.ZodTypeAny = z.object({
   affordance_id: z.string().min(1),
   action: z.enum([
@@ -76,38 +70,16 @@ const affordanceSchema: z.ZodTypeAny = z.object({
   target_id: z.string().min(1),
   owner_id: z.string().min(1),
   label: z.string().min(1),
-  parameters: z.record(z.string().min(1)),
-  parameter_domains: z.record(z.object({
-    kind: z.string().min(1),
-    entity_ids: z.array(z.string().min(1))
-  }).strict()),
-  entity_bindings: z.array(bindingSchema),
   provenance: z.literal("native_ui_adapter")
-}).strict();
-
-const annotationSchema = z.object({
-  scene_hint: z.string().nullable().optional(),
-  purpose_hint: z.string().nullable().optional(),
-  phase_hint: z.string().nullable().optional(),
-  expected_transition: z.string().nullable().optional(),
-  teacher_generated: z.boolean(),
-  authorization_effect: z.literal("none")
 }).strict();
 
 const observationSchema: z.ZodTypeAny = z.object({
   protocol_version: z.literal(SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL),
-  schema: z.literal("sts2.connector.human-ui/observation-1"),
-  mode: z.enum(HUMAN_EQUIVALENT_MODES),
+  schema: z.literal("sts2.connector.human-ui/observation-2"),
   state_token: z.string().min(1),
   sequence: z.number().int().positive(),
   observed_at: z.string().min(1),
   status: z.enum(["actionable", "visible_unsupported", "settling", "observed"]),
-  frame: z.object({
-    frame_id: z.string().min(1),
-    width: z.number().int().nonnegative(),
-    height: z.number().int().nonnegative(),
-    provenance: z.literal("native_structured_ui")
-  }).strict(),
   owner: z.object({ owner_id: z.string().min(1), kind: z.string().min(1) }).strict(),
   persistent_state: sharedVisibleStateSchema.nullable(),
   surface: z.object({
@@ -123,10 +95,9 @@ const observationSchema: z.ZodTypeAny = z.object({
   controls: z.array(z.object({
     control_id: z.string().min(1), owner_id: z.string().min(1), role: z.string().min(1),
     label: z.string().nullable().optional(), visible: z.boolean(), enabled: z.boolean(),
-    selected: z.boolean(), focused: z.boolean(), actions: z.array(z.string().min(1))
+    selected: z.boolean().nullable(), focused: z.boolean().nullable(), actions: z.array(z.string().min(1))
   }).strict()),
   affordances: z.array(affordanceSchema),
-  optional_annotations: annotationSchema.nullable(),
   completeness: z.object({
     player_visible_semantics: z.string().min(1),
     legal_actions: z.string().min(1),
@@ -148,9 +119,6 @@ const observationSchema: z.ZodTypeAny = z.object({
   warnings: z.array(z.string()),
   coverage: z.record(z.unknown())
 }).strict().superRefine((value, context) => {
-  if (value.mode === "he_pure" && value.optional_annotations !== null) {
-    context.addIssue({ code: z.ZodIssueCode.custom, message: "he_pure must not contain D annotations" });
-  }
   const ids = value.affordances.map((item) => item.affordance_id);
   if (new Set(ids).size !== ids.length) {
     context.addIssue({ code: z.ZodIssueCode.custom, message: "affordance ids must be unique" });
@@ -162,13 +130,13 @@ const observationSchema: z.ZodTypeAny = z.object({
 
 const capabilitiesSchema: z.ZodTypeAny = z.object({
   protocol_version: z.literal(SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL),
-  observation_schema: z.literal("sts2.connector.human-ui/observation-1"),
-  action_schema: z.literal("sts2.connector.human-ui/action-1"),
-  receipt_schema: z.literal("sts2.connector.human-ui/receipt-1"),
+  observation_schema: z.literal("sts2.connector.human-ui/observation-2"),
+  action_schema: z.literal("sts2.connector.human-ui/action-2"),
+  receipt_schema: z.literal("sts2.connector.human-ui/receipt-2"),
   control_schema: z.literal("sts2.connector.human-ui/control-1"),
   status: z.string().min(1), bridge: identitySchema, game: gameSchema,
-  modes: z.array(z.enum(HUMAN_EQUIVALENT_MODES)), actions: z.array(z.string()),
-  state_bound: z.literal(true), frame_bound: z.literal(true), single_controller: z.literal(true),
+  actions: z.array(z.string()),
+  state_bound: z.literal(true), single_controller: z.literal(true),
   business_source_required: z.literal(false), business_outcome_required: z.literal(false),
   execution_available: z.boolean(), control: controlSchema, non_claims: z.array(z.string())
 }).strict();
@@ -182,10 +150,10 @@ const attributionSchema = z.object({
 
 const receiptSchema: z.ZodTypeAny = z.object({
   protocol_version: z.literal(SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL),
-  schema: z.literal("sts2.connector.human-ui/receipt-1"), request_id: z.string().min(1),
+  schema: z.literal("sts2.connector.human-ui/receipt-2"), request_id: z.string().min(1),
   status: z.enum(["applied", "not_applied", "unknown"]),
   delivery: z.enum(["applied", "not_applied", "unknown"]),
-  action: z.object({ affordance_id: z.string(), action: z.string(), target_id: z.string(), parameters: z.record(z.string()) }).strict(),
+  action: z.object({ affordance_id: z.string(), action: z.string(), target_id: z.string() }).strict(),
   reason_code: z.string().nullable().optional(), detail: z.string().nullable().optional(),
   retry: z.object({ allowed: z.boolean(), reason: z.string() }).strict(),
   successor: observationSchema.nullable(), attribution: attributionSchema.nullable().optional()
@@ -218,27 +186,21 @@ export interface HumanEquivalentAffordance {
   target_id: string;
   owner_id: string;
   label: string;
-  parameters: Record<string, string>;
-  parameter_domains: Record<string, { kind: string; entity_ids: string[] }>;
-  entity_bindings: Array<{ role: string; entity_id: string }>;
   provenance: "native_ui_adapter";
 }
 export interface HumanEquivalentObservation {
   protocol_version: typeof SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL;
-  schema: "sts2.connector.human-ui/observation-1";
-  mode: typeof HUMAN_EQUIVALENT_MODES[number];
+  schema: "sts2.connector.human-ui/observation-2";
   state_token: string;
   sequence: number;
   observed_at: string;
   status: "actionable" | "visible_unsupported" | "settling" | "observed";
-  frame: { frame_id: string; width: number; height: number; provenance: "native_structured_ui" };
   owner: { owner_id: string; kind: string };
   persistent_state: unknown | null;
   surface: { kind: string; stage: string; prompt?: string | null; facts: Record<string, unknown> };
   entities: Array<{ entity_id: string; kind: string; label?: string | null; visible: boolean; enabled: boolean; selected: boolean; detail?: unknown }>;
-  controls: Array<{ control_id: string; owner_id: string; role: string; label?: string | null; visible: boolean; enabled: boolean; selected: boolean; focused: boolean; actions: string[] }>;
+  controls: Array<{ control_id: string; owner_id: string; role: string; label?: string | null; visible: boolean; enabled: boolean; selected: boolean | null; focused: boolean | null; actions: string[] }>;
   affordances: HumanEquivalentAffordance[];
-  optional_annotations: { scene_hint?: string | null; purpose_hint?: string | null; phase_hint?: string | null; expected_transition?: string | null; teacher_generated: boolean; authorization_effect: "none" } | null;
   completeness: { player_visible_semantics: string; legal_actions: string; sources: string[]; missing: string[] };
   bridge: HumanEquivalentBridgeIdentity;
   game: HumanEquivalentGameIdentity;
@@ -252,17 +214,15 @@ export interface HumanEquivalentObservation {
 }
 export interface HumanEquivalentCapabilities {
   protocol_version: typeof SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL;
-  observation_schema: "sts2.connector.human-ui/observation-1";
-  action_schema: "sts2.connector.human-ui/action-1";
-  receipt_schema: "sts2.connector.human-ui/receipt-1";
+  observation_schema: "sts2.connector.human-ui/observation-2";
+  action_schema: "sts2.connector.human-ui/action-2";
+  receipt_schema: "sts2.connector.human-ui/receipt-2";
   control_schema: "sts2.connector.human-ui/control-1";
   status: string;
   bridge: HumanEquivalentBridgeIdentity;
   game: HumanEquivalentGameIdentity;
-  modes: Array<typeof HUMAN_EQUIVALENT_MODES[number]>;
   actions: string[];
   state_bound: true;
-  frame_bound: true;
   single_controller: true;
   business_source_required: false;
   business_outcome_required: false;
@@ -272,11 +232,11 @@ export interface HumanEquivalentCapabilities {
 }
 export interface HumanEquivalentReceipt {
   protocol_version: typeof SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL;
-  schema: "sts2.connector.human-ui/receipt-1";
+  schema: "sts2.connector.human-ui/receipt-2";
   request_id: string;
   status: "applied" | "not_applied" | "unknown";
   delivery: "applied" | "not_applied" | "unknown";
-  action: { affordance_id: string; action: string; target_id: string; parameters: Record<string, string> };
+  action: { affordance_id: string; action: string; target_id: string };
   reason_code?: string | null;
   detail?: string | null;
   retry: { allowed: boolean; reason: string };

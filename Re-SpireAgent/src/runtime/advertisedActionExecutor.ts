@@ -2,7 +2,7 @@ import type { AllowedAction } from "../domain/actions/allowedAction.js";
 import type { ExecutableGameAction } from "../domain/actions/action.js";
 import type { StateEnvelope } from "../domain/state/index.js";
 import type { GameAdapter, GameExecutionResult, RawGameState } from "../game-io/adapter.js";
-import type { SettlementResult, SettlementWatcher } from "./settlementWatcher.js";
+import type { SuccessorObservationResult, SuccessorWatcher } from "./successorWatcher.js";
 
 export type AdvertisedActionExecution =
   | {
@@ -32,7 +32,7 @@ export type AdvertisedActionExecution =
       readonly stage: "settlement";
       readonly outcome: "executed_and_settled" | "executed_checkpoint_pending" | "executed_unsettled";
       readonly adapterResult: GameExecutionResult;
-      readonly settlement: SettlementResult;
+      readonly settlement: SuccessorObservationResult;
       readonly error?: string;
     };
 
@@ -46,7 +46,7 @@ export async function executeAdvertisedAction(input: {
   readonly selectedAction: AllowedAction;
   readonly adapter: GameAdapter<RawGameState, ExecutableGameAction, GameExecutionResult>;
   readonly normalize: (raw: unknown) => StateEnvelope;
-  readonly settlement: SettlementWatcher;
+  readonly settlement: SuccessorWatcher;
 }): Promise<AdvertisedActionExecution> {
   let latest: StateEnvelope;
   try {
@@ -99,7 +99,7 @@ export async function executeAdvertisedAction(input: {
     };
   }
 
-  const settlement = await input.settlement.waitForNextState(
+  const settlement = await input.settlement.waitForReadySuccessor(
     input.pre,
     input.selectedAction.action,
     adapterResult.settlementAuthority,

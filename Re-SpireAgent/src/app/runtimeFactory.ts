@@ -6,7 +6,7 @@ import { DeepSeekDecisionProvider } from "../llm/deepseekProvider.js";
 import { normalizeCurrentState } from "../normalization/normalizeCurrentState.js";
 import { createRunId, FileDecisionRecorder } from "../recording/fileDecisionRecorder.js";
 import type { RunMetadata } from "../recording/types.js";
-import { SettlementWatcher } from "../runtime/settlementWatcher.js";
+import { SuccessorWatcher } from "../runtime/successorWatcher.js";
 import { acquireRuntimeLock } from "../runtime/runtimeLock.js";
 import { TickOrchestrator } from "../runtime/tickOrchestrator.js";
 import { onceAsync } from "./gracefulShutdown.js";
@@ -73,7 +73,7 @@ export async function createRuntime(config: RuntimeConfig): Promise<{
 export async function createConnectorRuntime(config: RuntimeConfig): Promise<{
   adapter: Sts2HumanEquivalentAdapter;
   normalize: (raw: unknown) => ReturnType<typeof normalizeCurrentState>;
-  settlement: SettlementWatcher;
+  settlement: SuccessorWatcher;
   release(): Promise<void>;
 }> {
   const lock = await acquireRuntimeLock(config.runtime.dataDir);
@@ -88,7 +88,7 @@ export async function createConnectorRuntime(config: RuntimeConfig): Promise<{
     await adapter.initialize();
     const adapterDescription = adapter.describe();
     const normalize = (raw: unknown) => normalizeCurrentState(raw, adapterDescription);
-    const settlement = new SettlementWatcher(adapter, normalize, {
+    const settlement = new SuccessorWatcher(adapter, normalize, {
       pollMs: config.runtime.settlementPollMs,
       defaultTimeoutMs: config.runtime.settlementTimeoutMs,
       endTurnTimeoutMs: config.runtime.endTurnSettlementTimeoutMs,

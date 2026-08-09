@@ -9,17 +9,15 @@ namespace STS2_MCP.HumanEquivalent.Protocol;
 
 public static class HumanEquivalentContract
 {
-    public const string ProtocolVersion = "1.0-preview.1";
+    public const string ProtocolVersion = "1.0-preview.2";
     public const string GatewayId = "sts2_human_equivalent_connector";
     public const string GatewayName = "STS2 Human-Equivalent Connector";
-    public const string ObservationSchema = "sts2.connector.human-ui/observation-1";
-    public const string ActionSchema = "sts2.connector.human-ui/action-1";
-    public const string ReceiptSchema = "sts2.connector.human-ui/receipt-1";
+    public const string ObservationSchema = "sts2.connector.human-ui/observation-2";
+    public const string ActionSchema = "sts2.connector.human-ui/action-2";
+    public const string ReceiptSchema = "sts2.connector.human-ui/receipt-2";
     public const string InspectionSchema = "sts2.connector.human-ui/inspection-1";
     public const string LinkedDetailSchema = "sts2.connector.human-ui/linked-detail-1";
     public const string ControlSchema = "sts2.connector.human-ui/control-1";
-    public const string AssistedMode = "he_assisted";
-    public const string PureMode = "he_pure";
 }
 
 public sealed record HumanEquivalentCapabilitiesResponse(
@@ -31,10 +29,8 @@ public sealed record HumanEquivalentCapabilitiesResponse(
     string Status,
     BridgeServerIdentity Bridge,
     GameBuildIdentity Game,
-    IReadOnlyList<string> Modes,
     IReadOnlyList<string> Actions,
     bool StateBound,
-    bool FrameBound,
     bool SingleController,
     bool BusinessSourceRequired,
     bool BusinessOutcomeRequired,
@@ -78,12 +74,6 @@ public sealed record HumanEquivalentControllerLeaseResponse(
     string Detail,
     BridgeClientRecord? Client,
     BridgeControllerLeaseInfo? Controller);
-
-public sealed record HumanEquivalentFrame(
-    string FrameId,
-    int Width,
-    int Height,
-    string Provenance);
 
 public sealed record HumanEquivalentOwner(
     string OwnerId,
@@ -155,13 +145,9 @@ public sealed record HumanEquivalentUiControl(
     string? Label,
     bool Visible,
     bool Enabled,
-    bool Selected,
-    bool Focused,
+    bool? Selected,
+    bool? Focused,
     IReadOnlyList<string> Actions);
-
-public sealed record HumanEquivalentParameterDomain(
-    string Kind,
-    IReadOnlyList<string> EntityIds);
 
 public sealed record HumanEquivalentAffordance(
     string AffordanceId,
@@ -169,18 +155,7 @@ public sealed record HumanEquivalentAffordance(
     string TargetId,
     string OwnerId,
     string Label,
-    IReadOnlyDictionary<string, string> Parameters,
-    IReadOnlyDictionary<string, HumanEquivalentParameterDomain> ParameterDomains,
-    IReadOnlyList<ActionEntityBinding> EntityBindings,
     string Provenance);
-
-public sealed record HumanEquivalentAnnotationEnvelope(
-    string? SceneHint,
-    string? PurposeHint,
-    string? PhaseHint,
-    string? ExpectedTransition,
-    bool TeacherGenerated,
-    string AuthorizationEffect);
 
 public sealed record HumanEquivalentCoverage(
     string VisibleInformation,
@@ -199,19 +174,16 @@ public sealed record HumanEquivalentLinkedDetailCatalogEntry(
 public sealed record HumanEquivalentObservationResponse(
     string ProtocolVersion,
     string Schema,
-    string Mode,
     string StateToken,
     long Sequence,
     DateTimeOffset ObservedAt,
     string Status,
-    HumanEquivalentFrame Frame,
     HumanEquivalentOwner Owner,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] SharedVisibleState? PersistentState,
     HumanEquivalentUiSurface Surface,
     IReadOnlyList<HumanEquivalentUiEntity> Entities,
     IReadOnlyList<HumanEquivalentUiControl> Controls,
     IReadOnlyList<HumanEquivalentAffordance> Affordances,
-    HumanEquivalentAnnotationEnvelope? OptionalAnnotations,
     StateCompleteness Completeness,
     BridgeServerIdentity Bridge,
     GameBuildIdentity Game,
@@ -257,12 +229,8 @@ public sealed record HumanEquivalentLinkedDetailResponse(
 
 public sealed record HumanEquivalentActionRequest(
     string? RequestId,
-    string? Mode,
     string? ExpectedStateToken,
-    string? ExpectedFrameId,
-    string? ExpectedOwnerId,
     string? AffordanceId,
-    IReadOnlyDictionary<string, string>? Parameters,
     string? ClientSessionId,
     string? ControllerLeaseId,
     long? ControllerGeneration);
@@ -270,8 +238,7 @@ public sealed record HumanEquivalentActionRequest(
 public sealed record HumanEquivalentActionSummary(
     string AffordanceId,
     string Action,
-    string TargetId,
-    IReadOnlyDictionary<string, string> Parameters);
+    string TargetId);
 
 public sealed record HumanEquivalentRetryPolicy(
     bool Allowed,

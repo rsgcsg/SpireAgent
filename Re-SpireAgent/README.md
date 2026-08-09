@@ -19,8 +19,9 @@ npm run doctor
 ```
 
 Put the provider key only in `.env.local` or process environment. The default
-mode is `he_assisted`; set `SPIREAGENT_HE_MODE=he_pure` to disable all optional
-D annotations. `STS2_MCP_PROTOCOL`, when set, may only be `he`.
+mode is `he_assisted`; set `SPIREAGENT_HE_MODE=he_pure` for A+C only. These are
+A composition modes and never alter C authority. `STS2_MCP_PROTOCOL`, when set,
+may only be `he`.
 
 ## Check And Run
 
@@ -42,7 +43,7 @@ availability. It does not require V2 permission, trial or qualification.
 ## Runtime Contract
 
 - only current `human_ui_action` opaque IDs can execute;
-- state/frame/owner and exact parameters are hidden local bindings;
+- state/owner/target and exact parameters are C-local bindings;
 - `applied` means delivery, then Re observes successor;
 - `not_applied` requires a fresh observation;
 - `unknown` terminates and is never retried;

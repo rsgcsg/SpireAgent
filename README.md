@@ -6,7 +6,7 @@ SpireAgent connects an external LLM agent to the real Slay the Spire 2 UI.
 - [`Re-SpireAgent/`](Re-SpireAgent/) is the strict Agent runtime.
 
 Human-Equivalent C is the only current target. Source protocol is
-`1.0-preview.1`. Connector V3 remains an explicit rollback implementation and
+`1.0-preview.2`. Connector V3 remains an explicit rollback implementation and
 historical comparison, never a silent execution fallback.
 
 > **Maturity:** source, tests and local Release build are available. Public
@@ -47,8 +47,9 @@ npm run agent:run
 It does not claim the DLL was loaded. `agent:run` verifies loaded SHA/MVID and
 uses `/api/he/*`; it never retries unknown input delivery.
 
-Use `SPIREAGENT_HE_MODE=he_pure` to disable optional D annotations. The default
-`he_assisted` keeps annotations in a separate non-authorizing envelope.
+Use `SPIREAGENT_HE_MODE=he_pure` for A+C only. The default `he_assisted` may
+compose a separate non-authorizing D provider when one is configured; both use
+the same pure C observation/action contract.
 
 See [Local Setup](docs/current/LOCAL_SETUP.md) for other machines, custom Steam
 paths, rollback and troubleshooting.
@@ -58,7 +59,7 @@ paths, rollback and troubleshooting.
 ```text
 Native STS2 UI
 -> HumanSnapshot (visible facts, current owner, entities, controls)
--> current state/frame-bound UI affordances
+-> current state-bound UI affordances (native operands remain C-local)
 -> native UI-equivalent input delivery
 -> delivery receipt + successor snapshot
 -> Re-SpireAgent chooses one opaque affordance ID
@@ -66,8 +67,8 @@ Native STS2 UI
 
 C does not require a business source, SourceContract or business Outcome to
 operate a currently exact human UI control. STS2 remains the only rules and
-effects authority. A/Re interprets the flow. Optional D annotations explain
-but never authorize or execute.
+effects authority. A/Re interprets the flow. Optional D input is external to C
+and never authorizes or executes.
 
 ## Contributing
 

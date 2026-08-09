@@ -19,26 +19,27 @@ The implementation reuses V3's state/entity identity, current UI providers,
 native adapters and controller lease. It does not use V3 action IDs or require
 SourceContract, permission scope, qualification or business Outcome.
 
-`he_assisted` includes optional non-authorizing D annotations. `he_pure`
-strictly excludes them and uses the same C state/action authority.
+`he_assisted` and `he_pure` are A composition modes over the same pure C wire.
+D is not embedded in C and currently has no default provider.
 
 ## Acceptance Already Covered By Tests
 
-- strict wire decode and pure-mode annotation rejection;
+- strict `preview.2` wire decode and rejection of any embedded D annotation;
 - unknown business source with exact current UI remains actionable;
 - source-free deck-card select/deselect/preview/cancel/confirm contracts;
 - source-free combat-pile select/deselect/cancel/confirm contracts;
 - opaque Re action projection without V2 `legal_actions[]` wire input;
-- exact parameter replacement/extra-operand rejection;
+- exact parameters never leave C and therefore cannot be replaced by Re;
 - generic verbs do not expose business operation as wire authority;
 - unknown delivery is non-retryable;
 - existing Gateway and Re regression suites.
 - adapter-confirmed HE delivery remains successful while successor readiness is
   transitional; Re continues instead of inventing a business failure.
+- HE semantic cycle detection ignores fresh state/affordance transport identity.
 
 ## Remaining Vertical Work
 
-1. Cold-load and loaded SHA/MVID verification for the replacement artifact.
+1. Build/install/cold-load `preview.2` and verify SHA/MVID.
 2. Regress source-free combat-pile selection and delivery/readiness separation.
 3. Assisted ordinary journey and pure bounded journey.
 4. Source-unclassified one-of-N and deck-card selector Live holdouts.
