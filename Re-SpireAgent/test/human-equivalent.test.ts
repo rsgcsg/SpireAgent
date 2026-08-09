@@ -92,6 +92,19 @@ function json(value: JsonObject, status = 200): Response {
 }
 
 describe("Human-Equivalent C", () => {
+  it("accepts omitted control state when selected and focused are not observed", () => {
+    const current = snapshot();
+    const control = (current.controls as JsonObject[])[0]!;
+    delete control.selected;
+    delete control.focused;
+
+    expect(decodeHumanObservation(current).data.controls[0]).toMatchObject({
+      control_id: "card-1",
+      visible: true,
+      enabled: true
+    });
+  });
+
   it("accepts an unknown business source when current native UI is exact and operable", () => {
     const decoded = decodeHumanObservation(snapshot()).data;
     expect(decoded.affordances).toHaveLength(1);

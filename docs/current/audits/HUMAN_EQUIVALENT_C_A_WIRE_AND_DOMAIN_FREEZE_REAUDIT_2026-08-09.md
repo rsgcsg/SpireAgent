@@ -36,6 +36,13 @@ All four reviewed runs used source `930941a2`, SHA `257ccac1...`, MVID
 These are Live coverage facts only. Metadata records
 `provenance=unrecorded`; no Organic or qualification claim is made.
 
+The first exact-loaded `preview.2` run, `run-20260809125843-1k1zrv`, stopped at
+decision 1 before mutation. Its exact artifact was SHA `28e4b335...`, MVID
+`69657c34...`, runtime `b87e2551...`. The Gateway omitted unknown
+`selected`/`focused` control fields while Re required the keys. Re now accepts
+omitted or null unobserved state. This is exact-load and negative integration
+evidence, not journey evidence.
+
 ## Root Causes
 
 The shop loop is A-domain debt, not failed C delivery. C repeatedly returned
@@ -85,7 +92,7 @@ and unknown handling, and structural boundary checks.
 
 Open blockers:
 
-1. `preview.2` exact build/install/load and Live regression;
+1. fixed `preview.2` ordinary and `he_pure` Live journeys;
 2. source-free combat-pile and unknown-source selector exact-runtime evidence;
 3. truthful hover/focus/tooltip/scroll/native-page information parity.
 

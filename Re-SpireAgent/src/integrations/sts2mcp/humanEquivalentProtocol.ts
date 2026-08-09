@@ -95,7 +95,7 @@ const observationSchema: z.ZodTypeAny = z.object({
   controls: z.array(z.object({
     control_id: z.string().min(1), owner_id: z.string().min(1), role: z.string().min(1),
     label: z.string().nullable().optional(), visible: z.boolean(), enabled: z.boolean(),
-    selected: z.boolean().nullable(), focused: z.boolean().nullable(), actions: z.array(z.string().min(1))
+    selected: z.boolean().nullable().optional(), focused: z.boolean().nullable().optional(), actions: z.array(z.string().min(1))
   }).strict()),
   affordances: z.array(affordanceSchema),
   completeness: z.object({
@@ -199,7 +199,7 @@ export interface HumanEquivalentObservation {
   persistent_state: unknown | null;
   surface: { kind: string; stage: string; prompt?: string | null; facts: Record<string, unknown> };
   entities: Array<{ entity_id: string; kind: string; label?: string | null; visible: boolean; enabled: boolean; selected: boolean; detail?: unknown }>;
-  controls: Array<{ control_id: string; owner_id: string; role: string; label?: string | null; visible: boolean; enabled: boolean; selected: boolean | null; focused: boolean | null; actions: string[] }>;
+  controls: Array<{ control_id: string; owner_id: string; role: string; label?: string | null; visible: boolean; enabled: boolean; selected?: boolean | null; focused?: boolean | null; actions: string[] }>;
   affordances: HumanEquivalentAffordance[];
   completeness: { player_visible_semantics: string; legal_actions: string; sources: string[]; missing: string[] };
   bridge: HumanEquivalentBridgeIdentity;

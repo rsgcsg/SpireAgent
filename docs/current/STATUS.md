@@ -10,8 +10,10 @@ Current source protocol is `1.0-preview.2`.
 
 Human-Equivalent C is the only default product path. Gateway, Re and the
 operator CLI use `/api/he/*`; V3 is explicit rollback/comparison only.
-Protocol `preview.2` is source and test verified in the current worktree and
-does not inherit `preview.1` load or Live evidence.
+Protocol `preview.2` is source, test, build, install and exact-load verified.
+Its first Live run exposed and reproduced a Re strict-decoder mismatch for
+omitted, unobserved control state; that defect is fixed in source and tests.
+It does not inherit `preview.1` journey evidence.
 
 Freeze verdict is `conditional freeze`. C authority, delivery, positive fact
 projection and A consumption boundaries are fixed. Short-term freeze now
@@ -54,6 +56,14 @@ ownership remains readability debt.
 
 ## Latest Exact Live Evidence
 
+`run-20260809125843-1k1zrv` used exact-loaded `preview.2` artifact SHA
+`28e4b335...`, MVID `69657c34...`, runtime `b87e2551...`, and stopped before
+mutation at decision 1. C correctly omitted unobserved `selected` and
+`focused`; Re incorrectly required those keys despite allowing null values.
+The consumer now accepts omitted or null control state, with a fixture matching
+the Live shape. This run proves exact load and the defect boundary, not an
+ordinary journey.
+
 Four `he_assisted` runs used source `930941a2`, protocol `1.0-preview.1`, SHA
 `257ccac1...`, MVID `2345552d...`, runtime `da0c602d...`, STS2 `v0.110.1` /
 `db5d3552` and an `additional_loaded_mods` Modset.
@@ -74,8 +84,7 @@ Organic evidence or durable qualification.
 
 ## Pending Exact-Runtime Evidence
 
-- build/install/cold-load `preview.2` and verify SHA/MVID;
-- one ordinary `preview.2` journey and one bounded `he_pure` journey;
+- one ordinary fixed-`preview.2` journey and one bounded `he_pure` journey;
 - source-free combat-pile select/deselect/confirm;
 - unknown-source one-of-N and deck-card selectors;
 - stale, duplicate-request and unknown-delivery runtime negatives;
