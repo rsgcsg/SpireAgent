@@ -173,7 +173,12 @@ export class Sts2HumanEquivalentAdapter implements GameAdapter<Sts2McpRawState, 
       return {
         accepted: true,
         outcome: "accepted",
-        settlementAuthority: "client_observation_required",
+        // HE proves bounded native input delivery. Re observes readiness but
+        // must not turn slow game animation into a failed business outcome.
+        settlementAuthority: "adapter_confirmed",
+        ...(receipt.data.successor?.state_token
+          ? { confirmedStateToken: receipt.data.successor.state_token }
+          : {}),
         response: receipt.raw
       };
     }

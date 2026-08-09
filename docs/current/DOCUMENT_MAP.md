@@ -10,6 +10,7 @@
 6. [Roadmap](ROADMAP.md)
 7. [Implementation and cutover audit](audits/HUMAN_EQUIVALENT_IMPLEMENTATION_AND_CUTOVER_AUDIT_2026-08-04.md)
 8. [HE completion and responsibility reaudit](audits/HUMAN_EQUIVALENT_COMPLETION_AND_RESPONSIBILITY_REAUDIT_2026-08-09.md)
+9. [HE post-cutover decoupling and Live failure closeout](audits/HUMAN_EQUIVALENT_POST_CUTOVER_DECOUPLING_AND_LIVE_FAILURE_CLOSEOUT_2026-08-09.md)
 
 ## Component Contracts
 

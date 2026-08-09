@@ -37,8 +37,10 @@ exact parameters and controller lease generation. The Gateway re-observes and
 calls one bounded native UI adapter.
 
 Receipts use `applied`, `not_applied` or `unknown`. Applied means input was
-delivered; successor is the game fact channel. If its immediate read fails,
-delivery stays `applied` with a null successor and Re performs a fresh read.
+delivered and is authoritative for that fact; successor is the game fact
+channel. If its immediate read fails, delivery stays `applied` with a null
+successor and Re performs a fresh read. A slow transitional successor is
+recorded as checkpoint-pending, not relabelled as execution failure.
 Unknown is reserved for uncertain input delivery and never permits retry.
 
 Controller registration and lease responses use the HE control schema. The HE

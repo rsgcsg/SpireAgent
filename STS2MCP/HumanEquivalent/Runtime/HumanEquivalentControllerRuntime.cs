@@ -2,14 +2,14 @@ using STS2_MCP.BridgeV2.Protocol;
 using STS2_MCP.BridgeV2.Runtime;
 using STS2_MCP.HumanEquivalent.Protocol;
 
-namespace STS2_MCP.ConnectorV3.Runtime;
+namespace STS2_MCP.HumanEquivalent.Runtime;
 
 /// <summary>
 /// Human-Equivalent wire projection over the shared single-controller
 /// coordinator. It owns HE DTOs but does not create UI affordances or action
 /// authority.
 /// </summary>
-internal static partial class ConnectorV3Runtime
+internal static partial class HumanEquivalentRuntime
 {
     public static HumanEquivalentClientRegistrationResponse RegisterHumanEquivalentClient(
         HumanEquivalentClientRegistrationRequest request)

@@ -1,7 +1,7 @@
 using System;
 using System.Net;
-using STS2_MCP.ConnectorV3.Runtime;
 using STS2_MCP.HumanEquivalent.Protocol;
+using STS2_MCP.HumanEquivalent.Runtime;
 
 namespace STS2_MCP;
 
@@ -13,7 +13,7 @@ public static partial class McpMod
     {
         try
         {
-            var task = RunOnMainThread(ConnectorV3Runtime.GetHumanEquivalentCapabilities);
+            var task = RunOnMainThread(HumanEquivalentRuntime.GetHumanEquivalentCapabilities);
             SendJson(response, task.GetAwaiter().GetResult());
         }
         catch (Exception exception)
@@ -40,7 +40,7 @@ public static partial class McpMod
         }
         try
         {
-            var task = RunOnMainThread(() => ConnectorV3Runtime.ObserveHumanEquivalent(mode));
+            var task = RunOnMainThread(() => HumanEquivalentRuntime.ObserveHumanEquivalent(mode));
             SendJson(response, task.GetAwaiter().GetResult());
         }
         catch (Exception exception)
@@ -75,7 +75,7 @@ public static partial class McpMod
         }
         try
         {
-            var task = RunOnMainThread(() => ConnectorV3Runtime.InspectHumanEquivalent(kind, expectedStateToken!, mode));
+            var task = RunOnMainThread(() => HumanEquivalentRuntime.InspectHumanEquivalent(kind, expectedStateToken!, mode));
             HumanEquivalentInspectionReadResult result = task.GetAwaiter().GetResult();
             if (result.Inspection != null)
             {
@@ -120,7 +120,7 @@ public static partial class McpMod
         }
         try
         {
-            var task = RunOnMainThread(() => ConnectorV3Runtime.ReadHumanEquivalentLinkedDetail(entityId, expectedStateToken!, mode));
+            var task = RunOnMainThread(() => HumanEquivalentRuntime.ReadHumanEquivalentLinkedDetail(entityId, expectedStateToken!, mode));
             HumanEquivalentLinkedDetailReadResult result = task.GetAwaiter().GetResult();
             if (result.LinkedDetail != null)
             {
@@ -167,7 +167,7 @@ public static partial class McpMod
         }
         try
         {
-            var task = RunOnMainThread(() => ConnectorV3Runtime.SubmitHumanEquivalent(action));
+            var task = RunOnMainThread(() => HumanEquivalentRuntime.SubmitHumanEquivalent(action));
             HumanEquivalentActionReceipt receipt = task.GetAwaiter().GetResult();
             response.StatusCode = receipt.Status switch
             {
@@ -211,7 +211,7 @@ public static partial class McpMod
         try
         {
             HumanEquivalentClientRegistrationResponse result =
-                ConnectorV3Runtime.RegisterHumanEquivalentClient(registration);
+                HumanEquivalentRuntime.RegisterHumanEquivalentClient(registration);
             response.StatusCode = 201;
             SendJson(response, result);
         }
@@ -225,7 +225,7 @@ public static partial class McpMod
     {
         try
         {
-            SendJson(response, ConnectorV3Runtime.GetHumanEquivalentControlSnapshot());
+            SendJson(response, HumanEquivalentRuntime.GetHumanEquivalentControlSnapshot());
         }
         catch (Exception exception)
         {
@@ -265,9 +265,9 @@ public static partial class McpMod
         {
             HumanEquivalentControllerLeaseResponse result = operation switch
             {
-                "acquire" => ConnectorV3Runtime.AcquireHumanEquivalentController(lease),
-                "renew" => ConnectorV3Runtime.RenewHumanEquivalentController(lease),
-                _ => ConnectorV3Runtime.ReleaseHumanEquivalentController(lease)
+                "acquire" => HumanEquivalentRuntime.AcquireHumanEquivalentController(lease),
+                "renew" => HumanEquivalentRuntime.RenewHumanEquivalentController(lease),
+                _ => HumanEquivalentRuntime.ReleaseHumanEquivalentController(lease)
             };
             response.StatusCode = result.Status switch
             {
@@ -304,7 +304,7 @@ public static partial class McpMod
             SendConnectorV3Error(response, 400, "invalid_request_id", "A bounded request_id is required.");
             return;
         }
-        HumanEquivalentActionReceipt? receipt = ConnectorV3Runtime.PollHumanEquivalent(requestId);
+        HumanEquivalentActionReceipt? receipt = HumanEquivalentRuntime.PollHumanEquivalent(requestId);
         if (receipt == null)
         {
             SendConnectorV3Error(response, 404, "request_not_found", "No Human-Equivalent receipt exists for request_id.");

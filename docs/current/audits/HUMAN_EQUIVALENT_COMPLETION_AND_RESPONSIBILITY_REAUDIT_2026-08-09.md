@@ -1,5 +1,9 @@
 # Human-Equivalent Completion And Responsibility Reaudit
 
+Status: superseded for current ownership and Live evidence by
+[Human-Equivalent post-cutover decoupling and Live failure closeout](HUMAN_EQUIVALENT_POST_CUTOVER_DECOUPLING_AND_LIVE_FAILURE_CLOSEOUT_2026-08-09.md).
+This report remains the pre-Live source audit of baseline `cd224872`.
+
 Date: 2026-08-09
 
 Source baseline audited: `cd224872b623665f51d33c8dcc9e28b61524e85c` on

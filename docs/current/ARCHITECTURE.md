@@ -70,6 +70,29 @@ Closed for HE: unknown-source action suppression, source permission as the
 default gate, business Outcome blocking successor, Re source whitelists and
 silent V3 executor fallback.
 
+## Code Ownership
+
+`HumanEquivalent/Protocol`, `Observation`, `Runtime` and `Transport` own the HE
+contract and lifecycle. `NativeUi/NativeUiRuntime` owns the process-wide entity
+registry and is authority-neutral. Re contains one live HE client/adapter;
+the retired V3 client, executor and public wire export have been deleted.
+Historical V3 protocol, normalization and fixtures remain internal read-only
+replay/comparison assets.
+
+The remaining implementation dependency is deliberately one-way:
+
+```text
+HumanEquivalentRuntime
+-> six checked ConnectorV3 bounded adapter-library seams
+-> native STS2 controls
+```
+
+Those seams may observe or deliver an already published native UI operation;
+they do not run V3 permission, qualification, SourceContract or business
+Outcome admission. New HE code may not add another seam. Subsequent family
+migration moves useful implementations under `NativeUi` and deletes the old
+owner, rather than wrapping it.
+
 ## Current Limits
 
 Structured UI coverage reuses bounded native adapters already proven in V3,

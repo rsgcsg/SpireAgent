@@ -27,22 +27,26 @@ strictly excludes them and uses the same C state/action authority.
 - strict wire decode and pure-mode annotation rejection;
 - unknown business source with exact current UI remains actionable;
 - source-free deck-card select/deselect/preview/cancel/confirm contracts;
+- source-free combat-pile select/deselect/cancel/confirm contracts;
 - opaque Re action projection without V2 `legal_actions[]` wire input;
 - exact parameter replacement/extra-operand rejection;
 - generic verbs do not expose business operation as wire authority;
 - unknown delivery is non-retryable;
 - existing Gateway and Re regression suites.
+- adapter-confirmed HE delivery remains successful while successor readiness is
+  transitional; Re continues instead of inventing a business failure.
 
 ## Remaining Vertical Work
 
-1. Cold-load and loaded SHA/MVID verification.
-2. Assisted ordinary journey and pure bounded journey.
-3. Source-unclassified one-of-N and deck-card selector Live holdouts.
-4. Re on-demand consumption of implemented state-bound Inspection and Human
+1. Cold-load and loaded SHA/MVID verification for the replacement artifact.
+2. Regress source-free combat-pile selection and delivery/readiness separation.
+3. Assisted ordinary journey and pure bounded journey.
+4. Source-unclassified one-of-N and deck-card selector Live holdouts.
+5. Re on-demand consumption of implemented state-bound Inspection and Human
    normal-flow native page transitions.
-5. Hover/focus/tooltip/scroll structured affordances.
-6. One real custom-drawn UI experiment before deciding on visual fallback.
-7. Main-menu destructive-operation governance.
+6. Hover/focus/tooltip/scroll structured affordances.
+7. One real custom-drawn UI experiment before deciding on visual fallback.
+8. Main-menu destructive-operation governance.
 
 ## Deletion Rule
 

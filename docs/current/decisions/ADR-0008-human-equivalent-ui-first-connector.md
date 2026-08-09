@@ -110,16 +110,22 @@ Do not retain as universal requirements:
 - unknown source automatically meaning no current UI action;
 - native-page access restricted to an operator-only evidence lane.
 
-The inherited V3 executor remains an explicit rollback/comparison endpoint. The
-default Re and operator CLI use `/api/he/*`; there is no silent V3 fallback.
-V3 provider and native-adapter code may be reused inside the game process while
-it is migrated, but it does not supply HE wire types, permission, qualification
-or business Outcome authority. This internal reuse is implementation debt, not
-a second production executor.
+The inherited game-side V3 endpoint remains an explicit rollback/comparison
+surface. Its Re live client and executor are retired; historical protocol and
+normalization code remains only for replaying old evidence. The default Re and
+operator CLI use `/api/he/*`; there is no silent V3 fallback.
+
+HE is a standalone runtime, not a `ConnectorV3Runtime` partial. Bounded V3
+provider/native-adapter implementations may still be called through the small
+machine-checked migration seam while each family moves under authority-neutral
+`NativeUi` ownership. They do not supply HE wire types, permission,
+qualification or business Outcome authority. This is one-way implementation
+reuse, not a second production executor.
 
 ## Evidence Boundary
 
 Protocol `1.0-preview.1` implements the structured-UI core, generic affordance
-delivery, successor and direct Re consumer. Source/tests/build are separate
-from install/load/Live. Exact-runtime HE evidence and broad Human information
-parity remain pending and are not inherited from V3.
+delivery, successor and direct Re consumer. Exact-runtime baseline HE evidence
+exists for ordinary surfaces, but replacement source/tests/build remain
+separate from install/load/Live. Broad Human information parity, `he_pure`
+Live evidence and durable qualification remain pending.

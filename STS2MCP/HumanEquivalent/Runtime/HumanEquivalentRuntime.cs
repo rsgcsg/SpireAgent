@@ -8,10 +8,11 @@ using STS2_MCP.BridgeV2.Game;
 using STS2_MCP.BridgeV2.Protocol;
 using STS2_MCP.BridgeV2.Runtime;
 using STS2_MCP.ConnectorV3.Protocol;
+using STS2_MCP.ConnectorV3.Runtime;
 using STS2_MCP.HumanEquivalent.Protocol;
-using STS2_MCP.HumanEquivalent.Runtime;
+using STS2_MCP.NativeUi;
 
-namespace STS2_MCP.ConnectorV3.Runtime;
+namespace STS2_MCP.HumanEquivalent.Runtime;
 
 internal sealed record HumanEquivalentRuntimeSnapshot(
     HumanEquivalentObservationResponse Observation,
@@ -29,13 +30,13 @@ internal sealed record HumanEquivalentLinkedDetailReadResult(
     string? Detail);
 
 /// <summary>
-/// Human-Equivalent observation and delivery facade. It is a partial of the
-/// inherited runtime only to reach its bounded native UI adapter library; HE
-/// owns separate wire contracts, admission and receipts and does not invoke
-/// the V3 HTTP or permission path.
+/// Human-Equivalent observation and delivery runtime. It owns the HE wire,
+/// admission and receipt lifecycle and shares only bounded native UI
+/// infrastructure with the explicit legacy comparison endpoint.
 /// </summary>
-internal static partial class ConnectorV3Runtime
+internal static partial class HumanEquivalentRuntime
 {
+    private static BridgeEntityRegistry Entities => NativeUiRuntime.Entities;
     private static readonly BridgeStateIdentityTracker HumanStateIdentity = new();
     private static readonly ConcurrentDictionary<string, string> HumanRequestFingerprints =
         new(StringComparer.Ordinal);
@@ -382,10 +383,11 @@ internal static partial class ConnectorV3Runtime
         GameBuildIdentity game = BridgeV2Runtime.ReadCurrentGameIdentity();
         BridgeObservationDraft? sourceFreeSurface =
             HumanGeneratedCardChoiceAdapter.TryBuild(Entities, game)
+            ?? HumanCombatPileSelectionAdapter.TryBuild(Entities, game)
             ?? HumanDeckCardSelectionAdapter.TryBuild(Entities, game);
         BridgeObservationDraft draft = sourceFreeSurface
             ?? BridgeSnapshotBuilder.Build(Entities, game);
-        draft = HumanEquivalence.SuppressMutation(draft) with
+        draft = ConnectorV3Runtime.SuppressForNativePageEvidence(draft) with
         {
             CandidateAdmission = "human_ui",
             AuthorityHandoff = new AuthorityHandoff(
@@ -621,8 +623,16 @@ internal static partial class ConnectorV3Runtime
                 binding,
                 parameters);
         }
+        if (snapshot.Draft.Surface is HumanCombatPileSelectionSurface combatPileSelection)
+        {
+            return HumanCombatPileSelectionAdapter.Start(
+                Entities,
+                combatPileSelection,
+                binding,
+                parameters);
+        }
 
-        ConnectorV3Snapshot carrier = BuildSnapshot(
+        ConnectorV3Snapshot carrier = ConnectorV3Runtime.BuildSnapshot(
             suppressHumanEquivalence: false,
             admitEncounter: false) with
         {
@@ -635,26 +645,37 @@ internal static partial class ConnectorV3Runtime
             null,
             binding.Candidate.Command,
             parameters);
-        return StartNativeUiInput(carrier, request, binding);
+        return ConnectorV3Runtime.StartNativeUiInput(carrier, request, binding);
     }
 
     private static IReadOnlyList<ConnectorV3BoundCommand> BuildHumanEquivalentBindings(
         BridgeObservationDraft draft)
     {
-        if (draft.Surface is not HumanDeckCardSelectionSurface deckSelection)
-            return BuildBindings(draft);
+        IReadOnlyList<ConnectorV3CommandDescriptor>? descriptors = draft.Surface switch
+        {
+            HumanDeckCardSelectionSurface deckSelection =>
+                HumanDeckCardSelectionAdapter.DescribeCommands(deckSelection),
+            HumanCombatPileSelectionSurface combatPileSelection =>
+                HumanCombatPileSelectionAdapter.DescribeCommands(combatPileSelection),
+            _ => null
+        };
+        if (descriptors == null)
+            return ConnectorV3Runtime.BuildBindings(draft);
 
-        return HumanDeckCardSelectionAdapter.DescribeCommands(deckSelection)
-            .Select(descriptor => BuildNativeBinding(draft, descriptor))
+        return descriptors
+            .Select(descriptor => ConnectorV3Runtime.BuildNativeBinding(draft, descriptor))
             .Where(binding => binding != null)
             .Cast<ConnectorV3BoundCommand>()
             .ToArray();
     }
 
     private static IEnumerable<VisibleCard> HumanSurfaceCards(IBridgeSurface surface) =>
-        surface is HumanDeckCardSelectionSurface deckSelection
-            ? deckSelection.Cards
-            : SurfaceCards(surface);
+        surface switch
+        {
+            HumanDeckCardSelectionSurface deckSelection => deckSelection.Cards,
+            HumanCombatPileSelectionSurface combatPileSelection => combatPileSelection.Cards,
+            _ => ConnectorV3Runtime.SurfaceCards(surface)
+        };
 
     private static IReadOnlyList<(HumanEquivalentAffordance, ConnectorV3BoundCommand)>
         ProjectHumanAffordances(

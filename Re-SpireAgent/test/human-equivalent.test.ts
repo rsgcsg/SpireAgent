@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.js";
 import type { AdapterDescriptor } from "../src/game-io/adapter.js";
+import { Sts2HumanEquivalentAdapter } from "../src/integrations/sts2mcp/humanEquivalentAdapter.js";
 import {
   decodeHumanClientRegistration,
   decodeHumanControllerLeaseResponse,
@@ -69,6 +70,37 @@ function snapshot(mode: "he_assisted" | "he_pure" = "he_pure"): JsonObject {
   };
 }
 
+function capabilities(): JsonObject {
+  const value = snapshot();
+  return {
+    protocol_version: "1.0-preview.1",
+    observation_schema: "sts2.connector.human-ui/observation-1",
+    action_schema: "sts2.connector.human-ui/action-1",
+    receipt_schema: "sts2.connector.human-ui/receipt-1",
+    control_schema: "sts2.connector.human-ui/control-1",
+    status: "ready",
+    bridge: value.bridge!,
+    game: value.game!,
+    modes: ["he_assisted", "he_pure"],
+    actions: ["select"],
+    state_bound: true,
+    frame_bound: true,
+    single_controller: true,
+    business_source_required: false,
+    business_outcome_required: false,
+    execution_available: true,
+    control: { recommended_renewal_ms: 10_000 },
+    non_claims: []
+  };
+}
+
+function json(value: JsonObject, status = 200): Response {
+  return new Response(JSON.stringify(value), {
+    status,
+    headers: { "content-type": "application/json" }
+  });
+}
+
 describe("Human-Equivalent C", () => {
   it("accepts an unknown business source when current native UI is exact and operable", () => {
     const decoded = decodeHumanObservation(snapshot()).data;
@@ -120,5 +152,101 @@ describe("Human-Equivalent C", () => {
 
     expect(lease.controller?.controller_lease_id).toBe("lease-he");
     expect(lease.schema).toBe("sts2.connector.human-ui/control-1");
+  });
+
+  it("treats applied HE input as delivered while successor readiness remains separate", async () => {
+    const current = snapshot();
+    const successor = {
+      ...snapshot(),
+      state_token: "state-he-2",
+      sequence: 2,
+      status: "settling"
+    } satisfies JsonObject;
+    const adapter = new Sts2HumanEquivalentAdapter(
+      "http://fixture.invalid",
+      1_000,
+      { mode: "he_pure", commandPollMs: 1, commandTimeoutMs: 100 },
+      async (input, init) => {
+        const url = String(input);
+        if (url.endsWith("/api/he/capabilities")) return json(capabilities());
+        if (url.endsWith("/api/he/observation?mode=he_pure")) return json(current);
+        if (url.endsWith("/api/he/clients/register")) {
+          const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+          return json({
+            protocol_version: "1.0-preview.1",
+            schema: "sts2.connector.human-ui/control-1",
+            runtime_instance_id: "fixture-runtime",
+            client: {
+              client_session_id: "client-session",
+              client_instance_id: String(body.client_instance_id)
+            },
+            controller: null
+          }, 201);
+        }
+        if (url.endsWith("/api/he/controller/acquire")) {
+          return json({
+            protocol_version: "1.0-preview.1",
+            schema: "sts2.connector.human-ui/control-1",
+            runtime_instance_id: "fixture-runtime",
+            status: "controller_acquired",
+            detail: "acquired",
+            client: {
+              client_session_id: "client-session",
+              client_instance_id: "client-instance"
+            },
+            controller: {
+              controller_lease_id: "controller-lease",
+              controller_generation: 1,
+              client_session_id: "client-session",
+              expires_at: new Date(Date.now() + 60_000).toISOString()
+            }
+          });
+        }
+        if (url.endsWith("/api/he/actions")) {
+          const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+          return json({
+            protocol_version: "1.0-preview.1",
+            schema: "sts2.connector.human-ui/receipt-1",
+            request_id: String(body.request_id),
+            status: "applied",
+            delivery: "applied",
+            action: {
+              affordance_id: "affordance-card-1",
+              action: "select",
+              target_id: "card-1",
+              parameters: { screen_id: "screen-current", card_id: "card-1" }
+            },
+            reason_code: null,
+            detail: "native input delivered",
+            retry: { allowed: false, reason: "terminal_receipt" },
+            successor,
+            attribution: {
+              runtime_instance_id: "fixture-runtime",
+              client_session_id: "client-session",
+              client_instance_id: "client-instance",
+              product_id: "re-spireagent",
+              product_name: "Re-SpireAgent",
+              product_version: "0.1.0",
+              controller_lease_id: "controller-lease",
+              controller_generation: 1
+            }
+          });
+        }
+        throw new Error(`Unexpected request ${url}`);
+      }
+    );
+
+    const raw = await adapter.readCurrentState();
+    const normalized = normalizeCurrentState(raw, adapter.describe());
+    const action = buildAllowedActions(normalized.currentState, normalized.stateHash)[0]!;
+    const result = await adapter.execute(action.action);
+    await adapter.close();
+
+    expect(result, JSON.stringify(result)).toMatchObject({
+      accepted: true,
+      outcome: "accepted",
+      settlementAuthority: "adapter_confirmed",
+      confirmedStateToken: "state-he-2"
+    });
   });
 });

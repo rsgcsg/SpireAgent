@@ -11,12 +11,12 @@ public sealed class HumanEquivalentContractTests
     {
         Assert.Equal(
             HumanEquivalentContract.AssistedMode,
-            ConnectorV3Runtime.NormalizeHumanMode(null));
+            HumanEquivalentRuntime.NormalizeHumanMode(null));
         Assert.Equal(
             HumanEquivalentContract.PureMode,
-            ConnectorV3Runtime.NormalizeHumanMode(HumanEquivalentContract.PureMode));
+            HumanEquivalentRuntime.NormalizeHumanMode(HumanEquivalentContract.PureMode));
         Assert.Throws<ArgumentException>(() =>
-            ConnectorV3Runtime.NormalizeHumanMode("semantic_auto"));
+            HumanEquivalentRuntime.NormalizeHumanMode("semantic_auto"));
     }
 
     [Theory]
@@ -30,7 +30,7 @@ public sealed class HumanEquivalentContractTests
         string operation,
         string expected)
     {
-        Assert.Equal(expected, ConnectorV3Runtime.GenericAction(command, operation));
+        Assert.Equal(expected, HumanEquivalentRuntime.GenericAction(command, operation));
     }
 
     [Fact]
@@ -41,21 +41,21 @@ public sealed class HumanEquivalentContractTests
             ["screen_id"] = "screen-a",
             ["card_id"] = "card-a"
         };
-        Assert.True(ConnectorV3Runtime.DictionaryEqual(
+        Assert.True(HumanEquivalentRuntime.DictionaryEqual(
             expected,
             new Dictionary<string, string>
             {
                 ["card_id"] = "card-a",
                 ["screen_id"] = "screen-a"
             }));
-        Assert.False(ConnectorV3Runtime.DictionaryEqual(
+        Assert.False(HumanEquivalentRuntime.DictionaryEqual(
             expected,
             new Dictionary<string, string>
             {
                 ["screen_id"] = "screen-a",
                 ["card_id"] = "card-replacement"
             }));
-        Assert.False(ConnectorV3Runtime.DictionaryEqual(
+        Assert.False(HumanEquivalentRuntime.DictionaryEqual(
             expected,
             new Dictionary<string, string>
             {
@@ -175,6 +175,47 @@ public sealed class HumanEquivalentContractTests
             command.Kind == HumanDeckCardSelectionAdapter.CancelPreviewOperation);
         Assert.Contains(commands, command =>
             command.Kind == HumanDeckCardSelectionAdapter.ConfirmOperation);
+    }
+
+    [Fact]
+    public void CombatPileCommandsDependOnVisibleSelectionMechanicsNotBusinessSource()
+    {
+        var cardA = TestCard("card-a", "Alpha");
+        var cardB = TestCard("card-b", "Beta");
+        var surface = new HumanCombatPileSelectionSurface(
+            HumanCombatPileSelectionAdapter.SurfaceKind,
+            "selecting",
+            "screen-a",
+            "Choose from discard pile",
+            "discard",
+            1,
+            2,
+            1,
+            new[] { "card-b" },
+            new[] { "card-a" },
+            new[] { "card-b" },
+            Cancelable: true,
+            CanCancel: true,
+            CanConfirm: true,
+            new[] { cardA, cardB });
+
+        ConnectorV3CommandDescriptor[] commands =
+            HumanCombatPileSelectionAdapter.DescribeCommands(surface).ToArray();
+
+        Assert.Equal(4, commands.Length);
+        Assert.Contains(commands, command =>
+            command.Kind == HumanCombatPileSelectionAdapter.SelectOperation);
+        Assert.Contains(commands, command =>
+            command.Kind == HumanCombatPileSelectionAdapter.DeselectOperation);
+        Assert.Contains(commands, command =>
+            command.Kind == HumanCombatPileSelectionAdapter.CancelOperation);
+        Assert.Contains(commands, command =>
+            command.Kind == HumanCombatPileSelectionAdapter.ConfirmOperation);
+        Assert.All(commands, command =>
+        {
+            Assert.DoesNotContain("source", command.EvidenceCode, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("contract", command.EvidenceCode, StringComparison.OrdinalIgnoreCase);
+        });
     }
 
     private static STS2_MCP.BridgeV2.Protocol.VisibleCard TestCard(

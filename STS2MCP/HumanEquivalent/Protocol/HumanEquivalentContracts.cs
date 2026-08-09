@@ -118,6 +118,27 @@ public sealed record HumanDeckCardSelectionSurface(
     bool CanConfirm,
     IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
 
+/// <summary>
+/// Player-visible mechanics of the native combat-pile selector. Business
+/// source, destination and eventual effect are deliberately absent.
+/// </summary>
+public sealed record HumanCombatPileSelectionSurface(
+    string Kind,
+    string Stage,
+    string ScreenEntityId,
+    string? Prompt,
+    string PileType,
+    int MinSelect,
+    int MaxSelect,
+    int SelectedCount,
+    IReadOnlyList<string> SelectedCardEntityIds,
+    IReadOnlyList<string> SelectableCardEntityIds,
+    IReadOnlyList<string> DeselectableCardEntityIds,
+    bool Cancelable,
+    bool CanCancel,
+    bool CanConfirm,
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
+
 public sealed record HumanEquivalentUiEntity(
     string EntityId,
     string Kind,

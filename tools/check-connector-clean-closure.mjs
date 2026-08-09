@@ -142,17 +142,9 @@ const menuProviderPath = path.join(
   root,
   "STS2MCP/BridgeV2/Game/MenuSurfaceProviders.cs"
 );
-const reConnectorAdapterPath = path.join(
-  root,
-  "Re-SpireAgent/src/integrations/sts2mcp/connectorV3Adapter.ts"
-);
 const reConnectorProjectionPath = path.join(
   root,
   "Re-SpireAgent/src/integrations/sts2mcp/connectorV3Projection.ts"
-);
-const reConnectorClientPath = path.join(
-  root,
-  "Re-SpireAgent/src/integrations/sts2mcp/connectorV3Client.ts"
 );
 const rePublicIndexPath = path.join(root, "Re-SpireAgent/src/index.ts");
 const gatewayRoutesPath = path.join(root, "STS2MCP/McpMod.cs");
@@ -198,9 +190,7 @@ const generatedChoiceProviderSource = await readFile(generatedChoiceProviderPath
 const menuProviderSource = await readFile(menuProviderPath, "utf8");
 const reStateSource = await readFile(reStatePath, "utf8");
 const reNormalizerSource = await readFile(reNormalizerPath, "utf8");
-const reConnectorAdapterSource = await readFile(reConnectorAdapterPath, "utf8");
 const reConnectorProjectionSource = await readFile(reConnectorProjectionPath, "utf8");
-const reConnectorClientSource = await readFile(reConnectorClientPath, "utf8");
 const rePublicIndexSource = await readFile(rePublicIndexPath, "utf8");
 const gatewayRoutesSource = await readFile(gatewayRoutesPath, "utf8");
 
@@ -284,11 +274,8 @@ if (/BridgeActionDraft/gu.test(connectorV3CommandSources)) {
   fail("Connector V3 regained the retired BridgeActionDraft command descriptor");
 }
 if (/BridgeV2RestClient|bridgeSidecar|bridge_v2_capabilities|temporary V2 consumer sidecar/gu
-    .test(reConnectorAdapterSource + reConnectorProjectionSource)) {
+    .test(reConnectorProjectionSource)) {
   fail("Re Connector V3 regained a V2 consumer sidecar");
-}
-if (/bridgeV2|\/api\/v2/gu.test(reConnectorAdapterSource + reConnectorClientSource)) {
-  fail("Re Connector V3 regained a V2 protocol import or HTTP route");
 }
 if (/bridgeV2Client|bridgeV2Protocol|hybridAdapter/gu.test(rePublicIndexSource)) {
   fail("Re public production entrypoint exports a retired V2 client path");

@@ -8,15 +8,17 @@ boundary; A owns interpretation and strategy; D is optional evidence/hints.
 
 ## Current State
 
-The first executable HE vertical slice is complete in source: observation,
-generic affordance projection, exact delivery, successor, direct Re consumer,
-pure/assisted modes and public deployment tooling. The next gate is exact
-cold-load and real-game evidence, not more source-specific C semantics.
+The HE vertical slice has exact-runtime baseline evidence across ordinary UI.
+That evidence exposed and drove fixes for client-side business-settlement
+waiting and source-gated combat-pile selection. The replacement is complete in
+source and tests; the next gate is its exact cold-load and real-game evidence,
+not more source-specific C semantics.
 
 ## Delivery Order
 
-1. Cold-load and verify one coherent HE artifact.
-2. Run an ordinary assisted journey; fix only C facts/input integrity defects.
+1. Cold-load and verify the coherent replacement HE artifact.
+2. Regress combat-pile selection and slow end-turn/map delivery, then continue
+   an ordinary assisted journey; fix only C facts/input integrity defects.
 3. Exercise one unknown-source native selector and one `he_pure` journey.
 4. Complete Human information parity: hover, focus, tooltip, scroll and native
    page open/read/return as optional UI transitions.

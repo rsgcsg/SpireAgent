@@ -8,7 +8,8 @@ ADR-0008 is canonical; V3 is explicit rollback/comparison only.
 
 ## HE-1: Executable Structured UI Core
 
-Status: source/test/build complete; load/Live pending.
+Status: baseline Live-exercised; replacement source/test complete and
+replacement load/Live pending.
 
 - `HumanSnapshot`, exact owner/entities/controls and current affordances;
 - generic state/frame-bound delivery and successor;
@@ -16,16 +17,18 @@ Status: source/test/build complete; load/Live pending.
 - direct Re consumer with `he_assisted` and `he_pure`;
 - HE CLI preflight without V2 permission/qualification gates.
 
-Exit still pending: cold-load matching artifact and complete an ordinary Live
-journey without hidden V3 execution.
+Baseline HE exercised menu, combat, reward, card reward, map, rest, event and
+treasure. Exit still pending: cold-load the receipt/combat-pile replacement and
+complete an ordinary Live journey without hidden V3 execution.
 
 ## HE-2: Adaptation Holdouts
 
 Status: pending exact runtime.
 
-Exercise both unknown-source selectors, stale replacement, duplicate request,
-unknown delivery, multi-stage selection and `he_pure`. A new source preserving
-known UI mechanics should require no wire, Re or Gateway-core change.
+Exercise source-free combat-pile selection, both unknown-source selector
+holdouts, stale replacement, duplicate request, unknown delivery, multi-stage
+selection and `he_pure`. A new source preserving known UI mechanics should
+require no wire, Re or Gateway-core change.
 
 ## HE-3: Human Information Parity
 

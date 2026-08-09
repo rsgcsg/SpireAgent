@@ -13,6 +13,7 @@ using STS2_MCP.BridgeV2.Game;
 using STS2_MCP.BridgeV2.Protocol;
 using STS2_MCP.BridgeV2.Runtime;
 using STS2_MCP.ConnectorV3.Protocol;
+using STS2_MCP.NativeUi;
 
 namespace STS2_MCP.ConnectorV3.Runtime;
 
@@ -46,7 +47,7 @@ internal sealed record ConnectorV3BoundCommand(
 
 internal static partial class ConnectorV3Runtime
 {
-    private static readonly BridgeEntityRegistry Entities = new();
+    private static BridgeEntityRegistry Entities => NativeUiRuntime.Entities;
     private static readonly Lazy<ConnectorV3HumanEquivalenceSessionMachine>
         HumanEquivalenceLazy = new(() =>
                 new ConnectorV3HumanEquivalenceSessionMachine(
@@ -106,6 +107,9 @@ internal static partial class ConnectorV3Runtime
     }
 
     public static ConnectorV3ObservationResponse Observe() => BuildSnapshot().Observation;
+
+    internal static BridgeObservationDraft SuppressForNativePageEvidence(
+        BridgeObservationDraft draft) => HumanEquivalence.SuppressMutation(draft);
 
     public static ConnectorV3InspectionReadResult Inspect(
         string kind,
@@ -329,7 +333,7 @@ internal static partial class ConnectorV3Runtime
         return ToReceipt(request, response);
     }
 
-    private static ConnectorV3Snapshot BuildSnapshot(
+    internal static ConnectorV3Snapshot BuildSnapshot(
         bool suppressHumanEquivalence = true,
         bool admitEncounter = true)
     {
@@ -485,7 +489,7 @@ internal static partial class ConnectorV3Runtime
             .OrderBy(entry => entry.EntityId, StringComparer.Ordinal)
             .ToArray();
 
-    private static IEnumerable<VisibleCard> SurfaceCards(IBridgeSurface surface) =>
+    internal static IEnumerable<VisibleCard> SurfaceCards(IBridgeSurface surface) =>
         surface switch
         {
             DeckEnchantSelectionSurface value => value.Cards,
@@ -566,7 +570,7 @@ internal static partial class ConnectorV3Runtime
             CombatPileCardSelectionSurface;
     }
 
-    private static IReadOnlyList<ConnectorV3BoundCommand> BuildBindings(
+    internal static IReadOnlyList<ConnectorV3BoundCommand> BuildBindings(
         BridgeObservationDraft draft)
     {
         if (draft.Surface is CombatTurnSurface combatTurn)
@@ -2226,7 +2230,7 @@ internal static partial class ConnectorV3Runtime
             evidenceCode,
             entityBindings);
 
-    private static ConnectorV3BoundCommand? BuildNativeBinding(
+    internal static ConnectorV3BoundCommand? BuildNativeBinding(
         BridgeObservationDraft draft,
         ConnectorV3CommandDescriptor action)
     {
@@ -2378,7 +2382,7 @@ internal static partial class ConnectorV3Runtime
         })[..20];
     }
 
-    private static BridgeActionStartResult StartNativeUiInput(
+    internal static BridgeActionStartResult StartNativeUiInput(
         ConnectorV3Snapshot snapshot,
         ConnectorV3CommandRequest request,
         ConnectorV3BoundCommand binding)
