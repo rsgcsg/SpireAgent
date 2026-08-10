@@ -115,6 +115,11 @@ public sealed class HumanEquivalentContractTests
             "single_entity",
             Array.Empty<string>());
         Assert.True(entry.SnapshotBound);
+        Assert.True(McpMod.IsSafeHumanEquivalentReadIdentifier("read:run_deck"));
+        Assert.True(McpMod.IsSafeHumanEquivalentReadIdentifier("read:surface_card:card-a"));
+        Assert.False(McpMod.IsSafeHumanEquivalentReadIdentifier("run_deck"));
+        Assert.False(McpMod.IsSafeHumanEquivalentReadIdentifier("read:../hidden"));
+        Assert.False(McpMod.IsSafeHumanEquivalentReadIdentifier("read:"));
     }
 
     [Fact]

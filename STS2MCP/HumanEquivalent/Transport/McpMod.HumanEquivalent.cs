@@ -53,7 +53,7 @@ public static partial class McpMod
             return;
         }
         string? expectedSnapshotId = request.QueryString["expected_snapshot_id"];
-        if (!IsSafeBridgeIdentifier(readId, 256)
+        if (!IsSafeHumanEquivalentReadIdentifier(readId)
             || !IsSafeBridgeIdentifier(expectedSnapshotId, 128))
         {
             SendConnectorV3Error(response, 400, "invalid_read_contract", "A current advertised read id and snapshot ID are required.");
@@ -78,6 +78,23 @@ public static partial class McpMod
         {
             SendConnectorV3InternalError(response, "human_read_failed", exception);
         }
+    }
+
+    internal static bool IsSafeHumanEquivalentReadIdentifier(string? readId)
+    {
+        const string prefix = "read:";
+        if (readId?.StartsWith(prefix, StringComparison.Ordinal) != true
+            || readId.Length > 256)
+            return false;
+        string[] segments = readId.Split(':');
+        if (segments.Length < 2 || !string.Equals(segments[0], "read", StringComparison.Ordinal))
+            return false;
+        for (int index = 1; index < segments.Length; index++)
+        {
+            if (!IsSafeBridgeIdentifier(segments[index], 128))
+                return false;
+        }
+        return true;
     }
 
     private static void HandlePostHumanEquivalentAction(
