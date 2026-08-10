@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.js";
 import type { AdapterDescriptor } from "../src/game-io/adapter.js";
 import { Sts2HumanEquivalentAdapter } from "../src/integrations/sts2mcp/humanEquivalentAdapter.js";
+import { prefetchHumanEnvironmentDecisionBundle } from "../src/integrations/sts2mcp/humanEnvironmentDecisionBundle.js";
 import {
   decodeHumanClientRegistration,
   decodeHumanControllerLeaseResponse,
@@ -335,6 +336,113 @@ describe("Human-Equivalent C", () => {
     expect(normalized.currentState.surface.kind).toBe("human_ui");
     expect(normalized.currentState.actionAuthority).toBe("none");
     expect(buildAllowedActions(normalized.currentState, normalized.stateHash)).toEqual([]);
+  });
+
+  it("lets an eager consumer aggregate advertised reads without creating action authority", async () => {
+    const current = decodeHumanObservation({
+      ...snapshot(),
+      reads: [
+        {
+          read_id: "read:run_deck",
+          kind: "run_deck",
+          target_referent_id: null,
+          content_schema: "sts2.human-environment/read/run_deck-1",
+          visibility_basis: "player_openable_run_deck_view",
+          snapshot_bound: true,
+          ordering_semantics: "unordered_multiset",
+          hidden_by_policy: []
+        },
+        {
+          read_id: "read:surface_card:card-1",
+          kind: "surface_card",
+          target_referent_id: "card-1",
+          content_schema: "sts2.human-environment/read/surface_card-1",
+          visibility_basis: "normal_player_visible_surface_card",
+          snapshot_bound: true,
+          ordering_semantics: "single_entity",
+          hidden_by_policy: []
+        }
+      ]
+    }).data;
+    const calls: string[] = [];
+    const bundle = await prefetchHumanEnvironmentDecisionBundle(
+      current,
+      async (readId, expectedSnapshotId) => {
+        calls.push(readId);
+        return {
+          protocol_version: "1.0-preview.5",
+          schema: "sts2.human-environment/read-2",
+          read_id: readId,
+          expected_snapshot_id: expectedSnapshotId,
+          observed_snapshot_id: expectedSnapshotId,
+          observed_at: "2026-08-11T00:00:00Z",
+          kind: readId === "read:run_deck" ? "run_deck" : "surface_card",
+          target_referent_id: readId === "read:run_deck" ? null : "card-1",
+          visibility_basis: readId === "read:run_deck"
+            ? "player_openable_run_deck_view"
+            : "normal_player_visible_surface_card",
+          ordering_semantics: readId === "read:run_deck" ? "unordered_multiset" : "single_entity",
+          content_schema: readId === "read:run_deck"
+            ? "sts2.human-environment/read/run_deck-1"
+            : "sts2.human-environment/read/surface_card-1",
+          content: {},
+          completeness: {
+            status: "complete",
+            visible_information: "complete",
+            interaction_discovery: "read_only",
+            missing: [],
+            hidden_by_policy: []
+          },
+          session: current.session,
+          observation_policy: current.observation_policy
+        };
+      }
+    );
+
+    expect(calls).toEqual(["read:run_deck", "read:surface_card:card-1"]);
+    expect(bundle.observation).toBe(current);
+    expect(bundle.reads).toHaveLength(2);
+    expect(bundle.observation.bound_actions.actions).toHaveLength(1);
+  });
+
+  it("rejects a mixed-snapshot eager read bundle", async () => {
+    const current = decodeHumanObservation({
+      ...snapshot(),
+      reads: [{
+        read_id: "read:run_deck",
+        kind: "run_deck",
+        target_referent_id: null,
+        content_schema: "sts2.human-environment/read/run_deck-1",
+        visibility_basis: "player_openable_run_deck_view",
+        snapshot_bound: true,
+        ordering_semantics: "unordered_multiset",
+        hidden_by_policy: []
+      }]
+    }).data;
+
+    await expect(prefetchHumanEnvironmentDecisionBundle(current, async () => ({
+      protocol_version: "1.0-preview.5",
+      schema: "sts2.human-environment/read-2",
+      read_id: "read:run_deck",
+      expected_snapshot_id: current.snapshot_id,
+      observed_snapshot_id: "state-drifted",
+      observed_at: "2026-08-11T00:00:00Z",
+      kind: "run_deck",
+      target_referent_id: null,
+      visibility_basis: "player_openable_run_deck_view",
+      ordering_semantics: "unordered_multiset",
+      content_schema: "sts2.human-environment/read/run_deck-1",
+      content: {},
+      completeness: {
+        status: "complete",
+        visible_information: "complete",
+        interaction_discovery: "read_only",
+        missing: [],
+        hidden_by_policy: []
+      },
+      session: current.session,
+      observation_policy: current.observation_policy
+    }))).rejects.toThrow(/not coherent/u);
   });
 
   it("treats applied HE input as delivered while successor readiness remains separate", async () => {

@@ -10,7 +10,7 @@ import type { LlmDecisionProvider, LlmDecisionSession } from "../src/llm/types.j
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
 import type { DecisionRecord, DecisionRecorder, PreparedEvidence } from "../src/recording/types.js";
 import { SuccessorWatcher } from "../src/runtime/successorWatcher.js";
-import { TickOrchestrator } from "../src/runtime/tickOrchestrator.js";
+import { nonActionableStallLimit, TickOrchestrator } from "../src/runtime/tickOrchestrator.js";
 import { fixture, TEST_ADAPTER } from "./helpers.js";
 
 describe("TickOrchestrator", () => {
@@ -581,6 +581,37 @@ describe("TickOrchestrator", () => {
       contextKind: "event",
       surfaceKind: "option_choice"
     });
+  });
+
+  it("gives only the initial unknown HE startup surface a bounded cold-load grace", () => {
+    const startup = bridgeEnvelope("startup", "unknown").currentState;
+    startup.context = {
+      kind: "unknown",
+      reason: "Current human UI is unsupported",
+      observedTopLevelKeys: []
+    };
+    startup.surface = {
+      kind: "human_ui",
+      uiKind: "unsupported",
+      stage: "unsupported",
+      interactionId: "startup-screen",
+      contentSchema: "sts2.human-environment/surface/unsupported-1",
+      content: {},
+      referents: [],
+      reads: [],
+      capabilities: [],
+      boundActionProjection: {
+        status: "complete",
+        totalCount: 0,
+        limit: 512,
+        orderingSemantics: "fixture"
+      },
+      boundActions: []
+    };
+
+    expect(nonActionableStallLimit(startup, false)).toBe(40);
+    expect(nonActionableStallLimit(startup, true)).toBe(8);
+    expect(nonActionableStallLimit(bridgeEnvelope("known", "unknown").currentState, false)).toBe(8);
   });
 
   it("does not treat an adapter-declared unknown command outcome as success", async () => {

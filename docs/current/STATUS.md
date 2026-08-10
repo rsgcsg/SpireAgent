@@ -14,9 +14,10 @@ Preview.4: canonical visible truth and current interaction grammar no longer
 derive their meaning from Re's finite action menu.
 
 The freeze verdict remains **conditional freeze**. Core delivery invariants are
-stable; the wire remains preview until Preview.5 is cold-loaded and exercised,
-information parity improves, and a second Host or deterministic conformance
-host tests the host-neutral meanings.
+stable and Preview.5 is Live-exercised, but the current source adds a
+source-free rest-site adapter after Live evidence exposed an inherited business
+completion gate. That repair still requires a new cold-load and `he_pure`
+journey before temporary freeze.
 
 ## Current Source And Automated Truth
 
@@ -38,37 +39,40 @@ Preview.5 implements:
   requests, applied/not-applied/unknown and unknown-no-retry;
 - strict Re decoding and finite opaque choices using `bound_action_id`.
 
-Gateway `303/303` tests and Re `296/296` tests, typecheck, build, Python syntax
+Gateway `308/308` tests and Re `299/299` tests, typecheck, build, Python syntax
 and HE boundary checks cover these source claims. They are not loaded or Live
 evidence.
 
 ## Latest Exact Live Evidence
 
-The latest loaded artifact is Preview.4 SHA
-`a74a6452f4e514e7bd74de6ba9206e24544df50ec9e46d95c9d4c5598b3f8a34`,
-MVID `f7962056-bede-4793-b925-312f62e787e3`, runtime
-`458866c580fd447d9e70e980608783b7`, game `v0.110.1/db5d3552`, Modset
+Preview.5 SHA
+`12fab40bb5e93f255fc55c670d98fc0590ffcc8614a8a921b983867cc8c90e26`,
+MVID `15958f14-80d6-46b9-a333-480893aaf8e5`, runtime
+`d68d74321189495eaa0fced41bd08a71`, game `v0.110.1/db5d3552`, Modset
 `additional_loaded_mods` with fingerprint
-`c8cd0ce0d4b5b71d8aecaacc06bfff85bbe0007b363e028f5446b062dfc181c3`.
+`07ec7548225bd7b9b840478080b529d55f17b7a458605f716dc2921046e0e246`
+was exact-runtime exercised by four `he_assisted` runs:
 
-- `run-20260810090056-n0qf8t`: one character-select decision attempt; provider
-  `fetch failed`, no mutation. This is A/provider failure evidence.
-- `run-20260810090428-4i8i9a`: 152 decisions, 115 settled, 11 delivery
-  checkpoints, 25 transition polls, one safe stale refusal, completed boundary.
-  It includes exact card-subject/enemy-target delivery and successor evidence.
-- `run-20260810105732-l1zl09`: 213 decisions, 138 settled, 19 delivery
-  checkpoints, 53 transition polls, three safe stale refusals, no unknown,
-  completed boundary after game over and return to menu.
+- `run-20260810154103-ze7gm1`: no mutation; cold-start UI remained unmapped for
+  eight ticks and Re stopped too early. The current source gives only this
+  initial unknown state a bounded readiness grace.
+- `run-20260810154139-ecfct9`: 104 decisions, 75 settled, 11 delivery
+  checkpoints, completed boundary, no unknown.
+- `run-20260810154631-kln5u6`: 246 decisions, 171 settled, 16 delivery
+  checkpoints, four safe stale refusals; stopped at visible `DIG` because the
+  inherited rest provider demanded a business completion witness. Current
+  source replaces that HE gate with exact visible-button authority.
+- `run-20260810155642-8f15nw`: 28 decisions, 13 settled, two delivery
+  checkpoints, completed boundary, no unknown.
 
-These runs prove broad Preview.4 HE observation, bound predecessor affordance
-delivery, receipts, successors and bounded journeys on that exact artifact.
-They do not prove Preview.5, another Host, conformance or qualification.
+These runs prove Preview.5 observation, complete finite projection, delivery,
+receipts, successors, safe stale refusal and bounded journeys on that exact
+artifact. They do not prove the current rest repair, `he_pure`, another Host,
+conformance or qualification.
 
 ## Remaining Limits
 
-- On this machine Preview.5 Release build/install is verified by local
-  deployment records; cold-load identity and Live mutation remain pending. No
-  Preview.4 evidence transfers.
+- The current source/rest repair is not loaded; its Release identity is pending.
 - hover/focus/tooltip/scroll and native-page open/read/return parity is partial.
 - the Live Host still reuses five checked V3-owned adapter-library seams; they
   are implementation debt, not public wire or a second authority.
@@ -76,6 +80,9 @@ They do not prove Preview.5, another Host, conformance or qualification.
   types.
 - no Headless Host, cross-Host conformance suite, Training/Search adapter,
   clone/fork port or durable qualification exists.
+
+The exported eager read aggregator is consumer-side conformance evidence for
+memoryless policies; it is not a Training system or a second C authority.
 
 Source, test, build, installed, loaded, Live mutation, journey, conformance and
 qualification remain separate evidence levels.

@@ -109,3 +109,8 @@ Live and Headless unify these fair-player meanings, not exact wire provenance
 or privileged lifecycle. Headless reset/seed/clone/fork/fast-step remain
 separate Host ports. Training reward/termination and Search branching/value
 remain consumer-owned.
+
+A consumer that cannot issue lazy reads may eagerly aggregate selected
+advertised reads for one snapshot before encoding tensors or search state. The
+aggregation validates snapshot/runtime/environment coherence and stays outside
+C; it cannot change referents, capabilities, bound actions or legality.

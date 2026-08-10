@@ -10,9 +10,10 @@ Unknown business source does not suppress an exact current UI interaction.
 Preview.5 discovers player-visible referents from facts before finite action
 projection, exposes strategy-free interaction capabilities, and expresses
 exact public subject/argument combinations through complete bound actions.
-Source-free one-of-N,
-deck-card and combat-pile mechanics remain supported. STS2 owns all effects; C
-claims delivery only.
+Source-free one-of-N, deck-card, combat-pile and rest-site mechanics remain
+supported. Every current visible enabled rest option, including `DIG`, is
+published from its exact native button without a purpose-specific completion
+witness. STS2 owns all effects; C claims delivery only.
 
 ## Information
 
@@ -26,11 +27,11 @@ normal Agent native-page open/read/return and generated typed SDKs.
 
 ## Evidence
 
-Preview.4 exact artifact `a74a6452...` has two broad completed-boundary
-journeys, exact subject/target mutation, receipts, successors and safe stale
-refusals without unknown delivery. Preview.5 has source and automated evidence
-only until cold-loaded. No Live evidence transfers across the breaking protocol
-revision.
+Preview.5 exact artifact `12fab40b...` has two assisted completed-boundary
+journeys, broad combat/non-combat coverage, receipts, successors and safe stale
+refusals without unknown delivery. A separate long run exposed the inherited
+`DIG` witness gate; its source-free repair is automated-only until the next
+cold-load. `he_pure` remains pending on that repaired artifact.
 
 ## Unsupported
 

@@ -374,7 +374,8 @@ internal static partial class HumanEquivalentRuntime
         BridgeObservationDraft? sourceFreeSurface =
             HumanGeneratedCardChoiceAdapter.TryBuild(Entities, game)
             ?? HumanCombatPileSelectionAdapter.TryBuild(Entities, game)
-            ?? HumanDeckCardSelectionAdapter.TryBuild(Entities, game);
+            ?? HumanDeckCardSelectionAdapter.TryBuild(Entities, game)
+            ?? HumanRestSiteAdapter.TryBuild(Entities, game);
         BridgeObservationDraft draft = sourceFreeSurface
             ?? BridgeSnapshotBuilder.Build(Entities, game);
         draft = ConnectorV3Runtime.SuppressForNativePageEvidence(draft) with
@@ -604,6 +605,14 @@ internal static partial class HumanEquivalentRuntime
                 binding,
                 parameters);
         }
+        if (snapshot.Draft.Surface is RestSiteSurface restSite)
+        {
+            return HumanRestSiteAdapter.Start(
+                Entities,
+                restSite,
+                binding,
+                parameters);
+        }
 
         ConnectorV3Snapshot carrier = ConnectorV3Runtime.BuildSnapshot(
             suppressHumanEquivalence: false,
@@ -630,6 +639,8 @@ internal static partial class HumanEquivalentRuntime
                 HumanDeckCardSelectionAdapter.DescribeCommands(deckSelection),
             HumanCombatPileSelectionSurface combatPileSelection =>
                 HumanCombatPileSelectionAdapter.DescribeCommands(combatPileSelection),
+            RestSiteSurface restSite =>
+                HumanRestSiteAdapter.DescribeCommands(restSite),
             _ => null
         };
         if (descriptors == null)

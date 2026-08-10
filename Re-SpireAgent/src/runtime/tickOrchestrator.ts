@@ -33,12 +33,15 @@ export interface TickResult {
   stopReason?: "run_boundary" | "repeated_exact_transition" | "repeated_semantic_transition" | "repeated_non_actionable_state";
 }
 
+const MAX_REPEATED_NON_ACTIONABLE_STATE = 8;
+const MAX_REPEATED_STARTUP_UNKNOWN_STATE = 40;
+
 export class TickOrchestrator {
-  private static readonly maxRepeatedNonActionableState = 8;
   private readonly executedTransitionOccurrences = new Map<string, number>();
   private readonly progressCycleGuard = new ProgressCycleGuard();
   private lastNonActionableStateKey?: string;
   private nonActionableStateOccurrences = 0;
+  private observedKnownState = false;
   private runTerminalObserved = false;
 
   constructor(private readonly dependencies: TickOrchestratorDependencies) {}
@@ -65,6 +68,8 @@ export class TickOrchestrator {
     }
 
     if (pre.currentState.context.kind === "run_ended") this.runTerminalObserved = true;
+    const startupUnknown = isStartupUnknownState(pre.currentState) && !this.observedKnownState;
+    if (!startupUnknown) this.observedKnownState = true;
     const builtAllowedActions = this.dependencies.buildAllowedActions(pre.currentState, pre.stateHash);
     const cycleFilter = this.progressCycleGuard.filterActions(pre.currentState, builtAllowedActions);
     const allowedActions = cycleFilter.actions;
@@ -82,7 +87,8 @@ export class TickOrchestrator {
     }
     if (pre.currentState.stability !== "actionable") {
       const occurrence = this.observeNonActionableState(pre);
-      const stalled = occurrence >= TickOrchestrator.maxRepeatedNonActionableState;
+      const limit = nonActionableStallLimit(pre.currentState, this.observedKnownState);
+      const stalled = occurrence >= limit;
       return this.recordWithoutDecision({
         decisionId,
         tick,
@@ -428,6 +434,24 @@ export class TickOrchestrator {
     this.lastNonActionableStateKey = undefined;
     this.nonActionableStateOccurrences = 0;
   }
+}
+
+export function isStartupUnknownState(
+  state: StateEnvelope["currentState"]
+): boolean {
+  return state.context.kind === "unknown"
+    && state.surface.kind === "human_ui"
+    && state.surface.uiKind === "unsupported"
+    && state.stability !== "actionable";
+}
+
+export function nonActionableStallLimit(
+  state: StateEnvelope["currentState"],
+  observedKnownState: boolean
+): number {
+  return isStartupUnknownState(state) && !observedKnownState
+    ? MAX_REPEATED_STARTUP_UNKNOWN_STATE
+    : MAX_REPEATED_NON_ACTIONABLE_STATE;
 }
 
 function bridgeStateToken(envelope: StateEnvelope): string | undefined {

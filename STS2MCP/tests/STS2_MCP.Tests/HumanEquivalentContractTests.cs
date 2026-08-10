@@ -228,6 +228,54 @@ public sealed class HumanEquivalentContractTests
     }
 
     [Fact]
+    public void RestCommandsDependOnCurrentButtonsNotPurposeSpecificWitnesses()
+    {
+        var surface = new RestSiteSurface(
+            HumanRestSiteAdapter.SurfaceKind,
+            "screen-rest",
+            new[]
+            {
+                new VisibleRestOption("option-rest", 0, "REST", "Rest", "Heal", false),
+                new VisibleRestOption("option-dig", 1, "DIG", "Dig", "Find a relic", true)
+            },
+            CanProceed: true);
+
+        ConnectorV3CommandDescriptor[] commands =
+            HumanRestSiteAdapter.DescribeCommands(surface).ToArray();
+
+        Assert.Equal(2, commands.Length);
+        Assert.Contains(commands, command =>
+            command.Kind == "choose_rest_option"
+            && command.EntityBindings?.Any(binding => binding.EntityId == "option-dig") == true);
+        Assert.Contains(commands, command => command.Kind == "proceed_rest_site");
+        Assert.All(commands, command =>
+        {
+            Assert.DoesNotContain("source", command.EvidenceCode, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("witness", command.EvidenceCode, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("outcome", command.EvidenceCode, StringComparison.OrdinalIgnoreCase);
+        });
+    }
+
+    [Theory]
+    [InlineData(true, true, true, true)]
+    [InlineData(false, true, true, false)]
+    [InlineData(true, false, true, false)]
+    [InlineData(true, true, false, false)]
+    public void RestActionabilityRequiresTheExactVisibleEnabledNativeControl(
+        bool optionEnabled,
+        bool buttonEnabled,
+        bool buttonVisible,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            HumanRestSiteAdapter.IsOptionActionable(
+                optionEnabled,
+                buttonEnabled,
+                buttonVisible));
+    }
+
+    [Fact]
     public void HumanFactsUsePositiveProjectionRatherThanBusinessKeyDeletion()
     {
         var surface = new CombatPileCardSelectionSurface(

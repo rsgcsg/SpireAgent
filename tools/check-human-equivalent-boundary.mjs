@@ -179,6 +179,22 @@ if (!/HumanDeckCardSelectionAdapter\.TryBuild/u.test(runtime)) {
 if (!/HumanCombatPileSelectionAdapter\.TryBuild/u.test(runtime)) {
   failures.push("HumanEquivalentRuntime.cs: source-free combat-pile selector is not in the HE discovery path");
 }
+if (!/HumanRestSiteAdapter\.TryBuild/u.test(runtime)
+    || !/HumanRestSiteAdapter\.Start/u.test(runtime)) {
+  failures.push("HumanEquivalentRuntime.cs: source-free rest-site observation/execution is not in the HE path");
+}
+for (const retiredRestGate of [
+  "OptionCompletionWitness",
+  "HealRestSiteOption",
+  "SmithRestSiteOption",
+  "purpose-specific v0.109"
+]) {
+  forbidText(
+    "STS2MCP/HumanEquivalent/Runtime/HumanRestSiteAdapter.cs",
+    retiredRestGate,
+    `business completion gate ${retiredRestGate} in source-free rest adapter`
+  );
+}
 if (/CombatPileSelectionSourceBinding|CombatPileSourceContractRegistry/u.test(
   read("STS2MCP/HumanEquivalent/Runtime/HumanCombatPileSelectionAdapter.cs")
 )) {

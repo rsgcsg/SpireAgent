@@ -51,7 +51,7 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectR
   if (env.STS2_MCP_PROTOCOL !== undefined && env.STS2_MCP_PROTOCOL !== "he") {
     throw new Error("Re-SpireAgent uses Human-Equivalent C; STS2_MCP_PROTOCOL may only be he");
   }
-  const humanMode = env.SPIREAGENT_HE_MODE ?? "he_assisted";
+  const humanMode = env.SPIREAGENT_HE_MODE ?? "he_pure";
   if (humanMode !== "he_assisted" && humanMode !== "he_pure") {
     throw new Error("SPIREAGENT_HE_MODE must be he_assisted or he_pure");
   }

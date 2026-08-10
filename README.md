@@ -47,9 +47,9 @@ npm run agent:run
 It does not claim the DLL was loaded. `agent:run` verifies loaded SHA/MVID and
 uses `/api/he/*`; it never retries unknown input delivery.
 
-Use `SPIREAGENT_HE_MODE=he_pure` for A+C only. The default `he_assisted` may
-compose a separate non-authorizing D provider when one is configured; both use
-the same pure C observation/action contract.
+The default is `he_pure` (A+C only). `SPIREAGENT_HE_MODE=he_assisted` is an
+explicit opt-in composition point for a future non-authorizing D provider; it
+does not alter C observation or action authority.
 
 See [Local Setup](docs/current/LOCAL_SETUP.md) for other machines, custom Steam
 paths, rollback and troubleshooting.

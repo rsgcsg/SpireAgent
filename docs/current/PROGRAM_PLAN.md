@@ -8,20 +8,19 @@ Host control, strategy, training and evaluation remain orthogonal.
 
 ## Current State
 
-Preview.4 completed two broad exact-runtime HE journeys and proved exact
-card-subject/enemy-target delivery without unknown mutation. It also exposed a
-remaining architecture defect: finite action expansion still defined parts of
-canonical observation and silently capped combinations. Preview.5 fixes that
-coupling and has source/automated evidence only until cold-loaded.
+Preview.5 completed two assisted exact-runtime HE journeys without unknown
+delivery and proved the core/projection split. A longer run exposed a remaining
+HE violation: visible `DIG` was suppressed by a V2 purpose-specific completion
+witness. Current source replaces that gate with source-free current-button
+authority and makes `he_pure` the default.
 
 ## Delivery Order
 
-1. Cold-load Preview.5 and verify exact source/build/install/load SHA/MVID and
-   runtime. Current-machine build/install has succeeded.
-2. Run one action using a complete bound-action projection and one state-bound
-   read, including stale refusal.
-3. Run one ordinary `he_pure` journey and confirm no truncated projection or
-   unknown delivery.
+1. Build/install/cold-load the current source-free rest repair and verify exact
+   source/build/install/load SHA/MVID and runtime.
+2. Run one state-bound read, including stale refusal.
+3. Run an ordinary default `he_pure` journey and confirm no truncated
+   projection, business witness gate or unknown delivery.
 4. Complete missing human information parity.
 5. Shift normal product work to A strategy, planning and recovery.
 6. Add a second Host and conformance fixtures before freezing C 1.0.

@@ -227,3 +227,18 @@ projection ordering do not define canonical stale identity.
 This amendment preserves the Live/Headless semantic-core direction. It does
 not move reset, seed, save/load, clone/fork, scenario mutation, acceleration,
 reward, termination or search policy into C.
+
+## Source-Free Rest And Consumer Aggregation Amendment (2026-08-11)
+
+Preview.5 Live evidence rejected one remaining inherited gate: a visible,
+enabled `DIG` control was suppressed because V2 lacked a purpose-specific
+business completion witness. Human Environment rest authority now derives
+only from one exact current `NRestSiteButton`, its option identity, visibility
+and enabled state. Execution revalidates those same objects and returns input
+delivery; the option's business consequence remains STS2-owned.
+
+`he_pure` is the default composition. Consumers that cannot issue lazy reads
+may eagerly aggregate every selected advertised read for one snapshot. That
+adapter must reject mixed snapshot/runtime/environment results and cannot add
+facts, legality or action bindings. LLM finite menus, RL feature/mask adapters
+and Search edges remain projections over the same C truth and binding table.

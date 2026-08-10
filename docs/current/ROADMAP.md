@@ -2,21 +2,21 @@
 
 ## C-0: Execution Core
 
-Status: architecture and Preview.4 Live behavior proven; Preview.5 exact-runtime
-evidence pending.
+Status: architecture and Preview.5 assisted Live behavior proven; current
+source-free rest repair and default `he_pure` still need exact-runtime evidence.
 
 Retain snapshot binding, current interaction, one controller, execute-time
 validation, idempotency, delivery receipts, unknown-no-retry and successor.
 
 ## C-1: Contract Convergence
 
-Status: Preview.5 source/test complete.
+Status: Preview.5 source/test and assisted Live complete.
 
 Preview.5 separates canonical HE truth, current interaction capabilities, the
 Host-local binding authority and a finite bound-action consumer projection.
 Projection truncation is explicit and fail closed; common `entity_id` facts no
-longer depend on candidate materialization. Per-machine deployment, cold-load
-and exact-runtime regression are next.
+longer depend on candidate materialization. A source-free rest adapter now
+prevents purpose-specific completion witnesses from gating visible controls.
 
 ## C-2: Human Information Parity
 
@@ -25,6 +25,9 @@ Status: partial.
 Complete hover/focus/tooltip/scroll and native-page open/read/return. Keep hot
 observations compact, make all normal player-visible information reachable,
 and keep reads non-authorizing.
+
+The deterministic eager-read consumer adapter proves that a memoryless policy
+can aggregate one coherent decision bundle without redefining C.
 
 ## C-3: Host Neutrality
 

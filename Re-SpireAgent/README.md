@@ -19,9 +19,9 @@ npm run doctor
 ```
 
 Put the provider key only in `.env.local` or process environment. The default
-mode is `he_assisted`; set `SPIREAGENT_HE_MODE=he_pure` for A+C only. These are
-A composition modes and never alter C authority. `STS2_MCP_PROTOCOL`, when set,
-may only be `he`.
+mode is `he_pure` (A+C only). `SPIREAGENT_HE_MODE=he_assisted` is an explicit
+future D composition mode and never alters C authority. `STS2_MCP_PROTOCOL`,
+when set, may only be `he`.
 
 ## Check And Run
 
@@ -49,6 +49,11 @@ availability. It does not require V2 permission, trial or qualification.
 - `unknown` terminates and is never retried;
 - one run has one Gateway controller and one executor;
 - V3 is not a silent fallback.
+
+Consumers that cannot issue lazy reads may use the exported
+`prefetchHumanEnvironmentDecisionBundle` adapter to aggregate advertised reads
+for one snapshot. It validates snapshot/runtime/environment coherence and does
+not add facts or action authority.
 
 See [integration contract](docs/HUMAN_EQUIVALENT_INTEGRATION.md). Local
 `data/runs/` may contain provider output and must not be committed.

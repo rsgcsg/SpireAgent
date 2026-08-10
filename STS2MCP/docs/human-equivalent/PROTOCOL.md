@@ -42,6 +42,10 @@ authority. Counts, limit and deterministic ordering make loss auditable.
 
 `reads[]` advertises all bounded, non-authorizing information reads. Consumers
 send the opaque `read_id`; C rejects stale snapshots and arbitrary fields.
+Interactive consumers may read lazily. Memoryless consumers may prefetch and
+aggregate selected advertised reads, but every result must retain the same
+snapshot, runtime and environment identity; that aggregation is a downstream
+projection, not a different C ontology.
 
 ## Action And Receipt
 
