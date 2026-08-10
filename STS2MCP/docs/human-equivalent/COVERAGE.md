@@ -2,33 +2,35 @@
 
 ## Structured Core
 
-The Live host projects menu/run entry, combat cards/potions/end turn, map,
+The Live Host projects menu/run entry, combat cards/potions/end turn, map,
 event, reward/card reward, shop, rest, treasure, generated choices, combat
 hand/piles, upgrade/removal/transform/enchant/bundle selectors and game over.
-Current action targets are elements; actions are exact current affordances.
+Unknown business source does not suppress an exact current UI affordance.
 
-One-of-N, deck-card and combat-pile selectors retain source-free mechanics.
-Unknown business source does not suppress exact visible choices. STS2 owns all
-effects; C claims input delivery only.
+Preview.4 discovers player-visible referents from facts before affordances and
+expresses exact public subject/argument combinations. Source-free one-of-N,
+deck-card and combat-pile mechanics remain supported. STS2 owns all effects; C
+claims delivery only.
 
 ## Information
 
-Implemented: persistent run/player summary, versioned current Surface content,
-current target elements, state-bound run-deck/combat-pile/shop reads and linked
-card detail.
+Implemented: persistent run/player summary, revisioned current interaction
+content, visible/actionable referents, complete combat enemy context,
+state-bound run-deck/combat-pile/shop reads and current card detail through one
+advertised read route.
 
-Pending: complete non-actionable entity projection, hover/focus/tooltip/scroll,
-normal Agent native-page open/read/return and generated typed Surface SDKs.
+Pending: full projection of every context schema, hover/focus/tooltip/scroll,
+normal Agent native-page open/read/return and generated typed SDKs.
 
 ## Evidence
 
-`preview.2` has complete assisted and `he_pure` journeys, including final
-`run-20260809134724-5yfbuf`. `preview.3` has source, automated, exact loaded
-identity and strictly decoded read-only `main_menu` evidence on one local
-runtime. Input delivery and journey evidence remain pending.
+Preview.3 exact artifact `3a49b93c...` has broad `he_pure` mutation evidence,
+safe stale refusal, selector-loop failure evidence and a resumed completed-run
+boundary. Preview.4 has source and automated evidence only until cold-loaded.
+No Live evidence transfers across the breaking protocol revision.
 
 ## Unsupported
 
-Unmapped structured owner is visible unsupported. There is no arbitrary UI
-click/reflection, visual computer-use fallback, Headless host, Training adapter
-or arbitrary-version/Mod compatibility claim.
+Unmapped structured interaction is visible unsupported. There is no arbitrary
+click/reflection, visual computer-use fallback, Headless Host, Training adapter,
+cross-Host conformance or arbitrary-version/Mod compatibility claim.

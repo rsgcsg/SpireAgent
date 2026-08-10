@@ -4,12 +4,14 @@ import {
   decodeHumanCapabilities,
   decodeHumanControllerLeaseResponse,
   decodeHumanObservation,
+  decodeHumanRead,
   decodeHumanReceipt,
   type DecodedHumanPayload,
   type HumanEquivalentCapabilities,
   type HumanEquivalentClientRegistration,
   type HumanEquivalentControllerLeaseResponse,
   type HumanEquivalentObservation,
+  type HumanEnvironmentReadResponse,
   type HumanEquivalentReceipt
 } from "./humanEquivalentProtocol.js";
 
@@ -33,6 +35,12 @@ export class HumanEquivalentRestClient {
 
   async observation(): Promise<DecodedHumanPayload<HumanEquivalentObservation>> {
     return decodeHumanObservation(await this.get("/api/he/observation"));
+  }
+
+  async read(readId: string, expectedSnapshotId: string): Promise<DecodedHumanPayload<HumanEnvironmentReadResponse>> {
+    const encodedRead = encodeURIComponent(readId);
+    const encodedSnapshot = encodeURIComponent(expectedSnapshotId);
+    return decodeHumanRead(await this.get(`/api/he/reads/${encodedRead}?expected_snapshot_id=${encodedSnapshot}`));
   }
 
   async submit(input: {

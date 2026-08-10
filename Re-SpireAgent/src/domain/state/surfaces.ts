@@ -154,27 +154,26 @@ export interface HumanUiSurface {
   uiKind: string;
   stage: string;
   prompt?: string;
-  ownerId: string;
+  interactionId: string;
   contentSchema: string;
   content: JsonObject;
-  elements: Array<{
-    elementId: string;
+  referents: Array<{
+    referentId: string;
     role: string;
-    category: "entity" | "control";
+    kind: "entity" | "control";
     label?: string;
     visible: boolean;
-    enabled: boolean;
+    actionable: boolean;
     selected?: boolean;
     focused?: boolean;
-    observationBasis: "native_visible_entity" | "native_ui_actionability";
-    actions: string[];
+    observationBasis: "native_visible_fact" | "native_ui_actionability";
     propertiesSchema?: string;
     properties?: unknown;
   }>;
   reads: Array<{
     readId: string;
     kind: string;
-    targetElementId?: string;
+    targetReferentId?: string;
     contentSchema: string;
     visibilityBasis: string;
     orderingSemantics: string;
@@ -185,7 +184,8 @@ export interface HumanUiSurface {
     snapshotId: string;
     action: string;
     label: string;
-    targetElementId: string;
+    subjectRef?: string;
+    arguments: Array<{ role: string; referentId: string }>;
   }>;
 }
 

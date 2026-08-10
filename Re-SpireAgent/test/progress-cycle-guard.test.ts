@@ -94,17 +94,18 @@ function humanShopState(
       kind: "human_ui",
       uiKind,
       stage: "ready",
-      ownerId: uiKind === "shop_room" ? "room-1" : "screen-1",
+      interactionId: uiKind === "shop_room" ? "room-1" : "screen-1",
       contentSchema: `sts2.human-environment/surface/${uiKind}-1`,
       content: { uiKind, gold },
-      elements: [],
+      referents: [],
       reads: [],
       affordances: [{
         affordanceId,
         snapshotId: stateToken,
         action: verb,
         label: verb,
-        targetElementId: uiKind === "shop_room" ? "room-1" : "screen-1"
+        subjectRef: uiKind === "shop_room" ? "room-1" : "screen-1",
+        arguments: []
       }]
     }
   } as NormalizedCurrentState;

@@ -1,43 +1,43 @@
 # Human Environment Contract Implementation Plan
 
-Status: `preview.3` source/test/load/read-only complete; mutation, journey and information parity open
+Status: Preview.4 source/test complete; build/install/cold-load and Live pending
 
 Authority: [ADR-0008](decisions/ADR-0008-human-equivalent-ui-first-connector.md)
 
 ## Delivered Core
 
 ```text
-host observe -> snapshot/elements/affordances/reads
+Host observe -> snapshot/interaction/referents/affordances/reads
 -> consumer chooses opaque affordance
--> host revalidates exact local binding
+-> Host revalidates exact local binding
 -> input delivery -> receipt + successor
 ```
 
-Public C records have neutral host/game/session/controller/element/read types
-and no BridgeV2/ConnectorV3 import. Re strictly consumes `preview.3`; it does
-not accept preview.2 aliases or a silent fallback.
+Public records import no BridgeV2/ConnectorV3 types. Re strictly consumes
+Preview.4 without aliases or silent fallback. Observable referents are produced
+before affordance authority, and public subject/argument bindings never expose
+native operands.
 
 ## Automated Acceptance
 
-- strict schema rejects legacy fields, dangling action targets and dangling
-  read targets, unversioned extensible content and environment drift;
-- every affordance targets one current element;
-- unknown source does not gate exact current UI;
-- source-free selector mechanics remain covered;
-- exact operands never leave C;
-- Re stores current UI affordances in an HE-native domain type rather than the
-  historical Bridge legal-action model;
-- stale, duplicate request and unknown-no-retry tests remain active;
-- all Gateway and Re regression suites remain active;
-- boundary check prevents Bridge/V3 public DTOs and old HE wire fields.
+- strict schemas reject legacy fields, dangling referents, unversioned
+  extensible content and identity drift;
+- affordance interaction/subject/arguments bind the same current snapshot;
+- multi-enemy actions remain semantically distinguishable;
+- complete visible combat context reaches A rather than placeholder state;
+- unknown source does not gate current exact UI mechanics;
+- stale, duplicate-request and unknown-no-retry behavior remains active;
+- one state-bound advertised read route replaces split transport concepts;
+- boundary checks prevent V3 wire/default fallback and source authority.
 
-## Remaining Vertical Work
+## Remaining Work
 
-1. Short current-element/action/successor mutation smoke.
-2. One ordinary `he_pure` journey.
-3. Native hover/focus/tooltip/scroll/page read-return.
-4. Neutralize five V3-owned host adapter seams.
-5. Generate tagged Surface schemas/SDKs from `content_schema` revisions.
+1. Release build/install/cold-load Preview.4.
+2. Multi-enemy delivery and stale-read exact-runtime regression.
+3. One ordinary `he_pure` journey.
+4. Hover/focus/tooltip/scroll/native-page information parity.
+5. Neutralize the five real V3-owned Host adapter seams without wrappers.
+6. Add generated interaction schemas and a second-Host conformance probe.
 
-V3 remains explicit rollback only. No source-specific authority, reward,
-business Outcome or simulation lifecycle may be added to C.
+V3 remains explicit rollback only. Source authority, reward, business Outcome,
+simulation lifecycle and privileged scenario control may not enter C.

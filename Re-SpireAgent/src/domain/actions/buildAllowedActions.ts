@@ -122,7 +122,13 @@ function humanUiActions(state: NormalizedCurrentState, sourceStateHash: string):
     kind: affordance.action,
     label: affordance.label,
     description: `Current human UI: ${affordance.action}`,
-    entityBindings: [{ role: "target", entityId: affordance.targetElementId }],
+    entityBindings: [
+      ...(affordance.subjectRef ? [{ role: "subject", entityId: affordance.subjectRef }] : []),
+      ...affordance.arguments.map((argument) => ({
+        role: argument.role,
+        entityId: argument.referentId
+      }))
+    ],
     action: {
       kind: "human_ui_action",
       choiceId: affordance.affordanceId,

@@ -26,15 +26,15 @@ const SOURCE: AdapterDescriptor = {
 
 function snapshot(): JsonObject {
   return {
-    protocol_version: "1.0-preview.3",
-    schema: "sts2.human-environment/observation-1",
+    protocol_version: "1.0-preview.4",
+    schema: "sts2.human-environment/observation-2",
     snapshot_id: "state-he-1",
     sequence: 1,
     observed_at: "2026-08-04T00:00:00Z",
     status: "actionable",
-    owner: { owner_id: "screen-current", role: "generated_card_choice" },
     persistent: null,
-    surface: {
+    interaction: {
+      interaction_id: "screen-current",
       kind: "generated_card_choice",
       stage: "ready",
       prompt: "Choose a card",
@@ -44,21 +44,21 @@ function snapshot(): JsonObject {
         context: { kind: "event", name: "Unknown new event" }
       }
     },
-    elements: [{
-      element_id: "card-1",
+    referents: [{
+      referent_id: "card-1",
       role: "card",
-      category: "entity",
+      kind: "entity",
       label: "Visible card",
-      state: { visible: true, enabled: true, selected: false, observation_basis: "native_visible_entity" },
-      actions: ["select"],
-      properties_schema: "sts2.human-environment/element/card-1",
+      state: { visible: true, actionable: true, selected: false, observation_basis: "native_visible_fact" },
+      properties_schema: "sts2.human-environment/referent/card-1",
       properties: {}
     }],
     affordances: [{
       affordance_id: "affordance-card-1",
       action: "select",
-      target_element_id: "card-1",
-      owner_id: "screen-current",
+      interaction_id: "screen-current",
+      subject_ref: "card-1",
+      arguments: [],
       label: "Choose Visible card"
     }],
     reads: [],
@@ -70,10 +70,10 @@ function snapshot(): JsonObject {
 
 function capabilities(): JsonObject {
   return {
-    protocol_version: "1.0-preview.3",
-    observation_schema: "sts2.human-environment/observation-1",
+    protocol_version: "1.0-preview.4",
+    observation_schema: "sts2.human-environment/observation-2",
     action_schema: "sts2.human-environment/action-1",
-    receipt_schema: "sts2.human-environment/receipt-1",
+    receipt_schema: "sts2.human-environment/receipt-2",
     control_schema: "sts2.human-environment/control-1",
     status: "ready",
     host: { id: "sts2_human_environment", name: "STS2 Human Environment", version: "fixture", runtime_instance_id: "fixture-runtime", host_kind: "live_ui", implementation: { source_revision: "fixture", module_version_id: "fixture-mvid", artifact_sha256: "a".repeat(64) } },
@@ -96,23 +96,23 @@ function json(value: JsonObject, status = 200): Response {
 }
 
 describe("Human-Equivalent C", () => {
-  it("accepts omitted element state when selected and focused are not observed", () => {
+  it("accepts omitted referent state when selected and focused are not observed", () => {
     const current = snapshot();
-    const element = (current.elements as JsonObject[])[0]!;
-    const state = element.state as JsonObject;
+    const referent = (current.referents as JsonObject[])[0]!;
+    const state = referent.state as JsonObject;
     delete state.selected;
     delete state.focused;
 
-    expect(decodeHumanObservation(current).data.elements[0]).toMatchObject({
-      element_id: "card-1",
-      state: { visible: true, enabled: true }
+    expect(decodeHumanObservation(current).data.referents[0]).toMatchObject({
+      referent_id: "card-1",
+      state: { visible: true, actionable: true }
     });
   });
 
   it("accepts an unknown business source when current native UI is exact and operable", () => {
     const decoded = decodeHumanObservation(snapshot()).data;
     expect(decoded.affordances).toHaveLength(1);
-    expect(decoded.surface.content).not.toHaveProperty("source_kind");
+    expect(decoded.interaction.content).not.toHaveProperty("source_kind");
   });
 
   it("rejects D annotations in the pure C observation contract", () => {
@@ -120,28 +120,28 @@ describe("Human-Equivalent C", () => {
       .toThrow();
   });
 
-  it("rejects affordances and reads that do not bind a current element", () => {
+  it("rejects affordances and reads that do not bind a current referent", () => {
     const missingTarget = snapshot();
-    (missingTarget.affordances as JsonObject[])[0]!.target_element_id = "missing-element";
-    expect(() => decodeHumanObservation(missingTarget)).toThrow(/current element/u);
+    (missingTarget.affordances as JsonObject[])[0]!.subject_ref = "missing-referent";
+    expect(() => decodeHumanObservation(missingTarget)).toThrow(/current referent/u);
 
     const missingReadTarget = snapshot();
     missingReadTarget.reads = [{
       read_id: "read:surface_card:missing",
       kind: "surface_card",
-      target_element_id: "missing-element",
+      target_referent_id: "missing-referent",
       content_schema: "sts2.human-environment/read/surface_card-1",
       visibility_basis: "player_visible",
       snapshot_bound: true,
       ordering_semantics: "single_entity",
       hidden_by_policy: []
     }];
-    expect(() => decodeHumanObservation(missingReadTarget)).toThrow(/current element/u);
+    expect(() => decodeHumanObservation(missingReadTarget)).toThrow(/current referent/u);
   });
 
-  it("requires schemas for extensible element properties", () => {
+  it("requires schemas for extensible referent properties", () => {
     const unversioned = snapshot();
-    delete (unversioned.elements as JsonObject[])[0]!.properties_schema;
+    delete (unversioned.referents as JsonObject[])[0]!.properties_schema;
     expect(() => decodeHumanObservation(unversioned)).toThrow(/content schema/u);
   });
 
@@ -169,16 +169,78 @@ describe("Human-Equivalent C", () => {
     });
   });
 
+  it("preserves complete visible combat facts and distinguishes exact target referents", () => {
+    const current = snapshot();
+    const interaction = current.interaction as JsonObject;
+    interaction.kind = "combat_turn";
+    interaction.content_schema = "sts2.human-environment/surface/combat_turn-1";
+    interaction.content = {
+      surface: { kind: "combat_turn" },
+      context: {
+        kind: "combat",
+        encounter_type: "elite",
+        round: 3,
+        turn_owner: "player",
+        is_play_phase: true,
+        player: {
+          player_entity_id: "player-1",
+          block: 3,
+          energy: 2,
+          max_energy: 3,
+          hand: [],
+          draw_pile_count: 5,
+          discard_pile_count: 1,
+          exhaust_pile_count: 0,
+          statuses: [],
+          companions: [],
+          potion_states: [],
+          orbs: [],
+          orb_slots: 0
+        },
+        enemies: [
+          { entity_id: "enemy-1", definition_id: "LEFT", name: "Left enemy", hp: 11, max_hp: 20, block: 2, statuses: [], intents: [{ type: "Attack", label: "7" }] },
+          { entity_id: "enemy-2", definition_id: "RIGHT", name: "Right enemy", hp: 9, max_hp: 15, block: 0, statuses: [], intents: [{ type: "Defend" }] }
+        ]
+      }
+    };
+    current.referents = [
+      ...(current.referents as JsonObject[]),
+      { referent_id: "enemy-1", role: "enemy", kind: "entity", label: "Left enemy", state: { visible: true, actionable: true, observation_basis: "native_visible_fact" }, properties_schema: "sts2.human-environment/referent/enemy-1", properties: { hp: 11 } },
+      { referent_id: "enemy-2", role: "enemy", kind: "entity", label: "Right enemy", state: { visible: true, actionable: true, observation_basis: "native_visible_fact" }, properties_schema: "sts2.human-environment/referent/enemy-1", properties: { hp: 9 } }
+    ];
+    current.affordances = [
+      { affordance_id: "play-left", action: "play", interaction_id: "screen-current", subject_ref: "card-1", arguments: [{ role: "target", referent_id: "enemy-1" }], label: "Play Visible card -> Left enemy" },
+      { affordance_id: "play-right", action: "play", interaction_id: "screen-current", subject_ref: "card-1", arguments: [{ role: "target", referent_id: "enemy-2" }], label: "Play Visible card -> Right enemy" }
+    ];
+
+    const normalized = normalizeCurrentState(
+      wrapHumanEquivalentState({ snapshot: current }),
+      SOURCE,
+      "2026-08-04T00:00:00Z"
+    );
+    expect(normalized.currentState.context).toMatchObject({
+      kind: "combat",
+      encounterType: "elite",
+      round: 3,
+      enemies: [{ entityId: "enemy-1", name: "Left enemy" }, { entityId: "enemy-2", name: "Right enemy" }]
+    });
+    const actions = buildAllowedActions(normalized.currentState, normalized.stateHash);
+    expect(actions.map((action) => action.entityBindings)).toEqual([
+      [{ role: "subject", entityId: "card-1" }, { role: "target", entityId: "enemy-1" }],
+      [{ role: "subject", entityId: "card-1" }, { role: "target", entityId: "enemy-2" }]
+    ]);
+  });
+
   it("uses the Human-Equivalent control schema without a V3 wire dependency", () => {
     const registration = decodeHumanClientRegistration({
-      protocol_version: "1.0-preview.3",
+      protocol_version: "1.0-preview.4",
       schema: "sts2.human-environment/control-1",
       runtime_instance_id: "runtime-he",
       client: { client_session_id: "client-session", client_instance_id: "client-instance" },
       controller: null
     }).data;
     const lease = decodeHumanControllerLeaseResponse({
-      protocol_version: "1.0-preview.3",
+      protocol_version: "1.0-preview.4",
       schema: "sts2.human-environment/control-1",
       runtime_instance_id: "runtime-he",
       status: "controller_acquired",
@@ -239,7 +301,7 @@ describe("Human-Equivalent C", () => {
         if (url.endsWith("/api/he/clients/register")) {
           const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
           return json({
-            protocol_version: "1.0-preview.3",
+            protocol_version: "1.0-preview.4",
             schema: "sts2.human-environment/control-1",
             runtime_instance_id: "fixture-runtime",
             client: {
@@ -251,7 +313,7 @@ describe("Human-Equivalent C", () => {
         }
         if (url.endsWith("/api/he/controller/acquire")) {
           return json({
-            protocol_version: "1.0-preview.3",
+            protocol_version: "1.0-preview.4",
             schema: "sts2.human-environment/control-1",
             runtime_instance_id: "fixture-runtime",
             status: "controller_acquired",
@@ -272,14 +334,15 @@ describe("Human-Equivalent C", () => {
           const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
           submittedBody = body;
           return json({
-            protocol_version: "1.0-preview.3",
-            schema: "sts2.human-environment/receipt-1",
+            protocol_version: "1.0-preview.4",
+            schema: "sts2.human-environment/receipt-2",
             request_id: String(body.request_id),
             delivery: "applied",
             action: {
               affordance_id: "affordance-card-1",
               action: "select",
-              target_element_id: "card-1"
+              subject_ref: "card-1",
+              arguments: []
             },
             reason_code: null,
             detail: "native input delivered",

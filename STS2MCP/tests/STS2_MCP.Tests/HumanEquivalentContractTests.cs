@@ -34,7 +34,8 @@ public sealed class HumanEquivalentContractTests
         Assert.DoesNotContain("ParameterDomains", affordanceProperties);
         Assert.DoesNotContain("EntityBindings", affordanceProperties);
         Assert.Contains("SnapshotId", observationProperties);
-        Assert.Contains("Elements", observationProperties);
+        Assert.Contains("Referents", observationProperties);
+        Assert.Contains("Interaction", observationProperties);
         Assert.Contains("Reads", observationProperties);
         Assert.DoesNotContain("Bridge", observationProperties);
         Assert.DoesNotContain("Game", observationProperties);
@@ -67,10 +68,10 @@ public sealed class HumanEquivalentContractTests
     [Fact]
     public void BreakingWireCleanupUsesRevisionedSchemas()
     {
-        Assert.Equal("1.0-preview.3", HumanEquivalentContract.ProtocolVersion);
-        Assert.Equal("sts2.human-environment/observation-1", HumanEquivalentContract.ObservationSchema);
+        Assert.Equal("1.0-preview.4", HumanEquivalentContract.ProtocolVersion);
+        Assert.Equal("sts2.human-environment/observation-2", HumanEquivalentContract.ObservationSchema);
         Assert.Equal("sts2.human-environment/action-1", HumanEquivalentContract.ActionSchema);
-        Assert.Equal("sts2.human-environment/receipt-1", HumanEquivalentContract.ReceiptSchema);
+        Assert.Equal("sts2.human-environment/receipt-2", HumanEquivalentContract.ReceiptSchema);
     }
 
     [Fact]
@@ -84,7 +85,8 @@ public sealed class HumanEquivalentContractTests
             new HumanEquivalentActionSummary(
                 "affordance-a",
                 "activate",
-                "control-a"),
+                "control-a",
+                Array.Empty<HumanEnvironmentAffordanceArgument>()),
             "input_delivery_unknown",
             "Delivery may have occurred.",
             new HumanEquivalentRetryPolicy(false, "unknown_delivery_never_retry"),
@@ -98,11 +100,8 @@ public sealed class HumanEquivalentContractTests
     public void ReadOnlyDetailContractsAreHumanEquivalentAndStateBound()
     {
         Assert.Equal(
-            "sts2.human-environment/read-1",
-            HumanEquivalentContract.InspectionSchema);
-        Assert.Equal(
-            "sts2.human-environment/read-1",
-            HumanEquivalentContract.LinkedDetailSchema);
+            "sts2.human-environment/read-2",
+            HumanEquivalentContract.ReadSchema);
 
         var entry = new HumanEnvironmentReadOpportunity(
             "read:surface_card:card-a",

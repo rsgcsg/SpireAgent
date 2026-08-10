@@ -11,14 +11,13 @@ namespace STS2_MCP.HumanEquivalent.Protocol;
 /// </summary>
 public static class HumanEquivalentContract
 {
-    public const string ProtocolVersion = "1.0-preview.3";
+    public const string ProtocolVersion = "1.0-preview.4";
     public const string GatewayId = "sts2_human_environment";
     public const string GatewayName = "STS2 Human Environment";
-    public const string ObservationSchema = "sts2.human-environment/observation-1";
+    public const string ObservationSchema = "sts2.human-environment/observation-2";
     public const string ActionSchema = "sts2.human-environment/action-1";
-    public const string ReceiptSchema = "sts2.human-environment/receipt-1";
-    public const string InspectionSchema = "sts2.human-environment/read-1";
-    public const string LinkedDetailSchema = "sts2.human-environment/read-1";
+    public const string ReceiptSchema = "sts2.human-environment/receipt-2";
+    public const string ReadSchema = "sts2.human-environment/read-2";
     public const string ControlSchema = "sts2.human-environment/control-1";
 }
 
@@ -136,11 +135,13 @@ public sealed record HumanEquivalentControllerLeaseResponse(
     HumanEnvironmentClient? Client,
     HumanEnvironmentControllerLease? Controller);
 
-public sealed record HumanEquivalentOwner(
-    string OwnerId,
-    string Role);
-
-public sealed record HumanEquivalentUiSurface(
+/// <summary>
+/// The one current human interaction scope. A Live host normally derives this
+/// from the active UI owner; a Headless host may derive it from a decision
+/// point without fabricating a UI node or control.
+/// </summary>
+public sealed record HumanEnvironmentInteraction(
+    string InteractionId,
     string Kind,
     string Stage,
     string? Prompt,
@@ -151,38 +152,43 @@ public sealed record HumanEnvironmentContent(
     string ContentSchema,
     JsonNode Content);
 
-public sealed record HumanEnvironmentElementState(
+public sealed record HumanEnvironmentReferentState(
     bool Visible,
-    bool Enabled,
+    bool Actionable,
     bool? Selected,
     bool? Focused,
     string ObservationBasis);
 
 /// <summary>
-/// A stable, player-visible object or control. Affordances target element IDs;
-/// exact native operands remain private to the host implementation.
+/// A stable player-visible object or control in the current snapshot. This is
+/// an information identity, not an authorization object. Exact native operands
+/// remain private to the host implementation.
 /// </summary>
-public sealed record HumanEnvironmentElement(
-    string ElementId,
+public sealed record HumanEnvironmentReferent(
+    string ReferentId,
     string Role,
-    string Category,
+    string Kind,
     string? Label,
-    HumanEnvironmentElementState State,
-    IReadOnlyList<string> Actions,
+    HumanEnvironmentReferentState State,
     string? PropertiesSchema,
     JsonNode? Properties);
+
+public sealed record HumanEnvironmentAffordanceArgument(
+    string Role,
+    string ReferentId);
 
 public sealed record HumanEquivalentAffordance(
     string AffordanceId,
     string Action,
-    string TargetElementId,
-    string OwnerId,
+    string InteractionId,
+    string? SubjectRef,
+    IReadOnlyList<HumanEnvironmentAffordanceArgument> Arguments,
     string Label);
 
 public sealed record HumanEnvironmentReadOpportunity(
     string ReadId,
     string Kind,
-    string? TargetElementId,
+    string? TargetReferentId,
     string ContentSchema,
     string VisibilityBasis,
     bool SnapshotBound,
@@ -203,17 +209,16 @@ public sealed record HumanEquivalentObservationResponse(
     long Sequence,
     DateTimeOffset ObservedAt,
     string Status,
-    HumanEquivalentOwner Owner,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] HumanEnvironmentContent? Persistent,
-    HumanEquivalentUiSurface Surface,
-    IReadOnlyList<HumanEnvironmentElement> Elements,
+    HumanEnvironmentInteraction Interaction,
+    IReadOnlyList<HumanEnvironmentReferent> Referents,
     IReadOnlyList<HumanEquivalentAffordance> Affordances,
     IReadOnlyList<HumanEnvironmentReadOpportunity> Reads,
     HumanEnvironmentCompleteness Completeness,
     HumanEnvironmentSessionReference Session,
     HumanEnvironmentObservationPolicy ObservationPolicy);
 
-public sealed record HumanEquivalentInspectionResponse(
+public sealed record HumanEnvironmentReadResponse(
     string ProtocolVersion,
     string Schema,
     string ReadId,
@@ -221,25 +226,12 @@ public sealed record HumanEquivalentInspectionResponse(
     string ObservedSnapshotId,
     DateTimeOffset ObservedAt,
     string Kind,
-    string VisibilityClass,
+    string? TargetReferentId,
+    string VisibilityBasis,
     string OrderingSemantics,
     string ContentSchema,
     JsonNode Content,
     HumanEnvironmentCompleteness Completeness,
-    HumanEnvironmentSessionReference Session,
-    HumanEnvironmentObservationPolicy ObservationPolicy);
-
-public sealed record HumanEquivalentLinkedDetailResponse(
-    string ProtocolVersion,
-    string Schema,
-    string ReadId,
-    string ExpectedSnapshotId,
-    string ObservedSnapshotId,
-    DateTimeOffset ObservedAt,
-    string Kind,
-    string ElementId,
-    string ContentSchema,
-    JsonNode Content,
     HumanEnvironmentSessionReference Session,
     HumanEnvironmentObservationPolicy ObservationPolicy);
 
@@ -254,7 +246,8 @@ public sealed record HumanEquivalentActionRequest(
 public sealed record HumanEquivalentActionSummary(
     string AffordanceId,
     string Action,
-    string TargetElementId);
+    string? SubjectRef,
+    IReadOnlyList<HumanEnvironmentAffordanceArgument> Arguments);
 
 public sealed record HumanEquivalentRetryPolicy(
     bool Allowed,

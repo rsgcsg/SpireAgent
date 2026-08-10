@@ -1,46 +1,52 @@
 # Human Environment Contract Roadmap
 
-## C-0: Fair-Player Execution Core
+## C-0: Execution Core
 
-Status: source/test/build/install/load/read-only complete on one machine;
-`preview.3` mutation and journey evidence pending.
+Status: architecture and Preview.3 Live behavior proven; Preview.4 exact-runtime
+evidence pending.
 
-Snapshot/owner/element binding, one controller, execute-time revalidation,
-native delivery, idempotency, stale refusal, unknown-no-retry and successor.
+Retain snapshot binding, current interaction, one controller, execute-time
+validation, idempotency, delivery receipts, unknown-no-retry and successor.
 
-## C-1: Contract And Ownership Convergence
+## C-1: Contract Convergence
 
-Status: public contract complete; Live host ownership migration ongoing.
+Status: Preview.4 source/test complete.
 
-`preview.3` removes Bridge/V3 public DTOs, unifies entity/control targets as
-elements, unifies read opportunities and separates session identity from the
-hot path. Remaining work is five V3 adapter-library seams and generated typed
-Surface SDKs, not a new authority model.
+Preview.4 separates interaction, referents and affordance arguments; derives
+observable referents before authority; unifies read discovery and transport;
+and preserves complete visible combat context in Re. Per-machine deployment,
+cold-load and a targeted multi-enemy regression are next; repository source
+does not claim a portable installed identity.
 
 ## C-2: Human Information Parity
 
 Status: partial.
 
-Complete truthful hover/focus/tooltip/scroll and native-page open/read/return.
-Keep semantic accessibility default and all read operations non-authorizing.
+Complete hover/focus/tooltip/scroll and native-page open/read/return. Keep hot
+observations compact, make all normal player-visible information reachable,
+and keep reads non-authorizing.
 
-## C-3: Host Conformance
+## C-3: Host Neutrality
 
-Status: design boundary only; not implemented.
+Status: design only.
 
-After a real Headless host exists, verify equivalent fair-player snapshots,
-affordances, stale behavior and hidden-information policy against Live. Host
-reset/seed/fork remain outside C.
+Implement a second fair-player Host before freezing 1.0. Compare snapshots,
+referents, affordances, reads, stale behavior and hidden-information policy.
+Keep reset/seed/clone/fork/fast-step outside C.
+
+## C-4: Internal Ownership
+
+Status: five V3 adapter-library seams remain.
+
+Move real native UI implementation into neutral ownership when touched. Do not
+add shims, dual executors or a second authority merely to improve directory
+names.
 
 ## A Mainline
 
-Status: ready after one `preview.3` input regression and ordinary journey.
+After Preview.4 target-selection and read regressions, shift primary effort to
+A strategy, planning and selector recovery. The latest Live failures were A/Re
+cycle-supervision failures, not C delivery uncertainty.
 
-Improve decision-lossless projection, transition context, planning, recovery
-and long-run quality. Do not move native legality or completion into A.
-
-## Separate Programs
-
-Training/RL adapters, MCTS/search adapters, replay datasets, vector hosts,
-learning, arbitrary Mod compatibility, Companion and Workshop are not C freeze
-work. They may consume C without changing its fact or action authority.
+Training, Search, Headless lifecycle, learning and arbitrary Mod support are
+separate programs that may consume C without changing its authority.

@@ -1,43 +1,35 @@
-# Re Human-Equivalent Integration
+# Re Human Environment Integration
 
-Re strictly accepts `1.0-preview.3`.
+Re strictly accepts `1.0-preview.4`.
 
-The adapter reads `/api/he/observation`, verifies runtime/MVID/SHA/Modset
-and environment-fingerprint coherence, then normalizes versioned persistent,
-Surface, element, read and affordance content. It projects a finite
-choice list whose model-visible kind is the generic UI verb. The model receives
-only opaque IDs; exact native operands never leave C.
-
-The live chain is:
+The adapter reads `/api/he/observation`, verifies exact runtime/environment
+coherence, and normalizes persistent facts, one interaction, referents,
+affordances and read opportunities. It projects finite choices from public
+subject/argument referents; exact native operands never leave C.
 
 ```text
-C Human Environment snapshot
--> A normalization and transition context
+C observation
+-> A strict decode and consumer projection
 -> finite model choices
 -> LLM selects one opaque ID
 -> A submits snapshot ID + affordance ID
--> C revalidates and delivers native UI input
+-> C revalidates and delivers
 -> delivery receipt + successor
--> A successor readiness and flow interpretation
+-> A interprets readiness and progress
 ```
 
-`applied` is adapter-confirmed delivery. `SuccessorWatcher` uses the receipt
-successor when present and otherwise reads C until a repeatable decision
-checkpoint. A readiness timeout becomes `executed_checkpoint_pending`; it does
-not overwrite delivery with a business failure. `not_applied` requires a fresh
-snapshot and `unknown` stops without retry.
+Preview.4 projects complete visible combat enemy/status/intent context rather
+than replacing it with placeholders. A targeted action includes a `subject`
+binding and role-labelled argument bindings, so equal UI verbs against distinct
+targets remain distinguishable to the model.
 
-`SPIREAGENT_HE_MODE=he_pure|he_assisted` is an A composition setting, not a C
-mode. Both modes consume the same pure C truth and affordance contract. Pure
-uses A+C only. Assisted may add separately supplied D hints when a D provider
-exists; this repository currently supplies none by default. D cannot authorize
-or execute.
+`applied` is delivery-authoritative. Successor readiness remains A's concern.
+`not_applied` requires a fresh snapshot; `unknown` stops without retry.
 
-V3 is not a fallback. The old V3 Re client/executor is deleted; retained V3
-schema/normalization code exists only for historical replay and comparison.
+`SPIREAGENT_HE_MODE=he_pure|he_assisted` is an A composition setting. Both use
+the same pure C contract. Assisted may add separately supplied D annotations;
+D cannot add, remove or authorize an affordance.
 
-The Live host reports implementation SHA/MVID in optional host implementation
-metadata. A future Headless/replay/test host is not required to invent .NET
-artifact fields, but every host must provide a runtime instance and exact
-environment fingerprint. Re rejects either identity drifting during a coherent
-read.
+V3 is not a fallback. Retained V3 protocol/normalization is historical replay
+support only. The normal client also exposes the unified, advertised
+`/api/he/reads/{read_id}` path for state-bound information retrieval.

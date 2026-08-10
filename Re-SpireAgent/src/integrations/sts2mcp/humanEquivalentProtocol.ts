@@ -2,7 +2,7 @@ import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 import { sharedVisibleStateSchema } from "./gatewayVisibleStateProtocol.js";
 
-export const SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL = "1.0-preview.3" as const;
+export const SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL = "1.0-preview.4" as const;
 
 const hostSchema = z.object({
   id: z.string().min(1),
@@ -83,36 +83,39 @@ const actionVerbSchema = z.enum([
 const affordanceSchema = z.object({
   affordance_id: z.string().min(1),
   action: actionVerbSchema,
-  target_element_id: z.string().min(1),
-  owner_id: z.string().min(1),
+  interaction_id: z.string().min(1),
+  subject_ref: z.string().min(1).nullable().optional(),
+  arguments: z.array(z.object({
+    role: z.string().min(1),
+    referent_id: z.string().min(1)
+  }).strict()),
   label: z.string().min(1)
 }).strict();
 
-const elementSchema = z.object({
-  element_id: z.string().min(1),
+const referentSchema = z.object({
+  referent_id: z.string().min(1),
   role: z.string().min(1),
-  category: z.enum(["entity", "control"]),
+  kind: z.enum(["entity", "control"]),
   label: z.string().nullable().optional(),
   state: z.object({
     visible: z.boolean(),
-    enabled: z.boolean(),
+    actionable: z.boolean(),
     selected: z.boolean().nullable().optional(),
     focused: z.boolean().nullable().optional(),
-    observation_basis: z.enum(["native_visible_entity", "native_ui_actionability"])
+    observation_basis: z.enum(["native_visible_fact", "native_ui_actionability"])
   }).strict(),
-  actions: z.array(actionVerbSchema),
-  properties_schema: z.string().regex(/^sts2\.human-environment\/element\/[a-z0-9_]+-1$/u).nullable().optional(),
+  properties_schema: z.string().regex(/^sts2\.human-environment\/referent\/[a-z0-9_]+-1$/u).nullable().optional(),
   properties: z.unknown().nullable().optional()
 }).strict().superRefine((value, context) => {
   if (value.properties != null && !value.properties_schema) {
-    context.addIssue({ code: z.ZodIssueCode.custom, message: "element properties require a content schema" });
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "referent properties require a content schema" });
   }
 });
 
 const readSchema = z.object({
   read_id: z.string().min(1),
   kind: z.string().min(1),
-  target_element_id: z.string().nullable().optional(),
+  target_referent_id: z.string().nullable().optional(),
   content_schema: z.string().regex(/^sts2\.human-environment\/read\/[a-z0-9_]+-1$/u),
   visibility_basis: z.string().min(1),
   snapshot_bound: z.literal(true),
@@ -122,24 +125,24 @@ const readSchema = z.object({
 
 const observationSchema: z.ZodTypeAny = z.object({
   protocol_version: z.literal(SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL),
-  schema: z.literal("sts2.human-environment/observation-1"),
+  schema: z.literal("sts2.human-environment/observation-2"),
   snapshot_id: z.string().min(1),
   sequence: z.number().int().positive(),
   observed_at: z.string().min(1),
   status: z.enum(["actionable", "visible_unsupported", "settling", "observed"]),
-  owner: z.object({ owner_id: z.string().min(1), role: z.string().min(1) }).strict(),
   persistent: z.object({
     content_schema: z.literal("sts2.human-environment/persistent/run-player-1"),
     content: sharedVisibleStateSchema
   }).strict().nullable(),
-  surface: z.object({
+  interaction: z.object({
+    interaction_id: z.string().min(1),
     kind: z.string().min(1),
     stage: z.string().min(1),
     prompt: z.string().nullable().optional(),
     content_schema: z.string().regex(/^sts2\.human-environment\/surface\/[a-z0-9_]+-1$/u),
     content: z.record(z.unknown())
   }).strict(),
-  elements: z.array(elementSchema),
+  referents: z.array(referentSchema),
   affordances: z.array(affordanceSchema),
   reads: z.array(readSchema),
   completeness: z.object({
@@ -158,29 +161,32 @@ const observationSchema: z.ZodTypeAny = z.object({
   }).strict()
 }).strict().superRefine((value, context) => {
   const affordanceIds = value.affordances.map((item) => item.affordance_id);
-  const elementIds = new Set(value.elements.map((item) => item.element_id));
+  const referentIds = new Set(value.referents.map((item) => item.referent_id));
   if (new Set(affordanceIds).size !== affordanceIds.length) {
     context.addIssue({ code: z.ZodIssueCode.custom, message: "affordance ids must be unique" });
   }
-  if (elementIds.size !== value.elements.length) {
-    context.addIssue({ code: z.ZodIssueCode.custom, message: "element ids must be unique" });
+  if (referentIds.size !== value.referents.length) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "referent ids must be unique" });
   }
-  if (value.affordances.some((item) => item.owner_id !== value.owner.owner_id)) {
-    context.addIssue({ code: z.ZodIssueCode.custom, message: "affordance owner must match current UI owner" });
+  if (value.affordances.some((item) => item.interaction_id !== value.interaction.interaction_id)) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "affordance interaction must match the current interaction" });
   }
-  if (value.affordances.some((item) => !elementIds.has(item.target_element_id))) {
-    context.addIssue({ code: z.ZodIssueCode.custom, message: "every affordance target must be a current element" });
+  if (value.affordances.some((item) => item.subject_ref && !referentIds.has(item.subject_ref))) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "every affordance subject must be a current referent" });
   }
-  if (value.reads.some((item) => item.target_element_id && !elementIds.has(item.target_element_id))) {
-    context.addIssue({ code: z.ZodIssueCode.custom, message: "every targeted read must reference a current element" });
+  if (value.affordances.some((item) => item.arguments.some((argument) => !referentIds.has(argument.referent_id)))) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "every affordance argument must be a current referent" });
+  }
+  if (value.reads.some((item) => item.target_referent_id && !referentIds.has(item.target_referent_id))) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "every targeted read must reference a current referent" });
   }
 });
 
 const capabilitiesSchema = z.object({
   protocol_version: z.literal(SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL),
-  observation_schema: z.literal("sts2.human-environment/observation-1"),
+  observation_schema: z.literal("sts2.human-environment/observation-2"),
   action_schema: z.literal("sts2.human-environment/action-1"),
-  receipt_schema: z.literal("sts2.human-environment/receipt-1"),
+  receipt_schema: z.literal("sts2.human-environment/receipt-2"),
   control_schema: z.literal("sts2.human-environment/control-1"),
   status: z.string().min(1),
   host: hostSchema,
@@ -203,11 +209,14 @@ const attributionSchema = z.object({
 
 const receiptSchema: z.ZodTypeAny = z.object({
   protocol_version: z.literal(SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL),
-  schema: z.literal("sts2.human-environment/receipt-1"),
+  schema: z.literal("sts2.human-environment/receipt-2"),
   request_id: z.string().min(1),
   delivery: z.enum(["applied", "not_applied", "unknown"]),
   action: z.object({
-    affordance_id: z.string(), action: actionVerbSchema, target_element_id: z.string()
+    affordance_id: z.string(),
+    action: actionVerbSchema,
+    subject_ref: z.string().min(1).nullable().optional(),
+    arguments: z.array(z.object({ role: z.string().min(1), referent_id: z.string().min(1) }).strict())
   }).strict(),
   reason_code: z.string().nullable().optional(),
   detail: z.string().nullable().optional(),
@@ -220,31 +229,61 @@ const receiptSchema: z.ZodTypeAny = z.object({
   }
 });
 
+const readResponseSchema = z.object({
+  protocol_version: z.literal(SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL),
+  schema: z.literal("sts2.human-environment/read-2"),
+  read_id: z.string().min(1),
+  expected_snapshot_id: z.string().min(1),
+  observed_snapshot_id: z.string().min(1),
+  observed_at: z.string().min(1),
+  kind: z.string().min(1),
+  target_referent_id: z.string().min(1).nullable().optional(),
+  visibility_basis: z.string().min(1),
+  ordering_semantics: z.string().min(1),
+  content_schema: z.string().regex(/^sts2\.human-environment\/read\/[a-z0-9_]+-1$/u),
+  content: z.unknown(),
+  completeness: z.object({
+    status: z.enum(["complete", "partial", "visible_unmapped", "unknown"]),
+    visible_information: z.string().min(1),
+    interaction_discovery: z.string().min(1),
+    missing: z.array(z.string()),
+    hidden_by_policy: z.array(z.string())
+  }).strict(),
+  session: sessionSchema,
+  observation_policy: z.object({
+    id: z.string().min(1),
+    scope: z.string().min(1),
+    includes_hidden_information: z.literal(false),
+    unknown_field_behavior: z.string().min(1)
+  }).strict()
+}).strict();
+
 export type HumanActionVerb = z.infer<typeof actionVerbSchema>;
 export type HumanEnvironmentHostIdentity = z.infer<typeof hostSchema>;
 export type HumanEquivalentGameIdentity = z.infer<typeof gameSchema>;
-export type HumanEnvironmentElement = z.infer<typeof elementSchema>;
+export type HumanEnvironmentReferent = z.infer<typeof referentSchema>;
 export type HumanEnvironmentRead = z.infer<typeof readSchema>;
+export type HumanEnvironmentAffordanceArgument = z.infer<typeof affordanceSchema>["arguments"][number];
 
 export interface HumanEquivalentAffordance {
   affordance_id: string;
   action: HumanActionVerb;
-  target_element_id: string;
-  owner_id: string;
+  interaction_id: string;
+  subject_ref?: string | null;
+  arguments: HumanEnvironmentAffordanceArgument[];
   label: string;
 }
 
 export interface HumanEquivalentObservation {
   protocol_version: typeof SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL;
-  schema: "sts2.human-environment/observation-1";
+  schema: "sts2.human-environment/observation-2";
   snapshot_id: string;
   sequence: number;
   observed_at: string;
   status: "actionable" | "visible_unsupported" | "settling" | "observed";
-  owner: { owner_id: string; role: string };
   persistent: { content_schema: "sts2.human-environment/persistent/run-player-1"; content: unknown } | null;
-  surface: { kind: string; stage: string; prompt?: string | null; content_schema: string; content: Record<string, unknown> };
-  elements: HumanEnvironmentElement[];
+  interaction: { interaction_id: string; kind: string; stage: string; prompt?: string | null; content_schema: string; content: Record<string, unknown> };
+  referents: HumanEnvironmentReferent[];
   affordances: HumanEquivalentAffordance[];
   reads: HumanEnvironmentRead[];
   completeness: { status: "complete" | "partial" | "visible_unmapped" | "unknown"; visible_information: string; interaction_discovery: string; missing: string[]; hidden_by_policy: string[] };
@@ -254,9 +293,9 @@ export interface HumanEquivalentObservation {
 
 export interface HumanEquivalentCapabilities {
   protocol_version: typeof SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL;
-  observation_schema: "sts2.human-environment/observation-1";
+  observation_schema: "sts2.human-environment/observation-2";
   action_schema: "sts2.human-environment/action-1";
-  receipt_schema: "sts2.human-environment/receipt-1";
+  receipt_schema: "sts2.human-environment/receipt-2";
   control_schema: "sts2.human-environment/control-1";
   status: string;
   host: HumanEnvironmentHostIdentity;
@@ -272,16 +311,18 @@ export interface HumanEquivalentCapabilities {
 
 export interface HumanEquivalentReceipt {
   protocol_version: typeof SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL;
-  schema: "sts2.human-environment/receipt-1";
+  schema: "sts2.human-environment/receipt-2";
   request_id: string;
   delivery: "applied" | "not_applied" | "unknown";
-  action: { affordance_id: string; action: HumanActionVerb; target_element_id: string };
+  action: { affordance_id: string; action: HumanActionVerb; subject_ref?: string | null; arguments: HumanEnvironmentAffordanceArgument[] };
   reason_code?: string | null;
   detail?: string | null;
   retry: { allowed: boolean; reason: string };
   successor: HumanEquivalentObservation | null;
   attribution?: { runtime_instance_id: string; client_session_id: string; client_instance_id: string; product_id: string; product_name: string; product_version: string; controller_lease_id: string; controller_generation: number } | null;
 }
+
+export type HumanEnvironmentReadResponse = z.infer<typeof readResponseSchema>;
 
 export interface HumanEquivalentClientRegistration {
   protocol_version: typeof SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL;
@@ -319,6 +360,9 @@ export function decodeHumanObservation(value: unknown): DecodedHumanPayload<Huma
 }
 export function decodeHumanReceipt(value: unknown): DecodedHumanPayload<HumanEquivalentReceipt> {
   return decode<HumanEquivalentReceipt>(value, receiptSchema, "Human Environment receipt");
+}
+export function decodeHumanRead(value: unknown): DecodedHumanPayload<HumanEnvironmentReadResponse> {
+  return decode<HumanEnvironmentReadResponse>(value, readResponseSchema, "Human Environment read");
 }
 export function decodeHumanClientRegistration(value: unknown): DecodedHumanPayload<HumanEquivalentClientRegistration> {
   return decode<HumanEquivalentClientRegistration>(value, clientRegistrationSchema, "Human Environment client registration");

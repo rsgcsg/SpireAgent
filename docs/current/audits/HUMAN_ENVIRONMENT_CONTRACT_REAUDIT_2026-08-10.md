@@ -1,5 +1,8 @@
 # Human Environment Contract Reaudit - 2026-08-10
 
+Status: historical Preview.3 input. Superseded for current protocol truth by
+[Human Environment Interface Synthesis And Preview.4](HUMAN_ENVIRONMENT_INTERFACE_SYNTHESIS_AND_PREVIEW4_2026-08-10.md).
+
 Baseline: `aa68544c2d75e03233c0c7ecc50e1c194958b82a`
 
 ## Verdict

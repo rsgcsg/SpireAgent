@@ -23,13 +23,8 @@ internal sealed record HumanEquivalentNativeBinding(
     ConnectorV3BoundCommand Command,
     IReadOnlyDictionary<string, string> Parameters);
 
-internal sealed record HumanEquivalentInspectionReadResult(
-    HumanEquivalentInspectionResponse? Inspection,
-    string? ErrorCode,
-    string? Detail);
-
-internal sealed record HumanEquivalentLinkedDetailReadResult(
-    HumanEquivalentLinkedDetailResponse? LinkedDetail,
+internal sealed record HumanEnvironmentReadResult(
+    HumanEnvironmentReadResponse? Read,
     string? ErrorCode,
     string? Detail);
 
@@ -98,7 +93,8 @@ internal static partial class HumanEquivalentRuntime
                 requestId,
                 request.AffordanceId ?? "invalid",
                 "activate",
-                "invalid",
+                null,
+                Array.Empty<HumanEnvironmentAffordanceArgument>(),
                 "not_applied",
                 "not_applied",
                 "invalid_request_id",
@@ -126,7 +122,8 @@ internal static partial class HumanEquivalentRuntime
                     requestId,
                     request.AffordanceId ?? "invalid",
                     "activate",
-                    "invalid",
+                    null,
+                    Array.Empty<HumanEnvironmentAffordanceArgument>(),
                     "not_applied",
                     "not_applied",
                     "request_id_conflict",
@@ -149,7 +146,9 @@ internal static partial class HumanEquivalentRuntime
             parameters = binding?.Parameters
                 ?? new Dictionary<string, string>(StringComparer.Ordinal);
             string action = affordance?.Action ?? "activate";
-            string targetId = affordance?.TargetElementId ?? "invalid";
+            string? subjectRef = affordance?.SubjectRef;
+            IReadOnlyList<HumanEnvironmentAffordanceArgument> arguments =
+                affordance?.Arguments ?? Array.Empty<HumanEnvironmentAffordanceArgument>();
 
             HumanRequestFingerprints[requestId] = fingerprint;
             HumanEquivalentActionReceipt Fail(string code, string detail)
@@ -158,7 +157,8 @@ internal static partial class HumanEquivalentRuntime
                     requestId,
                     affordanceId,
                     action,
-                    targetId,
+                    subjectRef,
+                    arguments,
                     "not_applied",
                     "not_applied",
                     code,
@@ -201,7 +201,8 @@ internal static partial class HumanEquivalentRuntime
                     requestId,
                     affordanceId,
                     action,
-                    targetId,
+                    subjectRef,
+                    arguments,
                     "unknown",
                     "unknown",
                     "input_delivery_unknown",
@@ -232,7 +233,8 @@ internal static partial class HumanEquivalentRuntime
                 requestId,
                 affordanceId,
                 action,
-                targetId,
+                subjectRef,
+                arguments,
                 "applied",
                 "applied",
                 successor == null ? "successor_observation_unavailable" : null,
@@ -249,8 +251,8 @@ internal static partial class HumanEquivalentRuntime
             ? receipt
             : null;
 
-    public static HumanEquivalentInspectionReadResult InspectHumanEquivalent(
-        string kind,
+    public static HumanEnvironmentReadResult ReadHumanEquivalent(
+        string readId,
         string expectedSnapshotId)
     {
         HumanEquivalentRuntimeSnapshot snapshot =
@@ -258,46 +260,43 @@ internal static partial class HumanEquivalentRuntime
         HumanEquivalentObservationResponse observation = snapshot.Observation;
         if (!string.Equals(observation.SnapshotId, expectedSnapshotId, StringComparison.Ordinal))
         {
-            return new HumanEquivalentInspectionReadResult(
+            return new HumanEnvironmentReadResult(
                 null,
                 "stale_state",
                 "The expected snapshot is no longer current; obtain a fresh Human Environment observation.");
         }
-        if (!observation.Reads.Any(entry =>
-                string.Equals(entry.Kind, kind, StringComparison.Ordinal)
-                && entry.TargetElementId == null))
+        HumanEnvironmentReadOpportunity? opportunity = observation.Reads.SingleOrDefault(entry =>
+            string.Equals(entry.ReadId, readId, StringComparison.Ordinal));
+        if (opportunity == null)
         {
-            return new HumanEquivalentInspectionReadResult(
+            return new HumanEnvironmentReadResult(
                 null,
-                "inspection_not_available",
-                "This read is not in the current player-visible inspection catalog.");
+                "read_not_available",
+                "This read is not in the current player-visible read catalog.");
         }
 
+        if (opportunity.TargetReferentId != null)
+            return ReadLinkedHumanDetail(snapshot, opportunity, expectedSnapshotId);
+
         BridgeInspectionBuildResult built = BridgeInspectionBuilder.Build(
-            kind,
+            opportunity.Kind,
             snapshot.Draft.Context,
             Entities);
         if (built.Draft == null)
-            return new HumanEquivalentInspectionReadResult(null, built.ErrorCode, built.Detail);
+            return new HumanEnvironmentReadResult(null, built.ErrorCode, built.Detail);
 
         BridgeInspectionDraft draft = built.Draft;
-        string inspectionId = "heinspection_" + BridgeHash.Object(new
-        {
-            observation.SnapshotId,
-            draft.Kind,
-            draft.Content,
-            draft.Completeness
-        })[..20];
-        return new HumanEquivalentInspectionReadResult(
-            new HumanEquivalentInspectionResponse(
+        return new HumanEnvironmentReadResult(
+            new HumanEnvironmentReadResponse(
                 HumanEquivalentContract.ProtocolVersion,
-                HumanEquivalentContract.InspectionSchema,
-                inspectionId,
+                HumanEquivalentContract.ReadSchema,
+                readId,
                 expectedSnapshotId,
                 observation.SnapshotId,
                 DateTimeOffset.UtcNow,
                 draft.Kind,
-                draft.VisibilityClass,
+                null,
+                opportunity.VisibilityBasis,
                 draft.OrderingSemantics,
                 ReadContentSchema(draft.Kind),
                 JsonSerializer.SerializeToNode(draft.Content, draft.Content.GetType(), McpMod._jsonOptions) ?? new JsonObject(),
@@ -308,60 +307,54 @@ internal static partial class HumanEquivalentRuntime
             null);
     }
 
-    public static HumanEquivalentLinkedDetailReadResult ReadHumanEquivalentLinkedDetail(
-        string entityId,
+    private static HumanEnvironmentReadResult ReadLinkedHumanDetail(
+        HumanEquivalentRuntimeSnapshot snapshot,
+        HumanEnvironmentReadOpportunity opportunity,
         string expectedSnapshotId)
     {
-        HumanEquivalentRuntimeSnapshot snapshot =
-            BuildHumanEquivalentSnapshot();
         HumanEquivalentObservationResponse observation = snapshot.Observation;
-        if (!string.Equals(observation.SnapshotId, expectedSnapshotId, StringComparison.Ordinal))
+        if (!string.Equals(opportunity.Kind, "surface_card", StringComparison.Ordinal)
+            || opportunity.TargetReferentId == null)
         {
-            return new HumanEquivalentLinkedDetailReadResult(
+            return new HumanEnvironmentReadResult(
                 null,
-                "stale_state",
-                "The expected snapshot is no longer current; obtain a fresh Human Environment observation.");
+                "read_kind_not_implemented",
+                "This current read kind has no bounded Live host implementation.");
         }
-        if (!observation.Reads.Any(entry =>
-                string.Equals(entry.Kind, "surface_card", StringComparison.Ordinal)
-                && string.Equals(entry.TargetElementId, entityId, StringComparison.Ordinal)))
-        {
-            return new HumanEquivalentLinkedDetailReadResult(
-                null,
-                "linked_detail_not_available",
-                "This entity is not in the current state-bound linked-detail catalog.");
-        }
+        string referentId = opportunity.TargetReferentId;
         VisibleCard? card = HumanSurfaceCards(snapshot.Draft.Surface)
             .FirstOrDefault(value => string.Equals(
                 value.EntityId,
-                entityId,
+                referentId,
                 StringComparison.Ordinal));
         if (card == null)
         {
-            return new HumanEquivalentLinkedDetailReadResult(
+            return new HumanEnvironmentReadResult(
                 null,
-                "linked_detail_binding_failed",
+                "read_binding_failed",
                 "The current card detail could not be rebuilt from the same UI Surface.");
         }
 
-        string detailId = "hedetail_" + BridgeHash.Object(new
-        {
-            observation.SnapshotId,
-            kind = "surface_card",
-            card
-        })[..20];
-        return new HumanEquivalentLinkedDetailReadResult(
-            new HumanEquivalentLinkedDetailResponse(
+        return new HumanEnvironmentReadResult(
+            new HumanEnvironmentReadResponse(
                 HumanEquivalentContract.ProtocolVersion,
-                HumanEquivalentContract.LinkedDetailSchema,
-                detailId,
+                HumanEquivalentContract.ReadSchema,
+                opportunity.ReadId,
                 expectedSnapshotId,
                 observation.SnapshotId,
                 DateTimeOffset.UtcNow,
-                "surface_card",
-                entityId,
-                ReadContentSchema("surface_card"),
+                opportunity.Kind,
+                referentId,
+                opportunity.VisibilityBasis,
+                opportunity.OrderingSemantics,
+                opportunity.ContentSchema,
                 JsonSerializer.SerializeToNode(card, McpMod._jsonOptions) ?? new JsonObject(),
+                new HumanEnvironmentCompleteness(
+                    "complete",
+                    "complete_current_player_visible_card_detail",
+                    "read_only",
+                    Array.Empty<string>(),
+                    Array.Empty<string>()),
                 observation.Session,
                 observation.ObservationPolicy),
             null,
@@ -414,9 +407,10 @@ internal static partial class HumanEquivalentRuntime
             draft.Surface,
             draft.Surface.GetType(),
             McpMod._jsonOptions) ?? new JsonObject();
+        JsonNode surfaceContent = ProjectHumanFacts(draft.Surface, draft.Context);
         IReadOnlyList<ConnectorV3BoundCommand> nativeBindings =
             BuildHumanEquivalentBindings(draft);
-        string ownerId = ReadFirstString(
+        string interactionId = ReadFirstString(
             rawSurface,
             "screen_entity_id",
             "room_entity_id",
@@ -424,67 +418,17 @@ internal static partial class HumanEquivalentRuntime
             "map_screen_entity_id")
             ?? nativeBindings.SelectMany(item => item.Candidate.EntityBindings)
                 .FirstOrDefault(entity => IsOwnerRole(entity.Role))?.EntityId
-            ?? "owner_" + BridgeHash.Object(new { draft.Surface.Kind, draft.Signature })[..20];
+            ?? "interaction_" + BridgeHash.Object(new { draft.Surface.Kind, draft.Signature })[..20];
+        Dictionary<string, HumanEnvironmentReferent> referents = BuildHumanReferents(
+            surfaceContent,
+            draft.Surface,
+            nativeBindings,
+            rawSurface);
         IReadOnlyList<(HumanEquivalentAffordance Affordance, HumanEquivalentNativeBinding Binding)> projected =
-            ProjectHumanAffordances(nativeBindings, ownerId);
+            ProjectHumanAffordances(nativeBindings, interactionId, referents);
+        referents = CompleteHumanReferents(referents, projected);
         string stage = ReadFirstString(rawSurface, "stage") ?? draft.Readiness;
         string? prompt = ReadFirstString(rawSurface, "prompt", "body", "message");
-        JsonNode surfaceContent = ProjectHumanFacts(draft.Surface, draft.Context);
-        Dictionary<string, VisibleCard> cards = HumanSurfaceCards(draft.Surface)
-            .GroupBy(card => card.EntityId, StringComparer.Ordinal)
-            .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
-        IReadOnlyList<HumanEnvironmentElement> elements = projected
-            .GroupBy(item => item.Affordance.TargetElementId, StringComparer.Ordinal)
-            .Select(group =>
-            {
-                string elementId = group.Key;
-                VisibleCard? card = cards.GetValueOrDefault(elementId);
-                string role = card == null
-                    ? ElementRole(group.First().Binding.Command, elementId)
-                    : "card";
-                return new HumanEnvironmentElement(
-                    elementId,
-                    role,
-                    card == null ? "control" : "entity",
-                    card?.Name ?? card?.DefinitionId ?? group.First().Affordance.Label,
-                    new HumanEnvironmentElementState(
-                        Visible: true,
-                        Enabled: true,
-                        Selected: card == null ? null : IsSelected(rawSurface, elementId),
-                        Focused: null,
-                        ObservationBasis: card == null
-                            ? "native_ui_actionability"
-                            : "native_visible_entity"),
-                    group.Select(item => item.Affordance.Action)
-                        .Distinct(StringComparer.Ordinal)
-                        .OrderBy(action => action, StringComparer.Ordinal)
-                        .ToArray(),
-                    card == null ? null : ElementPropertiesSchema("card"),
-                    card == null
-                        ? null
-                        : JsonSerializer.SerializeToNode(card, McpMod._jsonOptions) ?? new JsonObject());
-            })
-            .Concat(cards.Values
-                .Where(card => projected.All(item => !string.Equals(
-                    item.Affordance.TargetElementId,
-                    card.EntityId,
-                    StringComparison.Ordinal)))
-                .Select(card => new HumanEnvironmentElement(
-                    card.EntityId,
-                    "card",
-                    "entity",
-                    card.Name ?? card.DefinitionId,
-                    new HumanEnvironmentElementState(
-                        Visible: true,
-                        Enabled: false,
-                        Selected: IsSelected(rawSurface, card.EntityId),
-                        Focused: null,
-                        ObservationBasis: "native_visible_entity"),
-                    Array.Empty<string>(),
-                    ElementPropertiesSchema("card"),
-                    JsonSerializer.SerializeToNode(card, McpMod._jsonOptions) ?? new JsonObject())))
-            .OrderBy(element => element.ElementId, StringComparer.Ordinal)
-            .ToArray();
         IReadOnlyList<HumanEnvironmentReadOpportunity> reads = inspections
             .Select(entry => new HumanEnvironmentReadOpportunity(
                 $"read:{entry.Kind}",
@@ -513,8 +457,8 @@ internal static partial class HumanEquivalentRuntime
             shared.State,
             draft.Readiness,
             surface = surfaceContent,
-            ownerId,
-            elements,
+            interactionId,
+            referents = referents.Values.OrderBy(item => item.ReferentId, StringComparer.Ordinal).ToArray(),
             affordances = projected.Select(item => item.Affordance).ToArray(),
             reads,
             visibility.HiddenByPolicy
@@ -531,19 +475,19 @@ internal static partial class HumanEquivalentRuntime
             sequence,
             DateTimeOffset.UtcNow,
             status,
-            new HumanEquivalentOwner(ownerId, draft.Surface.Kind),
             shared.State == null
                 ? null
                 : new HumanEnvironmentContent(
                     "sts2.human-environment/persistent/run-player-1",
                     JsonSerializer.SerializeToNode(shared.State, McpMod._jsonOptions) ?? new JsonObject()),
-            new HumanEquivalentUiSurface(
+            new HumanEnvironmentInteraction(
+                interactionId,
                 draft.Surface.Kind,
                 stage,
                 prompt,
                 SurfaceContentSchema(draft.Surface.Kind),
                 surfaceContent),
-            elements,
+            referents.Values.OrderBy(item => item.ReferentId, StringComparer.Ordinal).ToArray(),
             projected.Select(item => item.Affordance).ToArray(),
             reads,
             HumanCompleteness(
@@ -711,38 +655,267 @@ internal static partial class HumanEquivalentRuntime
     private static IReadOnlyList<(HumanEquivalentAffordance, HumanEquivalentNativeBinding)>
         ProjectHumanAffordances(
             IReadOnlyList<ConnectorV3BoundCommand> bindings,
-            string ownerId)
+            string interactionId,
+            IReadOnlyDictionary<string, HumanEnvironmentReferent> visibleReferents)
     {
         var result = new List<(HumanEquivalentAffordance, HumanEquivalentNativeBinding)>();
         foreach (ConnectorV3BoundCommand binding in bindings)
         {
             foreach (IReadOnlyDictionary<string, string> parameters in ExpandParameters(binding.Candidate))
             {
-                string targetId = parameters
-                    .Where(pair => pair.Key.EndsWith("_id", StringComparison.Ordinal)
-                        && pair.Key is not "screen_id" and not "room_id" and not "hand_id" and not "map_screen_id")
-                    .Select(pair => pair.Value)
-                    .FirstOrDefault()
-                    ?? parameters.Values.FirstOrDefault()
-                    ?? "control_" + BridgeHash.Text(binding.Candidate.Operation)[..20];
+                IReadOnlyList<HumanEnvironmentAffordanceArgument> publicBindings =
+                    PublicAffordanceBindings(binding.Candidate, parameters, visibleReferents);
+                int subjectIndex = SubjectBindingIndex(binding.Candidate.Command, publicBindings);
+                string? subjectRef = subjectIndex < 0
+                    ? null
+                    : publicBindings[subjectIndex].ReferentId;
+                HumanEnvironmentAffordanceArgument[] arguments = publicBindings
+                    .Where((_, index) => index != subjectIndex)
+                    .ToArray();
                 string action = GenericAction(binding.Candidate.Command, binding.Candidate.Operation);
                 string affordanceId = "affordance_" + BridgeHash.Object(new
                 {
                     action,
-                    targetId,
+                    interactionId,
+                    subjectRef,
+                    arguments,
                     parameters = parameters.OrderBy(pair => pair.Key, StringComparer.Ordinal).ToArray()
                 })[..20];
+                string label = AffordanceLabel(binding.Candidate.Label, arguments, visibleReferents);
                 result.Add((
                     new HumanEquivalentAffordance(
                         affordanceId,
                         action,
-                        targetId,
-                        ownerId,
-                        binding.Candidate.Label),
+                        interactionId,
+                        subjectRef,
+                        arguments,
+                        label),
                     new HumanEquivalentNativeBinding(binding, parameters)));
             }
         }
         return result;
+    }
+
+    private static Dictionary<string, HumanEnvironmentReferent> BuildHumanReferents(
+        JsonNode surfaceContent,
+        IBridgeSurface surface,
+        IReadOnlyList<ConnectorV3BoundCommand> bindings,
+        JsonNode rawSurface)
+    {
+        var referents = new Dictionary<string, HumanEnvironmentReferent>(StringComparer.Ordinal);
+        CollectHumanReferents(surfaceContent, null, referents);
+        foreach (VisibleCard card in HumanSurfaceCards(surface))
+        {
+            AddHumanReferent(
+                referents,
+                card.EntityId,
+                "card",
+                "entity",
+                card.Name ?? card.DefinitionId,
+                IsSelected(rawSurface, card.EntityId),
+                JsonSerializer.SerializeToNode(card, McpMod._jsonOptions));
+        }
+        foreach (ActionEntityBinding binding in bindings.SelectMany(item => item.Candidate.EntityBindings))
+        {
+            if (IsOwnerRole(binding.Role) || IsPrivateBindingRole(binding.Role))
+                continue;
+            AddHumanReferent(
+                referents,
+                binding.EntityId,
+                PublicRole(binding.Role),
+                "control",
+                null,
+                null,
+                null,
+                observationBasis: "native_ui_actionability");
+        }
+        return referents;
+    }
+
+    private static Dictionary<string, HumanEnvironmentReferent> CompleteHumanReferents(
+        Dictionary<string, HumanEnvironmentReferent> referents,
+        IReadOnlyList<(HumanEquivalentAffordance Affordance, HumanEquivalentNativeBinding Binding)> affordances)
+    {
+        var actionable = affordances
+            .SelectMany(item => item.Affordance.Arguments.Select(argument => argument.ReferentId)
+                .Prepend(item.Affordance.SubjectRef))
+            .Where(value => value != null)
+            .Cast<string>()
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (string referentId in actionable)
+        {
+            if (!referents.TryGetValue(referentId, out HumanEnvironmentReferent? referent))
+            {
+                referent = new HumanEnvironmentReferent(
+                    referentId,
+                    "control",
+                    "control",
+                    null,
+                    new HumanEnvironmentReferentState(
+                        Visible: true,
+                        Actionable: true,
+                        Selected: null,
+                        Focused: null,
+                        ObservationBasis: "native_ui_actionability"),
+                    null,
+                    null);
+            }
+            else
+            {
+                referent = referent with
+                {
+                    State = referent.State with { Actionable = true }
+                };
+            }
+            referents[referentId] = referent;
+        }
+        return referents;
+    }
+
+    private static void CollectHumanReferents(
+        JsonNode? node,
+        string? parentKey,
+        Dictionary<string, HumanEnvironmentReferent> referents)
+    {
+        if (node is JsonObject obj)
+        {
+            foreach ((string key, JsonNode? value) in obj)
+            {
+                if (value?.GetValueKind() == JsonValueKind.String
+                    && IsVisibleReferentField(key))
+                {
+                    AddHumanReferent(
+                        referents,
+                        value.GetValue<string>(),
+                        ReferentRole(key, parentKey),
+                        "entity",
+                        ReadFirstString(obj, "name", "label", "title", "definition_id"),
+                        ReadOptionalBool(obj, "is_selected", "selected"),
+                        obj.DeepClone());
+                }
+                else if (value is JsonArray ids && IsVisibleReferentArray(key))
+                {
+                    foreach (JsonNode? id in ids)
+                    {
+                        if (id?.GetValueKind() == JsonValueKind.String)
+                        {
+                            AddHumanReferent(
+                                referents,
+                                id.GetValue<string>(),
+                                ReferentRole(key, parentKey),
+                                "entity",
+                                null,
+                                null,
+                                null);
+                        }
+                    }
+                }
+                CollectHumanReferents(value, key, referents);
+            }
+        }
+        else if (node is JsonArray array)
+        {
+            foreach (JsonNode? value in array)
+                CollectHumanReferents(value, parentKey, referents);
+        }
+    }
+
+    private static void AddHumanReferent(
+        Dictionary<string, HumanEnvironmentReferent> referents,
+        string referentId,
+        string role,
+        string kind,
+        string? label,
+        bool? selected,
+        JsonNode? properties,
+        string observationBasis = "native_visible_fact")
+    {
+        if (string.IsNullOrWhiteSpace(referentId))
+            return;
+        bool hasProperties = properties is JsonObject { Count: > 1 };
+        if (referents.TryGetValue(referentId, out HumanEnvironmentReferent? existing)
+            && (!hasProperties || existing.Properties != null))
+            return;
+        string safeRole = SchemaToken(role);
+        referents[referentId] = new HumanEnvironmentReferent(
+            referentId,
+            safeRole,
+            kind,
+            label ?? existing?.Label,
+            new HumanEnvironmentReferentState(
+                Visible: true,
+                Actionable: existing?.State.Actionable ?? false,
+                Selected: selected ?? existing?.State.Selected,
+                Focused: existing?.State.Focused,
+                ObservationBasis: observationBasis),
+            hasProperties ? ReferentPropertiesSchema(safeRole) : null,
+            hasProperties ? properties : null);
+    }
+
+    private static IReadOnlyList<HumanEnvironmentAffordanceArgument> PublicAffordanceBindings(
+        ConnectorV3CommandCandidate candidate,
+        IReadOnlyDictionary<string, string> parameters,
+        IReadOnlyDictionary<string, HumanEnvironmentReferent> visibleReferents)
+    {
+        var result = new List<HumanEnvironmentAffordanceArgument>();
+        foreach ((string name, string value) in parameters)
+        {
+            if (!name.EndsWith("_id", StringComparison.Ordinal) || IsPrivateBindingParameter(name))
+                continue;
+            ActionEntityBinding? entityBinding = candidate.EntityBindings.FirstOrDefault(item =>
+                string.Equals(item.EntityId, value, StringComparison.Ordinal)
+                && !IsOwnerRole(item.Role)
+                && !IsPrivateBindingRole(item.Role));
+            if (entityBinding == null && !visibleReferents.ContainsKey(value))
+                continue;
+            string role = PublicRole(entityBinding?.Role ?? name);
+            if (!result.Any(item => string.Equals(item.Role, role, StringComparison.Ordinal)
+                && string.Equals(item.ReferentId, value, StringComparison.Ordinal)))
+            {
+                result.Add(new HumanEnvironmentAffordanceArgument(role, value));
+            }
+        }
+        return result;
+    }
+
+    private static int SubjectBindingIndex(
+        string command,
+        IReadOnlyList<HumanEnvironmentAffordanceArgument> bindings)
+    {
+        if (bindings.Count == 0)
+            return -1;
+        string[] preferred = command switch
+        {
+            "play_card" => new[] { "card" },
+            "use_potion" => new[] { "potion" },
+            "select_entity" or "deselect_entity" => new[] { "card", "option", "item", "entity" },
+            "purchase" => new[] { "item", "card", "relic", "potion" },
+            "navigate" => new[] { "map_choice", "node" },
+            "choose" => new[] { "option", "choice", "card", "reward" },
+            _ => Array.Empty<string>()
+        };
+        foreach (string role in preferred)
+        {
+            int index = bindings.ToList().FindIndex(item => item.Role.Contains(role, StringComparison.Ordinal));
+            if (index >= 0)
+                return index;
+        }
+        int nonTarget = bindings.ToList().FindIndex(item => item.Role != "target");
+        return nonTarget >= 0 ? nonTarget : 0;
+    }
+
+    private static string AffordanceLabel(
+        string label,
+        IReadOnlyList<HumanEnvironmentAffordanceArgument> arguments,
+        IReadOnlyDictionary<string, HumanEnvironmentReferent> referents)
+    {
+        HumanEnvironmentAffordanceArgument? target = arguments.FirstOrDefault(item => item.Role == "target");
+        if (target == null
+            || !referents.TryGetValue(target.ReferentId, out HumanEnvironmentReferent? referent)
+            || string.IsNullOrWhiteSpace(referent.Label)
+            || label.Contains(referent.Label, StringComparison.Ordinal))
+            return label;
+        return $"{label} -> {referent.Label}";
     }
 
     private static IEnumerable<IReadOnlyDictionary<string, string>> ExpandParameters(
@@ -770,7 +943,8 @@ internal static partial class HumanEquivalentRuntime
         string requestId,
         string affordanceId,
         string action,
-        string targetId,
+        string? subjectRef,
+        IReadOnlyList<HumanEnvironmentAffordanceArgument> arguments,
         string status,
         string delivery,
         string? reasonCode,
@@ -782,7 +956,7 @@ internal static partial class HumanEquivalentRuntime
             HumanEquivalentContract.ReceiptSchema,
             requestId,
             delivery,
-            new HumanEquivalentActionSummary(affordanceId, action, targetId),
+            new HumanEquivalentActionSummary(affordanceId, action, subjectRef, arguments),
             reasonCode,
             detail,
             new HumanEquivalentRetryPolicy(
@@ -880,16 +1054,11 @@ internal static partial class HumanEquivalentRuntime
     private static string SurfaceContentSchema(string surfaceKind) =>
         $"sts2.human-environment/surface/{surfaceKind}-1";
 
-    private static string ElementPropertiesSchema(string role) =>
-        $"sts2.human-environment/element/{role}-1";
+    private static string ReferentPropertiesSchema(string role) =>
+        $"sts2.human-environment/referent/{role}-1";
 
     private static string ReadContentSchema(string kind) =>
         $"sts2.human-environment/read/{kind}-1";
-
-    private static string ElementRole(ConnectorV3BoundCommand binding, string elementId) =>
-        binding.Candidate.EntityBindings
-            .FirstOrDefault(item => string.Equals(item.EntityId, elementId, StringComparison.Ordinal))
-            ?.Role ?? "control";
 
     internal static string GenericAction(string command, string operation) => command switch
     {
@@ -911,6 +1080,89 @@ internal static partial class HumanEquivalentRuntime
         role.Contains("screen", StringComparison.Ordinal)
         || role.Contains("room", StringComparison.Ordinal)
         || role is "hand" or "owner";
+
+    private static bool IsPrivateBindingRole(string role) =>
+        IsOwnerRole(role)
+        || role.Contains("source", StringComparison.Ordinal)
+        || role.Contains("annotation_input", StringComparison.Ordinal)
+        || role is "dialogue_line";
+
+    private static bool IsPrivateBindingParameter(string name) =>
+        name is "screen_id" or "room_id" or "hand_id" or "source_id" or "control_id"
+            or "menu_screen_id" or "game_over_screen_id" or "map_screen_id"
+            or "map_annotation_input_id" or "dialogue_line_id"
+        || name.EndsWith("_screen_id", StringComparison.Ordinal)
+        || name.EndsWith("_room_id", StringComparison.Ordinal);
+
+    private static string PublicRole(string role)
+    {
+        string normalized = role.EndsWith("_id", StringComparison.Ordinal)
+            ? role[..^3]
+            : role;
+        return normalized switch
+        {
+            "map_node" or "destination" => "destination",
+            "character_choice" => "character",
+            "rest_option" or "option" or "choice" or "alternative" => "option",
+            "shop_offer" => "offer",
+            "shop_card_removal" => "service",
+            _ => SchemaToken(normalized)
+        };
+    }
+
+    private static bool IsVisibleReferentField(string key) =>
+        key.EndsWith("_entity_id", StringComparison.Ordinal)
+        && !key.Contains("screen", StringComparison.Ordinal)
+        && !key.Contains("room", StringComparison.Ordinal)
+        && !key.Contains("source", StringComparison.Ordinal)
+        && !key.Contains("owner", StringComparison.Ordinal)
+        && !key.Contains("hand", StringComparison.Ordinal);
+
+    private static bool IsVisibleReferentArray(string key) =>
+        key.EndsWith("_entity_ids", StringComparison.Ordinal)
+        && !key.Contains("screen", StringComparison.Ordinal)
+        && !key.Contains("source", StringComparison.Ordinal)
+        && !key.Contains("owner", StringComparison.Ordinal);
+
+    private static string ReferentRole(string key, string? parentKey)
+    {
+        string role = key.EndsWith("_entity_ids", StringComparison.Ordinal)
+            ? key[..^11]
+            : key.EndsWith("_entity_id", StringComparison.Ordinal)
+                ? key[..^10]
+                : key;
+        if (role is "selectable_card" or "deselectable_card" or "selected_card")
+            return "card";
+        if (role is "target" or "targetable_enemy")
+            return "target";
+        if (role is "entity" && !string.IsNullOrWhiteSpace(parentKey))
+            role = parentKey.TrimEnd('s');
+        return PublicRole(role);
+    }
+
+    private static string SchemaToken(string value)
+    {
+        char[] token = value
+            .ToLowerInvariant()
+            .Select(character => char.IsLetterOrDigit(character) || character == '_'
+                ? character
+                : '_')
+            .ToArray();
+        string normalized = new string(token).Trim('_');
+        return string.IsNullOrWhiteSpace(normalized) ? "entity" : normalized;
+    }
+
+    private static bool? ReadOptionalBool(JsonObject obj, params string[] keys)
+    {
+        foreach (string key in keys)
+        {
+            if (obj[key]?.GetValueKind() == JsonValueKind.True)
+                return true;
+            if (obj[key]?.GetValueKind() == JsonValueKind.False)
+                return false;
+        }
+        return null;
+    }
 
     private static string? ReadFirstString(JsonNode node, params string[] keys)
     {

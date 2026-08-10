@@ -334,21 +334,11 @@ public static partial class McpMod
                 else
                     SendError(response, 405, "Method not allowed");
             }
-            else if (path.StartsWith("/api/he/inspections/", StringComparison.Ordinal))
+            else if (path.StartsWith("/api/he/reads/", StringComparison.Ordinal))
             {
                 if (request.HttpMethod == "GET")
-                    HandleGetHumanEquivalentInspection(
-                        path["/api/he/inspections/".Length..],
-                        request,
-                        response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path.StartsWith("/api/he/linked-details/", StringComparison.Ordinal))
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetHumanEquivalentLinkedDetail(
-                        path["/api/he/linked-details/".Length..],
+                    HandleGetHumanEquivalentRead(
+                        path["/api/he/reads/".Length..],
                         request,
                         response);
                 else

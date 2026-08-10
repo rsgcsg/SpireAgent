@@ -37,89 +37,46 @@ public static partial class McpMod
         }
     }
 
-    private static void HandleGetHumanEquivalentInspection(
-        string encodedKind,
+    private static void HandleGetHumanEquivalentRead(
+        string encodedReadId,
         HttpListenerRequest request,
         HttpListenerResponse response)
     {
-        string kind;
+        string readId;
         try
         {
-            kind = Uri.UnescapeDataString(encodedKind);
+            readId = Uri.UnescapeDataString(encodedReadId);
         }
         catch (UriFormatException)
         {
-            SendConnectorV3Error(response, 400, "invalid_inspection_kind", "Inspection kind is not valid URI data.");
+            SendConnectorV3Error(response, 400, "invalid_read_id", "Read id is not valid URI data.");
             return;
         }
         string? expectedSnapshotId = request.QueryString["expected_snapshot_id"];
-        if (!IsSafeBridgeIdentifier(kind, 64)
+        if (!IsSafeBridgeIdentifier(readId, 256)
             || !IsSafeBridgeIdentifier(expectedSnapshotId, 128))
         {
-            SendConnectorV3Error(response, 400, "invalid_inspection_contract", "A current read kind and snapshot ID are required.");
+            SendConnectorV3Error(response, 400, "invalid_read_contract", "A current advertised read id and snapshot ID are required.");
             return;
         }
         try
         {
-            var task = RunOnMainThread(() => HumanEquivalentRuntime.InspectHumanEquivalent(kind, expectedSnapshotId!));
-            HumanEquivalentInspectionReadResult result = task.GetAwaiter().GetResult();
-            if (result.Inspection != null)
+            var task = RunOnMainThread(() => HumanEquivalentRuntime.ReadHumanEquivalent(readId, expectedSnapshotId!));
+            HumanEnvironmentReadResult result = task.GetAwaiter().GetResult();
+            if (result.Read != null)
             {
-                SendJson(response, result.Inspection);
+                SendJson(response, result.Read);
                 return;
             }
             SendConnectorV3Error(
                 response,
-                result.ErrorCode == "inspection_kind_not_implemented" ? 404 : 409,
-                result.ErrorCode ?? "inspection_failed",
-                result.Detail ?? "Inspection failed closed.");
+                result.ErrorCode is "read_not_available" or "read_kind_not_implemented" ? 404 : 409,
+                result.ErrorCode ?? "read_failed",
+                result.Detail ?? "Read failed closed.");
         }
         catch (Exception exception)
         {
-            SendConnectorV3InternalError(response, "human_inspection_failed", exception);
-        }
-    }
-
-    private static void HandleGetHumanEquivalentLinkedDetail(
-        string encodedEntityId,
-        HttpListenerRequest request,
-        HttpListenerResponse response)
-    {
-        string entityId;
-        try
-        {
-            entityId = Uri.UnescapeDataString(encodedEntityId);
-        }
-        catch (UriFormatException)
-        {
-            SendConnectorV3Error(response, 400, "invalid_linked_detail_entity", "Entity id is not valid URI data.");
-            return;
-        }
-        string? expectedSnapshotId = request.QueryString["expected_snapshot_id"];
-        if (!IsSafeBridgeIdentifier(entityId, 128)
-            || !IsSafeBridgeIdentifier(expectedSnapshotId, 128))
-        {
-            SendConnectorV3Error(response, 400, "invalid_linked_detail_contract", "A current element ID and snapshot ID are required.");
-            return;
-        }
-        try
-        {
-            var task = RunOnMainThread(() => HumanEquivalentRuntime.ReadHumanEquivalentLinkedDetail(entityId, expectedSnapshotId!));
-            HumanEquivalentLinkedDetailReadResult result = task.GetAwaiter().GetResult();
-            if (result.LinkedDetail != null)
-            {
-                SendJson(response, result.LinkedDetail);
-                return;
-            }
-            SendConnectorV3Error(
-                response,
-                result.ErrorCode == "linked_detail_binding_failed" ? 500 : 409,
-                result.ErrorCode ?? "linked_detail_failed",
-                result.Detail ?? "Linked-detail read failed closed.");
-        }
-        catch (Exception exception)
-        {
-            SendConnectorV3InternalError(response, "human_linked_detail_failed", exception);
+            SendConnectorV3InternalError(response, "human_read_failed", exception);
         }
     }
 

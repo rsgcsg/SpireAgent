@@ -1,14 +1,13 @@
 # Human Environment Protocol
 
-Source protocol: `1.0-preview.3`
+Source protocol: `1.0-preview.4`
 
 ## Endpoints
 
 ```text
 GET  /api/he/capabilities
 GET  /api/he/observation
-GET  /api/he/inspections/{kind}?expected_snapshot_id=...
-GET  /api/he/linked-details/{element_id}?expected_snapshot_id=...
+GET  /api/he/reads/{read_id}?expected_snapshot_id=...
 POST /api/he/clients/register
 GET  /api/he/controller
 POST /api/he/controller/acquire|renew|release
@@ -16,46 +15,47 @@ POST /api/he/actions
 GET  /api/he/actions/{request_id}
 ```
 
-## Capabilities And Observation
+## Observation
 
-Capabilities contain host/game/Modset identity, an exact environment
-fingerprint, supported verbs, and optional host implementation provenance such
-as Live DLL SHA/MVID. A hot observation contains:
+Capabilities carry Host/game/Modset identity, environment fingerprint and
+optional Host implementation provenance. The hot observation carries:
 
 ```text
-snapshot_id, sequence, status, owner, persistent,
-surface { kind, stage, prompt, content_schema, content },
-elements[], affordances[], reads[], completeness,
+snapshot_id, sequence, status, persistent,
+interaction { interaction_id, kind, stage, prompt, content_schema, content },
+referents[], affordances[], reads[], completeness,
 session { runtime_instance_id, environment_fingerprint }, observation_policy
 ```
 
-Elements are the only public target ontology. They carry role/category,
-visible/enabled/selected/focused state, observation basis, available actions
-and optional schema-versioned player-visible properties. Every affordance and
-targeted read must reference a current element.
+A referent is a player-visible object or control identity. Facts create
+referents independently of action publication. An affordance has one optional
+`subject_ref` plus role-labelled `arguments[]`; each reference must exist in
+the current snapshot. Exact native operands stay inside the Host.
 
-Persistent content, `surface.content`, element properties and read content each
-carry a schema identifier. `reads[]` unifies
-Inspection and linked detail as non-authorizing snapshot-bound opportunities;
-the bounded endpoints remain separate implementation routes.
+`reads[]` advertises all bounded, non-authorizing information reads. Consumers
+send the opaque `read_id`; C rejects stale snapshots and arbitrary fields.
 
 ## Action And Receipt
 
 An action request contains request ID, expected snapshot ID, opaque affordance
-ID and controller lease identity. C rebuilds the UI and exact host-local native
-binding before delivery.
+ID and controller lease identity. C rebuilds the interaction, referents and
+exact native binding immediately before delivery.
 
-Receipts are `applied`, `not_applied` or `unknown`. Applied means native input
-delivery, not business completion. A null immediate successor never changes a
-known delivery into unknown. Unknown delivery never permits automatic retry.
+Receipts are `applied`, `not_applied` or `unknown`. Applied proves native input
+delivery, not business completion. Unknown delivery never permits automatic
+retry. The receipt repeats the public subject/arguments and may include an
+immediate successor.
+
+## Host Neutrality
+
+Live and future Headless Hosts implement the same fair-player semantics. A
+Headless Host need not fabricate UI nodes or .NET MVIDs; it must provide stable
+interaction/referent identity, current affordances, exact environment identity
+and equivalent stale/idempotency behavior. Reset, seed, save/load, clone/fork,
+fast-step, scenario mutation, rewards and tensors are separate APIs.
 
 ## Exclusions
 
-C contains no source authority, business Outcome, reward, reset/seed/fork,
-hidden state, arbitrary reflection, coordinate or model-generated operand.
-D annotations and Training/Headless lifecycle are separate contracts.
-
-## Evidence Boundary
-
-`preview.3` is a breaking contract correction. Source/tests/build/install/load/
-Live/qualification are separate, and no `preview.2` Live evidence transfers.
+C contains no source authority, SourceContract, business Outcome, hidden state,
+arbitrary reflection, coordinate input, model-generated native operand,
+strategy, reward or privileged simulator control.

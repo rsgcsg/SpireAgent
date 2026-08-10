@@ -9,15 +9,14 @@ legality, business source, action authorization, strategy or completion rule.
 |---|---|
 | `get_sts2_human_capabilities()` | exact loaded Gateway/game/Modset identity |
 | `get_sts2_human_snapshot()` | player-visible UI facts and current finite affordances |
-| `inspect_sts2_visible_state(...)` | state-bound run deck, combat pile or shop read |
-| `get_sts2_surface_card_detail(...)` | state-bound linked visible card detail |
+| `read_sts2_human_information(read_id, expected_snapshot_id)` | execute one advertised, state-bound read opportunity |
 | `apply_sts2_ui_affordance(...)` | deliver one exact advertised affordance |
 | `get_sts2_ui_delivery_receipt(request_id)` | read the original delivery result |
 
 `unknown` delivery is terminal and must not be retried. No tool accepts a game
 method, node path, coordinate, index, arbitrary reflection target or hidden
 information request. The action tool accepts only request ID, current state
-token and opaque affordance ID; exact native operands remain inside C.
+snapshot and opaque affordance ID; exact native operands remain inside C.
 
 ## Run
 

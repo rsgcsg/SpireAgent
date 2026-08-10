@@ -6,7 +6,7 @@ SpireAgent connects an external LLM agent to the real Slay the Spire 2 UI.
 - [`Re-SpireAgent/`](Re-SpireAgent/) is the strict Agent runtime.
 
 Human-Equivalent C is the only current target. Source protocol is
-`1.0-preview.3`. Connector V3 remains an explicit rollback implementation and
+`1.0-preview.4`. Connector V3 remains an explicit rollback implementation and
 historical comparison, never a silent execution fallback.
 
 > **Maturity:** source, tests and local Release build are available. Public
@@ -58,8 +58,8 @@ paths, rollback and troubleshooting.
 
 ```text
 Native STS2 UI
--> Human Environment snapshot (visible facts, current owner, elements, reads)
--> current state-bound UI affordances (native operands remain C-local)
+-> Human Environment snapshot (visible facts, interaction, referents, reads)
+-> current state-bound UI affordances (subject/arguments are public; native operands remain C-local)
 -> native UI-equivalent input delivery
 -> delivery receipt + successor snapshot
 -> Re-SpireAgent chooses one opaque affordance ID

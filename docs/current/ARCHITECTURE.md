@@ -1,85 +1,94 @@
-# Current Architecture - Human Environment Contract
+# Current Architecture - Human Environment Interface
 
 Authority: [ADR-0008](decisions/ADR-0008-human-equivalent-ui-first-connector.md)
 
-## Canonical Boundary
+## Canonical Model
 
 ```text
-STS2 Live UI host (today)       future fair-player Headless host
-             \                  /
-              C Human Environment Contract
-              observe / read / act / receipt
-                         |
-        +----------------+----------------+
-        |                |                |
-   Re LLM adapter   future Training   future Search
-        |             adapter           adapter
-        A                A                A
+Live STS2 Host                 future fair-player Headless Host
+ native UI observation             engine decision observation
+ native UI input delivery          engine-native decision delivery
+           \                              /
+            C Human Environment semantic core
+            capabilities / observe / read / interact / receipt
+                              |
+        +---------------------+----------------------+
+        |                     |                      |
+  Re LLM projection    future Training adapter   future Search adapter
+        A                 tensors/reward/mask       tree/policy state
 ```
 
-C is current player-visible facts, current owner, current elements and
-affordances, state-bound read opportunities, exact input delivery and an
-immediate successor. It is independent of the intelligence consuming it.
+The semantic core is unified; Host mechanics and privileged Host controls are
+not. A second Host should implement the same meaning, not fake Live UI nodes or
+copy .NET-specific provenance. Preview.4 is therefore a conformance candidate,
+not a frozen universal 1.0 wire.
+
+## Public Contract
+
+```text
+Capabilities
+  host + game + modset + environment identity + supported verbs
+
+Observation
+  snapshot_id + session
+  persistent visible summary
+  interaction { id, kind, stage, prompt, schema, content }
+  referents[] { id, role, kind, visible/actionable/selected/focused, properties }
+  affordances[] { id, verb, interaction_id, subject_ref, arguments[] }
+  reads[] + completeness + observation policy
+
+Action
+  request_id + expected_snapshot_id + affordance_id + controller lease
+
+Receipt
+  applied | not_applied | unknown
+  exact public action summary + optional immediate successor
+```
+
+Facts produce referents before authority is projected. An affordance references
+one optional subject and zero or more role-labelled current referents. Exact
+native objects and operands never cross the public boundary. `applied` means
+input delivery, not business completion; `unknown` is terminal for automatic
+retry.
+
+## Ownership
+
+- **Game/Host** owns rules, RNG, native state, legality and effects.
+- **C** owns fair-player facts, information reachability, current interaction,
+  affordances, state binding, delivery integrity and receipts.
+- **A/Re** owns normalization, model projection, finite choice resolution,
+  strategy, flow interpretation, readiness and recovery.
+- **D** owns optional annotations, graders, replay evaluation and conformance
+  evidence; it never authorizes or executes.
+- **P** owns build/install/configuration/runtime identity, controller policy,
+  rollback and experiment orchestration.
+- **Headless lifecycle/branching/scenario/acceleration ports** own reset, seed,
+  save/load, clone/fork, scenario mutation and fast stepping.
+- **Training** owns tensors, masks, reward, termination/truncation and batching.
+- **Search** owns tree state, branching policy and value evaluation.
 
 ## Normal Live Path
 
 ```text
-C observe snapshot
--> Re validates and normalizes Surface/elements/reads
--> Re projects finite opaque choices
--> LLM selects one local choice ID
--> Re submits request_id + snapshot_id + affordance_id
--> C rebuilds owner/target/actionability
--> native UI input
--> delivery receipt + optional immediate successor
--> A interprets readiness, flow and strategy
+C observe
+-> Re strict decode and consumer projection
+-> model sees facts plus finite opaque choices
+-> LLM selects one local ID
+-> Re submits the exact advertised affordance
+-> C rebuilds interaction/referents/actionability
+-> Host delivers native input
+-> receipt + successor
+-> A interprets progress
 ```
 
-`applied` proves delivery, not a business transaction. `not_applied` is a
-known refusal. `unknown` means delivery may have occurred and is terminal for
-automatic retry.
+## Exclusions And Internal Debt
 
-## Ownership
+C is not an LLM API, reward API, business transaction API, privileged simulator
+API or second game engine. It exposes no hidden state, arbitrary reflection,
+coordinates, SourceContract, source authority or business Outcome authority.
 
-- **C**: fair-player observation, elements, affordances, reads, stale checks,
-  one controller, exact host-local operands, execute-time validation, native
-  delivery, idempotency and delivery uncertainty.
-- **A/Re**: consumer normalization, finite choice projection, LLM/search/ML
-  policy, transition interpretation, strategy and recovery.
-- **D**: optional annotations, teachers, graders, rewards, replay evaluation
-  and conformance evidence. D never authorizes or executes.
-- **P**: build/install/configuration/runtime identity/rollback and experiment
-  orchestration.
-- **Headless/Simulation Host**: reset, seed, clone, fork, fast stepping and
-  host lifecycle. It must emit the same fair-player C semantics.
-- **Training Adapter**: tensors, action masks, reward, terminated/truncated,
-  vectorization and batching.
-
-## Public Contract
-
-Capabilities carry host/game/Modset identity, an exact environment fingerprint
-and optional implementation provenance. The hot observation carries only a
-session reference plus:
-
-```text
-snapshot_id + owner + persistent + versioned Surface content
-+ elements + affordances + reads + completeness + observation policy
-```
-
-Every affordance and targeted read references a current element. Exact native
-objects and parameters never cross the wire. Persistent, Surface,
-element-property and read content is explicitly schema-versioned; unknown
-schemas fail strict consumers rather than silently changing meaning.
-
-## Internal Reuse And Limits
-
-The Live implementation still uses Bridge observation providers and five
-V3-owned bounded adapter-library calls. These are one-way host implementation
-reuse, not C authority or public types. New hosts must implement C directly;
-they do not inherit V3 source permission, SourceContract, qualification or
-business Outcome.
-
-Do not add reward/reset/clone, arbitrary reflection, coordinates, hidden game
-state, source authority or a second rule engine to C. Move reusable native UI
-code toward neutral `NativeUi` ownership as touched, without adding shims or a
-second executor.
+The Live Host currently reuses Bridge observation providers and five bounded
+V3 adapter-library seams. This is one-way implementation reuse. It must not
+leak into public DTOs, Headless requirements or a second authority/executor.
+Move code to neutral `NativeUi` ownership only when the implementation itself
+can move; do not add wrappers that merely hide the dependency.

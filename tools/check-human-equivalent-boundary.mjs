@@ -31,6 +31,7 @@ for (const relative of defaultReFiles) {
 const humanClient = "Re-SpireAgent/src/integrations/sts2mcp/humanEquivalentClient.ts";
 requireText(humanClient, "/api/he/observation", "HE observation route");
 requireText(humanClient, "/api/he/actions", "HE action route");
+requireText(humanClient, "/api/he/reads/", "unified HE read route");
 requireText(humanClient, "/api/he/controller", "HE controller route");
 forbidText(humanClient, "/api/v3/", "V3 transport fallback");
 forbidText(humanClient, "connectorV3Protocol", "V3 controller/wire schema dependency");
@@ -65,7 +66,10 @@ forbidText(
 );
 
 const pythonMcp = "STS2MCP/mcp/server.py";
-requireText(pythonMcp, '_CONTROL_PROTOCOL = "1.0-preview.3"', "Human Environment MCP control protocol");
+requireText(pythonMcp, '_CONTROL_PROTOCOL = "1.0-preview.4"', "Human Environment MCP control protocol");
+requireText(pythonMcp, 'f"reads/{encoded_read}', "unified MCP read route");
+forbidText(pythonMcp, "inspections/", "split legacy inspection route");
+forbidText(pythonMcp, "linked-details/", "split legacy linked-detail route");
 for (const legacyMcpInput of [
   "expected_frame_id",
   "expected_owner_id",
@@ -127,7 +131,9 @@ for (const legacyNamespace of [
   }
 }
 for (const requiredContractName of [
-  "HumanEnvironmentElement",
+  "HumanEnvironmentInteraction",
+  "HumanEnvironmentReferent",
+  "HumanEnvironmentAffordanceArgument",
   "HumanEnvironmentReadOpportunity",
   "HumanEnvironmentSessionReference",
   "HumanEnvironmentImplementationIdentity",
@@ -135,7 +141,7 @@ for (const requiredContractName of [
   "EnvironmentFingerprint",
   "ContentSchema",
   "SnapshotId",
-  "TargetElementId"
+  "TargetReferentId"
 ]) {
   if (!contract.includes(requiredContractName)) {
     failures.push(`HumanEquivalentContracts.cs: missing ${requiredContractName}`);

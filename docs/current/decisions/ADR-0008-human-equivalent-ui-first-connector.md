@@ -157,3 +157,40 @@ This amendment does not broaden C. Live and future Headless hosts may implement
 the same fair-player contract. Host reset/seed/clone/fork, Training reward,
 terminated/truncated/action masks, A strategy and D graders remain separate.
 No previous Live evidence transfers across the breaking wire revision.
+
+## Environment Interface Amendment (2026-08-10)
+
+Preview.3 is superseded by Preview.4 as source truth. The macro decision remains
+correct, but Preview.3's `owner + surface + elements + one target` ontology is
+rejected as a universal contract:
+
+- observable facts could remain trapped in `surface.content` unless an action
+  candidate happened to reference them;
+- an action with a card subject and enemy target exposed only one target field;
+- Inspection and linked detail advertised one read concept but used two routes;
+- Re discarded complete visible combat context and emitted empty enemies.
+
+The canonical candidate is now:
+
+```text
+capabilities
++ snapshot/session
++ one interaction
++ observable referents
++ affordance { subject_ref, role-labelled arguments }
++ advertised state-bound reads
++ delivery receipt/successor
+```
+
+Facts produce referents independently of authority. The Host retains exact
+native operands and revalidates them at execution. This is one Human Environment
+semantic core with Host profiles, not one identical implementation: Live owns
+UI callbacks and single-writer delivery; Headless may own engine decision
+delivery. Reset/seed/save/load, clone/fork, scenario mutation and acceleration
+are privileged Host ports outside C. Training and Search consume C through
+their own projections.
+
+Preview.4 is not frozen as 1.0 until a second Host or deterministic conformance
+probe demonstrates equivalent fair-player meaning. Five V3-owned adapter calls
+remain Live Host implementation debt and may not define public types, action
+authority or Headless requirements.
