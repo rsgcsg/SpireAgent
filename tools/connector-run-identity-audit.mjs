@@ -59,11 +59,35 @@ function readSnapshot(runDirectory, reference) {
   }
 }
 
-function bridgeState(snapshot) {
+function recordedState(snapshot) {
+  if (snapshot?.human_snapshot) {
+    return {
+      ...snapshot.human_snapshot,
+      identity_kind: "human_environment_snapshot"
+    };
+  }
   return snapshot?.bridge_v2_state ?? null;
 }
 
 function identityPair(state) {
+  if (state?.identity_kind === "human_environment_snapshot") {
+    if (typeof state.snapshot_id !== "string") return null;
+    const actionKeys = (state.bound_actions?.actions ?? [])
+      .map(boundActionKey)
+      .filter(Boolean)
+      .sort();
+    return {
+      semantic: state.snapshot_id,
+      authority: JSON.stringify({
+        interaction_id: state.interaction?.interaction_id ?? null,
+        status: state.status ?? null,
+        projection_status: state.bound_actions?.status ?? null,
+        actions: actionKeys
+      }),
+      evidenceSource: "human_environment_snapshot"
+    };
+  }
+
   const formalSemantic = state?.semantic_state_id;
   const formalAuthority = state?.authority_projection_id;
   if (typeof formalSemantic === "string" && typeof formalAuthority === "string") {
@@ -91,19 +115,29 @@ function identityEvidenceSource(preIdentity, postIdentity) {
 
 function normalizedBindings(action) {
   const raw = action?.entity_bindings ?? action?.entityBindings ?? [];
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .map((binding) => ({
-      role: binding?.role ?? null,
-      entity_id: binding?.entity_id ?? binding?.entityId ?? null
-    }))
+  const bindings = Array.isArray(raw)
+    ? raw.map((binding) => ({
+        role: binding?.role ?? null,
+        entity_id: binding?.entity_id ?? binding?.entityId ?? null
+      }))
+    : [];
+  if (typeof action?.subject_ref === "string") {
+    bindings.push({ role: "subject", entity_id: action.subject_ref });
+  }
+  for (const argument of action?.arguments ?? []) {
+    if (typeof argument?.referent_id === "string") {
+      bindings.push({ role: argument.role ?? null, entity_id: argument.referent_id });
+    }
+  }
+  return bindings
     .sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
 }
 
 function boundActionKey(action) {
-  if (!action || typeof action.kind !== "string") return null;
+  const kind = action?.kind ?? action?.action;
+  if (typeof kind !== "string") return null;
   return JSON.stringify({
-    kind: action.kind,
+    kind,
     entity_bindings: normalizedBindings(action)
   });
 }
@@ -117,8 +151,11 @@ function selectedAction(record) {
 function actionContinuity(record, postState) {
   const selected = selectedAction(record);
   const selectedKey = boundActionKey(selected);
-  if (!selectedKey || !Array.isArray(postState?.legal_actions)) return "not_evaluable";
-  return postState.legal_actions.some((action) => boundActionKey(action) === selectedKey)
+  const publishedActions = postState?.identity_kind === "human_environment_snapshot"
+    ? postState.bound_actions?.actions
+    : postState?.legal_actions;
+  if (!selectedKey || !Array.isArray(publishedActions)) return "not_evaluable";
+  return publishedActions.some((action) => boundActionKey(action) === selectedKey)
     ? "same_kind_and_operands_published"
     : "not_published_with_same_kind_and_operands";
 }
@@ -140,9 +177,18 @@ function exactIdentity(metadata) {
       negotiated.connector_protocol_version
       ?? negotiated.bridge_protocol_version
       ?? null,
-    gateway_sha256: negotiated.bridge_assembly_file_sha256 ?? null,
-    gateway_mvid: negotiated.bridge_module_version_id ?? null,
-    runtime_instance_id: negotiated.bridge_runtime_instance_id ?? null,
+    gateway_sha256:
+      negotiated.host_artifact_sha256
+      ?? negotiated.bridge_assembly_file_sha256
+      ?? null,
+    gateway_mvid:
+      negotiated.host_module_version_id
+      ?? negotiated.bridge_module_version_id
+      ?? null,
+    runtime_instance_id:
+      negotiated.host_runtime_instance_id
+      ?? negotiated.bridge_runtime_instance_id
+      ?? null,
     game_version: negotiated.game_version ?? null,
     game_commit: negotiated.game_commit ?? null,
     main_assembly_hash: negotiated.main_assembly_hash ?? null,
@@ -163,8 +209,8 @@ export function auditRunIdentity({ run, runsDirectory = DEFAULT_RUNS_DIRECTORY }
   const findings = staleRecords.map((record) => {
     const pre = readSnapshot(runDirectory, record.preState?.rawStateRef);
     const post = readSnapshot(runDirectory, record.postState?.rawStateRef);
-    const preState = bridgeState(pre.value);
-    const postState = bridgeState(post.value);
+    const preState = recordedState(pre.value);
+    const postState = recordedState(post.value);
     const preIdentity = identityPair(preState);
     const postIdentity = identityPair(postState);
     const change = identityChange(preIdentity, postIdentity);
@@ -174,12 +220,14 @@ export function auditRunIdentity({ run, runsDirectory = DEFAULT_RUNS_DIRECTORY }
       context_kind: record.preState?.normalizedState?.context?.kind ?? null,
       surface_kind: record.preState?.normalizedState?.surface?.kind ?? null,
       selected_action_kind: selectedAction(record)?.kind ?? null,
-      current_state_id_changed: preState?.state_id !== postState?.state_id,
+      current_state_id_changed:
+        (preState?.snapshot_id ?? preState?.state_id)
+        !== (postState?.snapshot_id ?? postState?.state_id),
       identity_change: change,
       identity_evidence_source: identityEvidenceSource(preIdentity, postIdentity),
       selected_bound_action_continuity: actionContinuity(record, postState),
-      pre_state_id: preState?.state_id ?? null,
-      post_state_id: postState?.state_id ?? null,
+      pre_state_id: preState?.snapshot_id ?? preState?.state_id ?? null,
+      post_state_id: postState?.snapshot_id ?? postState?.state_id ?? null,
       snapshot_errors: [pre.error, post.error].filter(Boolean)
     };
   });
@@ -209,6 +257,7 @@ export function auditRunIdentity({ run, runsDirectory = DEFAULT_RUNS_DIRECTORY }
       neither_identity_changed: compositeOnly,
       missing_identity: missing,
       formal_state_identity_findings: sourceCount("formal_state_identity"),
+      human_environment_snapshot_findings: sourceCount("human_environment_snapshot"),
       historical_identity_shadow_findings: sourceCount("historical_identity_shadow"),
       mixed_identity_generation_findings: sourceCount("mixed_identity_generation"),
       selected_bound_action_still_published: findings.filter((finding) =>
@@ -225,6 +274,7 @@ export function auditRunIdentity({ run, runsDirectory = DEFAULT_RUNS_DIRECTORY }
     findings,
     limitations: [
       "identity changes identify hash-domain drift, not whether the underlying game change was strategically material",
+      "Human Environment audits compare snapshot identity and the complete finite bound-action projection; they do not recreate native legality",
       "Preview.74 and later use formal state identities; older recorded runs are read through the non-authorizing historical shadow only",
       "bound-action continuity compares only action kind and exact entity operands",
       "recorded evidence does not authorize identity migration or gameplay permission",

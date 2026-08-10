@@ -33,6 +33,30 @@ function action(id, entityId) {
   };
 }
 
+function humanSnapshot({ snapshotId, interactionId, actions }) {
+  return {
+    human_snapshot: {
+      snapshot_id: snapshotId,
+      status: "interactive",
+      interaction: { interaction_id: interactionId },
+      bound_actions: {
+        status: "complete",
+        actions
+      }
+    }
+  };
+}
+
+function humanAction(id, subjectId, targetId) {
+  return {
+    bound_action_id: id,
+    action: "play",
+    interaction_id: "combat-1",
+    subject_ref: subjectId,
+    arguments: [{ role: "target", referent_id: targetId }]
+  };
+}
+
 function record({ decisionId, preRef, postRef, entityId }) {
   return {
     decisionId,
@@ -69,6 +93,9 @@ try {
     },
     adapter: { negotiated: {
       connector_protocol_version: "3.0-fixture",
+      host_artifact_sha256: "he-sha-fixture",
+      host_module_version_id: "he-mvid-fixture",
+      host_runtime_instance_id: "he-runtime-fixture",
       bridge_protocol_version: "retired-fixture",
       runtime_patch_digest: "patch-fixture",
       permission_policy_digest: "policy-fixture"
@@ -134,30 +161,59 @@ try {
     historical: true
   })));
 
+  const humanRecord = record({
+    decisionId: "decision-4",
+    preRef: "snapshots/human-pre.json",
+    postRef: "snapshots/human-post.json",
+    entityId: "card-5"
+  });
+  humanRecord.allowedActions[0].kind = "play";
+  humanRecord.allowedActions[0].entityBindings = [
+    { role: "subject", entityId: "card-5" },
+    { role: "target", entityId: "enemy-1" }
+  ];
+  writeFileSync(path.join(snapshots, "human-pre.json"), JSON.stringify(humanSnapshot({
+    snapshotId: "snapshot-1",
+    interactionId: "combat-1",
+    actions: [humanAction("bound-1", "card-5", "enemy-1")]
+  })));
+  writeFileSync(path.join(snapshots, "human-post.json"), JSON.stringify(humanSnapshot({
+    snapshotId: "snapshot-2",
+    interactionId: "combat-1",
+    actions: [humanAction("bound-1", "card-5", "enemy-1")]
+  })));
+
   writeFileSync(
     path.join(run, "decisions.jsonl"),
-    `${JSON.stringify(semanticRecord)}\n${JSON.stringify(compositeRecord)}\n${JSON.stringify(historicalRecord)}\n`
+    `${JSON.stringify(semanticRecord)}\n${JSON.stringify(compositeRecord)}\n${JSON.stringify(historicalRecord)}\n${JSON.stringify(humanRecord)}\n`
   );
 
   const result = auditRunIdentity({ run: "run-fixture", runsDirectory: root });
   assert.equal(result.authorization_effect, "none");
   assert.equal(result.analysis_kind, "recorded_run_state_identity_audit");
   assert.equal(result.run.exact_identity.protocol_version, "3.0-fixture");
+  assert.equal(result.run.exact_identity.gateway_sha256, "he-sha-fixture");
+  assert.equal(result.run.exact_identity.gateway_mvid, "he-mvid-fixture");
+  assert.equal(result.run.exact_identity.runtime_instance_id, "he-runtime-fixture");
   assert.equal(result.run.exact_identity.patch_digest, "patch-fixture");
   assert.equal(result.run.exact_identity.permission_policy_digest, "policy-fixture");
-  assert.equal(result.summary.stale_refusal_count, 3);
-  assert.equal(result.summary.semantic_changed, 1);
+  assert.equal(result.summary.stale_refusal_count, 4);
+  assert.equal(result.summary.semantic_changed, 2);
   assert.equal(result.summary.authority_changed, 1);
   assert.equal(result.summary.neither_identity_changed, 1);
   assert.equal(result.summary.composite_only_stale_findings, 1);
   assert.equal(result.summary.formal_state_identity_findings, 2);
   assert.equal(result.summary.historical_identity_shadow_findings, 1);
-  assert.equal(result.summary.selected_bound_action_still_published, 2);
+  assert.equal(result.summary.human_environment_snapshot_findings, 1);
+  assert.equal(result.summary.selected_bound_action_still_published, 3);
   assert.equal(result.summary.selected_bound_action_not_published, 1);
   assert.equal(result.summary.migration_signal, "composite_only_stale_observed");
   assert.equal(result.findings[0].selected_bound_action_continuity, "same_kind_and_operands_published");
   assert.equal(result.findings[1].selected_bound_action_continuity, "not_published_with_same_kind_and_operands");
   assert.equal(result.findings[2].identity_evidence_source, "historical_identity_shadow");
+  assert.equal(result.findings[3].identity_evidence_source, "human_environment_snapshot");
+  assert.equal(result.findings[3].pre_state_id, "snapshot-1");
+  assert.equal(result.findings[3].post_state_id, "snapshot-2");
 } finally {
   rmSync(root, { recursive: true, force: true });
 }
