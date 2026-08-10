@@ -33,6 +33,10 @@ internal sealed record HumanEquivalentLinkedDetailCatalogEntry(
     string EntityId,
     string VisibilityBasis);
 
+internal sealed record HumanBoundActionProjectionResult(
+    HumanEnvironmentBoundActionProjection Projection,
+    IReadOnlyDictionary<string, HumanEquivalentNativeBinding> Bindings);
+
 /// <summary>
 /// Human-Equivalent observation and delivery runtime. It owns the HE wire,
 /// admission and receipt lifecycle and shares only bounded native UI
@@ -40,6 +44,7 @@ internal sealed record HumanEquivalentLinkedDetailCatalogEntry(
 /// </summary>
 internal static partial class HumanEquivalentRuntime
 {
+    private const int MaxBoundActions = 512;
     private static BridgeEntityRegistry Entities => NativeUiRuntime.Entities;
     private static readonly BridgeStateIdentityTracker HumanStateIdentity = new();
     private static readonly ConcurrentDictionary<string, string> HumanRequestFingerprints =
@@ -73,7 +78,7 @@ internal static partial class HumanEquivalentRuntime
             new[]
             {
                 "Applied means native UI input was delivered, not that a business transaction settled.",
-                "D annotations are outside the C observation and never authorize affordances.",
+                "D annotations are outside the C observation and never authorize bound actions.",
                 "Build or install does not prove this artifact is loaded or Live-exercised."
             });
     }
@@ -91,10 +96,10 @@ internal static partial class HumanEquivalentRuntime
         {
             return HumanReceipt(
                 requestId,
-                request.AffordanceId ?? "invalid",
+                request.BoundActionId ?? "invalid",
                 "activate",
                 null,
-                Array.Empty<HumanEnvironmentAffordanceArgument>(),
+                Array.Empty<HumanEnvironmentBoundActionArgument>(),
                 "not_applied",
                 "not_applied",
                 "invalid_request_id",
@@ -105,7 +110,7 @@ internal static partial class HumanEquivalentRuntime
         string fingerprint = BridgeHash.Object(new
         {
             request.ExpectedSnapshotId,
-            request.AffordanceId,
+            request.BoundActionId,
             request.ClientSessionId,
             request.ControllerLeaseId,
             request.ControllerGeneration
@@ -120,10 +125,10 @@ internal static partial class HumanEquivalentRuntime
                     return replay;
                 return HumanReceipt(
                     requestId,
-                    request.AffordanceId ?? "invalid",
+                    request.BoundActionId ?? "invalid",
                     "activate",
                     null,
-                    Array.Empty<HumanEnvironmentAffordanceArgument>(),
+                    Array.Empty<HumanEnvironmentBoundActionArgument>(),
                     "not_applied",
                     "not_applied",
                     "request_id_conflict",
@@ -133,29 +138,29 @@ internal static partial class HumanEquivalentRuntime
             }
 
             HumanEquivalentRuntimeSnapshot snapshot = BuildHumanEquivalentSnapshot();
-            string affordanceId = request.AffordanceId ?? string.Empty;
-            HumanEquivalentAffordance? affordance = snapshot.Observation.Affordances
+            string boundActionId = request.BoundActionId ?? string.Empty;
+            HumanEnvironmentBoundAction? boundAction = snapshot.Observation.BoundActions.Actions
                 .SingleOrDefault(candidate => string.Equals(
-                    candidate.AffordanceId,
-                    affordanceId,
+                    candidate.BoundActionId,
+                    boundActionId,
                     StringComparison.Ordinal));
-            HumanEquivalentNativeBinding? binding = affordance == null
-                || !snapshot.Bindings.TryGetValue(affordanceId, out HumanEquivalentNativeBinding? found)
+            HumanEquivalentNativeBinding? binding = boundAction == null
+                || !snapshot.Bindings.TryGetValue(boundActionId, out HumanEquivalentNativeBinding? found)
                     ? null
                     : found;
             parameters = binding?.Parameters
                 ?? new Dictionary<string, string>(StringComparer.Ordinal);
-            string action = affordance?.Action ?? "activate";
-            string? subjectRef = affordance?.SubjectRef;
-            IReadOnlyList<HumanEnvironmentAffordanceArgument> arguments =
-                affordance?.Arguments ?? Array.Empty<HumanEnvironmentAffordanceArgument>();
+            string action = boundAction?.Action ?? "activate";
+            string? subjectRef = boundAction?.SubjectRef;
+            IReadOnlyList<HumanEnvironmentBoundActionArgument> arguments =
+                boundAction?.Arguments ?? Array.Empty<HumanEnvironmentBoundActionArgument>();
 
             HumanRequestFingerprints[requestId] = fingerprint;
             HumanEquivalentActionReceipt Fail(string code, string detail)
             {
                 HumanEquivalentActionReceipt failed = HumanReceipt(
                     requestId,
-                    affordanceId,
+                    boundActionId,
                     action,
                     subjectRef,
                     arguments,
@@ -175,9 +180,11 @@ internal static partial class HumanEquivalentRuntime
                     "stale_snapshot",
                     "The exact Human-Equivalent snapshot changed; obtain a fresh observation.");
             }
-            if (affordance == null || binding == null)
-                return Fail("affordance_not_current", "The exact advertised affordance is no longer current.");
-            var bridgeRequest = new BridgeCommandRequest(requestId, request.ExpectedSnapshotId, affordanceId)
+            if (snapshot.Observation.BoundActions.Status != "complete")
+                return Fail("bound_action_projection_incomplete", "The finite bound-action projection is not complete and cannot authorize input.");
+            if (boundAction == null || binding == null)
+                return Fail("bound_action_not_current", "The exact advertised bound action is no longer current.");
+            var bridgeRequest = new BridgeCommandRequest(requestId, request.ExpectedSnapshotId, boundActionId)
             {
                 ClientSessionId = request.ClientSessionId,
                 ControllerLeaseId = request.ControllerLeaseId,
@@ -199,7 +206,7 @@ internal static partial class HumanEquivalentRuntime
             {
                 HumanEquivalentActionReceipt unknown = HumanReceipt(
                     requestId,
-                    affordanceId,
+                    boundActionId,
                     action,
                     subjectRef,
                     arguments,
@@ -231,7 +238,7 @@ internal static partial class HumanEquivalentRuntime
             }
             HumanEquivalentActionReceipt applied = HumanReceipt(
                 requestId,
-                affordanceId,
+                boundActionId,
                 action,
                 subjectRef,
                 arguments,
@@ -424,9 +431,10 @@ internal static partial class HumanEquivalentRuntime
             draft.Surface,
             nativeBindings,
             rawSurface);
-        IReadOnlyList<(HumanEquivalentAffordance Affordance, HumanEquivalentNativeBinding Binding)> projected =
-            ProjectHumanAffordances(nativeBindings, interactionId, referents);
-        referents = CompleteHumanReferents(referents, projected);
+        IReadOnlyList<HumanEnvironmentInteractionCapability> capabilities =
+            ProjectInteractionCapabilities(nativeBindings);
+        HumanBoundActionProjectionResult projected =
+            ProjectBoundActions(nativeBindings, interactionId, referents);
         string stage = ReadFirstString(rawSurface, "stage") ?? draft.Readiness;
         string? prompt = ReadFirstString(rawSurface, "prompt", "body", "message");
         IReadOnlyList<HumanEnvironmentReadOpportunity> reads = inspections
@@ -459,14 +467,14 @@ internal static partial class HumanEquivalentRuntime
             surface = surfaceContent,
             interactionId,
             referents = referents.Values.OrderBy(item => item.ReferentId, StringComparer.Ordinal).ToArray(),
-            affordances = projected.Select(item => item.Affordance).ToArray(),
+            authority = CanonicalAuthoritySignature(nativeBindings),
             reads,
             visibility.HiddenByPolicy
         });
         (string snapshotId, long sequence) = HumanStateIdentity.Observe(signature);
         bool visibleUnsupported = draft.Surface is UnsupportedSurface;
-        string status = projected.Count > 0
-            ? "actionable"
+        string status = projected.Projection.TotalCount > 0
+            ? "interactive"
             : visibleUnsupported ? "visible_unsupported" : draft.Readiness == "settling" ? "settling" : "observed";
         var observation = new HumanEquivalentObservationResponse(
             HumanEquivalentContract.ProtocolVersion,
@@ -486,9 +494,10 @@ internal static partial class HumanEquivalentRuntime
                 stage,
                 prompt,
                 SurfaceContentSchema(draft.Surface.Kind),
-                surfaceContent),
+                surfaceContent,
+                capabilities),
             referents.Values.OrderBy(item => item.ReferentId, StringComparer.Ordinal).ToArray(),
-            projected.Select(item => item.Affordance).ToArray(),
+            projected.Projection,
             reads,
             HumanCompleteness(
                 draft.Completeness,
@@ -499,7 +508,7 @@ internal static partial class HumanEquivalentRuntime
         return new HumanEquivalentRuntimeSnapshot(
             observation,
             draft,
-            projected.ToDictionary(item => item.Affordance.AffordanceId, item => item.Binding, StringComparer.Ordinal));
+            projected.Bindings);
     }
 
     private static IReadOnlyList<BridgeInspectionCatalogEntry> BuildHumanInspectionCatalog(
@@ -652,49 +661,156 @@ internal static partial class HumanEquivalentRuntime
             _ => Array.Empty<VisibleCard>()
         };
 
-    private static IReadOnlyList<(HumanEquivalentAffordance, HumanEquivalentNativeBinding)>
-        ProjectHumanAffordances(
+    internal static HumanBoundActionProjectionResult ProjectBoundActions(
             IReadOnlyList<ConnectorV3BoundCommand> bindings,
             string interactionId,
             IReadOnlyDictionary<string, HumanEnvironmentReferent> visibleReferents)
     {
-        var result = new List<(HumanEquivalentAffordance, HumanEquivalentNativeBinding)>();
-        foreach (ConnectorV3BoundCommand binding in bindings)
+        var actions = new List<HumanEnvironmentBoundAction>();
+        var exactBindings = new Dictionary<string, HumanEquivalentNativeBinding>(StringComparer.Ordinal);
+        long totalCount = 0;
+        foreach (ConnectorV3BoundCommand binding in bindings
+            .OrderBy(item => item.Candidate.CandidateId, StringComparer.Ordinal))
         {
-            foreach (IReadOnlyDictionary<string, string> parameters in ExpandParameters(binding.Candidate))
+            totalCount = SaturatingAdd(totalCount, CountParameterCombinations(binding.Candidate));
+            int remaining = MaxBoundActions - actions.Count;
+            if (remaining <= 0)
+                continue;
+            foreach (IReadOnlyDictionary<string, string> parameters in ExpandParameters(binding.Candidate, remaining))
             {
-                IReadOnlyList<HumanEnvironmentAffordanceArgument> publicBindings =
-                    PublicAffordanceBindings(binding.Candidate, parameters, visibleReferents);
+                IReadOnlyList<HumanEnvironmentBoundActionArgument> publicBindings =
+                    PublicBoundActionBindings(binding.Candidate, parameters, visibleReferents);
                 int subjectIndex = SubjectBindingIndex(binding.Candidate.Command, publicBindings);
                 string? subjectRef = subjectIndex < 0
                     ? null
                     : publicBindings[subjectIndex].ReferentId;
-                HumanEnvironmentAffordanceArgument[] arguments = publicBindings
+                HumanEnvironmentBoundActionArgument[] arguments = publicBindings
                     .Where((_, index) => index != subjectIndex)
                     .ToArray();
                 string action = GenericAction(binding.Candidate.Command, binding.Candidate.Operation);
-                string affordanceId = "affordance_" + BridgeHash.Object(new
+                string boundActionId = "bound_action_" + BridgeHash.Object(new
                 {
+                    binding.Candidate.CandidateId,
+                    binding.Candidate.Command,
                     action,
                     interactionId,
                     subjectRef,
                     arguments,
                     parameters = parameters.OrderBy(pair => pair.Key, StringComparer.Ordinal).ToArray()
                 })[..20];
-                string label = AffordanceLabel(binding.Candidate.Label, arguments, visibleReferents);
-                result.Add((
-                    new HumanEquivalentAffordance(
-                        affordanceId,
+                string label = BoundActionLabel(binding.Candidate.Label, arguments, visibleReferents);
+                var projected = new HumanEnvironmentBoundAction(
+                        boundActionId,
                         action,
                         interactionId,
                         subjectRef,
                         arguments,
-                        label),
-                    new HumanEquivalentNativeBinding(binding, parameters)));
+                        label);
+                if (exactBindings.TryAdd(
+                    boundActionId,
+                    new HumanEquivalentNativeBinding(binding, parameters)))
+                {
+                    actions.Add(projected);
+                }
             }
         }
-        return result;
+        string status = totalCount == actions.Count ? "complete" : "truncated";
+        return new HumanBoundActionProjectionResult(
+            new HumanEnvironmentBoundActionProjection(
+                "sts2.human-environment/bound-actions-1",
+                status,
+                actions.Count,
+                totalCount,
+                MaxBoundActions,
+                "candidate_id_then_operand_name_then_referent_id",
+                actions),
+            exactBindings);
     }
+
+    private static IReadOnlyList<HumanEnvironmentInteractionCapability>
+        ProjectInteractionCapabilities(IReadOnlyList<ConnectorV3BoundCommand> bindings) =>
+        bindings
+            .Where(binding => CountParameterCombinations(binding.Candidate) > 0)
+            .Select(binding =>
+            {
+                string[] roles = PublicParameterRoles(binding.Candidate).ToArray();
+                int subjectIndex = SubjectRoleIndex(binding.Candidate.Command, roles);
+                return new HumanEnvironmentInteractionCapability(
+                    GenericAction(binding.Candidate.Command, binding.Candidate.Operation),
+                    subjectIndex < 0 ? null : roles[subjectIndex],
+                    roles.Where((_, index) => index != subjectIndex)
+                        .Select(role => new HumanEnvironmentCapabilityArgument(role, Required: true))
+                        .ToArray(),
+                    "current_native_interaction");
+            })
+            .GroupBy(value => BridgeHash.Object(value), StringComparer.Ordinal)
+            .Select(group => group.First())
+            .OrderBy(value => value.Action, StringComparer.Ordinal)
+            .ThenBy(value => value.SubjectRole, StringComparer.Ordinal)
+            .ToArray();
+
+    private static IEnumerable<string> PublicParameterRoles(ConnectorV3CommandCandidate candidate)
+    {
+        IEnumerable<string> names = candidate.Operands.Keys.Concat(candidate.OperandDomains.Keys)
+            .Where(name => name.EndsWith("_id", StringComparison.Ordinal)
+                && !IsPrivateBindingParameter(name))
+            .Distinct(StringComparer.Ordinal);
+        foreach (string name in names.OrderBy(value => value, StringComparer.Ordinal))
+        {
+            IEnumerable<string> values = candidate.Operands.TryGetValue(name, out string? fixedValue)
+                ? new[] { fixedValue }
+                : candidate.OperandDomains.TryGetValue(name, out ConnectorV3OperandDomain? domain)
+                    ? domain.EntityIds
+                    : Array.Empty<string>();
+            ActionEntityBinding? entityBinding = candidate.EntityBindings.FirstOrDefault(item =>
+                values.Contains(item.EntityId, StringComparer.Ordinal)
+                && !IsOwnerRole(item.Role)
+                && !IsPrivateBindingRole(item.Role));
+            yield return PublicRole(entityBinding?.Role ?? name);
+        }
+    }
+
+    internal static long CountParameterCombinations(ConnectorV3CommandCandidate candidate)
+    {
+        long count = 1;
+        foreach (ConnectorV3OperandDomain domain in candidate.OperandDomains.Values)
+        {
+            if (domain.EntityIds.Count == 0)
+                return 0;
+            if (count > long.MaxValue / domain.EntityIds.Count)
+                return long.MaxValue;
+            count *= domain.EntityIds.Count;
+        }
+        return count;
+    }
+
+    private static long SaturatingAdd(long left, long right) =>
+        left > long.MaxValue - right ? long.MaxValue : left + right;
+
+    internal static string CanonicalAuthoritySignature(
+        IReadOnlyList<ConnectorV3BoundCommand> bindings) => BridgeHash.Object(
+        bindings.Select(binding => new
+        {
+            binding.Candidate.CandidateId,
+            binding.Candidate.Command,
+            binding.Candidate.Operation,
+            Operands = binding.Candidate.Operands.OrderBy(pair => pair.Key, StringComparer.Ordinal).ToArray(),
+            Domains = binding.Candidate.OperandDomains
+                .OrderBy(pair => pair.Key, StringComparer.Ordinal)
+                .Select(pair => new
+                {
+                    pair.Key,
+                    pair.Value.Kind,
+                    EntityIds = pair.Value.EntityIds.OrderBy(value => value, StringComparer.Ordinal).ToArray()
+                }).ToArray(),
+            EntityBindings = binding.Candidate.EntityBindings
+                .OrderBy(value => value.Role, StringComparer.Ordinal)
+                .ThenBy(value => value.EntityId, StringComparer.Ordinal)
+                .Select(value => new { value.Role, value.EntityId })
+                .ToArray(),
+            binding.Candidate.BindingKind,
+            binding.Candidate.AuthorityState
+        }).OrderBy(value => value.CandidateId, StringComparer.Ordinal).ToArray());
 
     private static Dictionary<string, HumanEnvironmentReferent> BuildHumanReferents(
         JsonNode surfaceContent,
@@ -702,8 +818,7 @@ internal static partial class HumanEquivalentRuntime
         IReadOnlyList<ConnectorV3BoundCommand> bindings,
         JsonNode rawSurface)
     {
-        var referents = new Dictionary<string, HumanEnvironmentReferent>(StringComparer.Ordinal);
-        CollectHumanReferents(surfaceContent, null, referents);
+        var referents = ProjectFactReferents(surfaceContent);
         foreach (VisibleCard card in HumanSurfaceCards(surface))
         {
             AddHumanReferent(
@@ -727,48 +842,17 @@ internal static partial class HumanEquivalentRuntime
                 null,
                 null,
                 null,
+                enabled: true,
                 observationBasis: "native_ui_actionability");
         }
         return referents;
     }
 
-    private static Dictionary<string, HumanEnvironmentReferent> CompleteHumanReferents(
-        Dictionary<string, HumanEnvironmentReferent> referents,
-        IReadOnlyList<(HumanEquivalentAffordance Affordance, HumanEquivalentNativeBinding Binding)> affordances)
+    internal static Dictionary<string, HumanEnvironmentReferent> ProjectFactReferents(
+        JsonNode surfaceContent)
     {
-        var actionable = affordances
-            .SelectMany(item => item.Affordance.Arguments.Select(argument => argument.ReferentId)
-                .Prepend(item.Affordance.SubjectRef))
-            .Where(value => value != null)
-            .Cast<string>()
-            .ToHashSet(StringComparer.Ordinal);
-        foreach (string referentId in actionable)
-        {
-            if (!referents.TryGetValue(referentId, out HumanEnvironmentReferent? referent))
-            {
-                referent = new HumanEnvironmentReferent(
-                    referentId,
-                    "control",
-                    "control",
-                    null,
-                    new HumanEnvironmentReferentState(
-                        Visible: true,
-                        Actionable: true,
-                        Selected: null,
-                        Focused: null,
-                        ObservationBasis: "native_ui_actionability"),
-                    null,
-                    null);
-            }
-            else
-            {
-                referent = referent with
-                {
-                    State = referent.State with { Actionable = true }
-                };
-            }
-            referents[referentId] = referent;
-        }
+        var referents = new Dictionary<string, HumanEnvironmentReferent>(StringComparer.Ordinal);
+        CollectHumanReferents(surfaceContent, null, referents);
         return referents;
     }
 
@@ -791,7 +875,8 @@ internal static partial class HumanEquivalentRuntime
                         "entity",
                         ReadFirstString(obj, "name", "label", "title", "definition_id"),
                         ReadOptionalBool(obj, "is_selected", "selected"),
-                        obj.DeepClone());
+                        obj.DeepClone(),
+                        ReadOptionalBool(obj, "enabled", "is_enabled"));
                 }
                 else if (value is JsonArray ids && IsVisibleReferentArray(key))
                 {
@@ -828,6 +913,7 @@ internal static partial class HumanEquivalentRuntime
         string? label,
         bool? selected,
         JsonNode? properties,
+        bool? enabled = null,
         string observationBasis = "native_visible_fact")
     {
         if (string.IsNullOrWhiteSpace(referentId))
@@ -844,7 +930,7 @@ internal static partial class HumanEquivalentRuntime
             label ?? existing?.Label,
             new HumanEnvironmentReferentState(
                 Visible: true,
-                Actionable: existing?.State.Actionable ?? false,
+                Enabled: enabled ?? existing?.State.Enabled,
                 Selected: selected ?? existing?.State.Selected,
                 Focused: existing?.State.Focused,
                 ObservationBasis: observationBasis),
@@ -852,12 +938,12 @@ internal static partial class HumanEquivalentRuntime
             hasProperties ? properties : null);
     }
 
-    private static IReadOnlyList<HumanEnvironmentAffordanceArgument> PublicAffordanceBindings(
+    private static IReadOnlyList<HumanEnvironmentBoundActionArgument> PublicBoundActionBindings(
         ConnectorV3CommandCandidate candidate,
         IReadOnlyDictionary<string, string> parameters,
         IReadOnlyDictionary<string, HumanEnvironmentReferent> visibleReferents)
     {
-        var result = new List<HumanEnvironmentAffordanceArgument>();
+        var result = new List<HumanEnvironmentBoundActionArgument>();
         foreach ((string name, string value) in parameters)
         {
             if (!name.EndsWith("_id", StringComparison.Ordinal) || IsPrivateBindingParameter(name))
@@ -872,7 +958,7 @@ internal static partial class HumanEquivalentRuntime
             if (!result.Any(item => string.Equals(item.Role, role, StringComparison.Ordinal)
                 && string.Equals(item.ReferentId, value, StringComparison.Ordinal)))
             {
-                result.Add(new HumanEnvironmentAffordanceArgument(role, value));
+                result.Add(new HumanEnvironmentBoundActionArgument(role, value));
             }
         }
         return result;
@@ -880,9 +966,14 @@ internal static partial class HumanEquivalentRuntime
 
     private static int SubjectBindingIndex(
         string command,
-        IReadOnlyList<HumanEnvironmentAffordanceArgument> bindings)
+        IReadOnlyList<HumanEnvironmentBoundActionArgument> bindings)
     {
-        if (bindings.Count == 0)
+        return SubjectRoleIndex(command, bindings.Select(item => item.Role).ToArray());
+    }
+
+    private static int SubjectRoleIndex(string command, IReadOnlyList<string> roles)
+    {
+        if (roles.Count == 0)
             return -1;
         string[] preferred = command switch
         {
@@ -896,20 +987,20 @@ internal static partial class HumanEquivalentRuntime
         };
         foreach (string role in preferred)
         {
-            int index = bindings.ToList().FindIndex(item => item.Role.Contains(role, StringComparison.Ordinal));
+            int index = roles.ToList().FindIndex(item => item.Contains(role, StringComparison.Ordinal));
             if (index >= 0)
                 return index;
         }
-        int nonTarget = bindings.ToList().FindIndex(item => item.Role != "target");
+        int nonTarget = roles.ToList().FindIndex(item => item != "target");
         return nonTarget >= 0 ? nonTarget : 0;
     }
 
-    private static string AffordanceLabel(
+    private static string BoundActionLabel(
         string label,
-        IReadOnlyList<HumanEnvironmentAffordanceArgument> arguments,
+        IReadOnlyList<HumanEnvironmentBoundActionArgument> arguments,
         IReadOnlyDictionary<string, HumanEnvironmentReferent> referents)
     {
-        HumanEnvironmentAffordanceArgument? target = arguments.FirstOrDefault(item => item.Role == "target");
+        HumanEnvironmentBoundActionArgument? target = arguments.FirstOrDefault(item => item.Role == "target");
         if (target == null
             || !referents.TryGetValue(target.ReferentId, out HumanEnvironmentReferent? referent)
             || string.IsNullOrWhiteSpace(referent.Label)
@@ -919,32 +1010,36 @@ internal static partial class HumanEquivalentRuntime
     }
 
     private static IEnumerable<IReadOnlyDictionary<string, string>> ExpandParameters(
-        ConnectorV3CommandCandidate candidate)
+        ConnectorV3CommandCandidate candidate,
+        int limit)
     {
         var current = new List<Dictionary<string, string>>
         {
             new(candidate.Operands, StringComparer.Ordinal)
         };
-        foreach ((string name, ConnectorV3OperandDomain domain) in candidate.OperandDomains)
+        foreach ((string name, ConnectorV3OperandDomain domain) in candidate.OperandDomains
+            .OrderBy(pair => pair.Key, StringComparer.Ordinal))
         {
-            current = current.SelectMany(parameters => domain.EntityIds.Select(entityId =>
+            current = current.SelectMany(parameters => domain.EntityIds
+                .OrderBy(entityId => entityId, StringComparer.Ordinal)
+                .Select(entityId =>
             {
                 var expanded = new Dictionary<string, string>(parameters, StringComparer.Ordinal)
                 {
                     [name] = entityId
                 };
                 return expanded;
-            })).Take(512).ToList();
+            })).Take(limit).ToList();
         }
         return current;
     }
 
     private static HumanEquivalentActionReceipt HumanReceipt(
         string requestId,
-        string affordanceId,
+        string boundActionId,
         string action,
         string? subjectRef,
-        IReadOnlyList<HumanEnvironmentAffordanceArgument> arguments,
+        IReadOnlyList<HumanEnvironmentBoundActionArgument> arguments,
         string status,
         string delivery,
         string? reasonCode,
@@ -956,7 +1051,7 @@ internal static partial class HumanEquivalentRuntime
             HumanEquivalentContract.ReceiptSchema,
             requestId,
             delivery,
-            new HumanEquivalentActionSummary(affordanceId, action, subjectRef, arguments),
+            new HumanEquivalentActionSummary(boundActionId, action, subjectRef, arguments),
             reasonCode,
             detail,
             new HumanEquivalentRetryPolicy(
@@ -1111,7 +1206,7 @@ internal static partial class HumanEquivalentRuntime
     }
 
     private static bool IsVisibleReferentField(string key) =>
-        key.EndsWith("_entity_id", StringComparison.Ordinal)
+        (key == "entity_id" || key.EndsWith("_entity_id", StringComparison.Ordinal))
         && !key.Contains("screen", StringComparison.Ordinal)
         && !key.Contains("room", StringComparison.Ordinal)
         && !key.Contains("source", StringComparison.Ordinal)
@@ -1126,7 +1221,9 @@ internal static partial class HumanEquivalentRuntime
 
     private static string ReferentRole(string key, string? parentKey)
     {
-        string role = key.EndsWith("_entity_ids", StringComparison.Ordinal)
+        string role = key == "entity_id"
+            ? "entity"
+            : key.EndsWith("_entity_ids", StringComparison.Ordinal)
             ? key[..^11]
             : key.EndsWith("_entity_id", StringComparison.Ordinal)
                 ? key[..^10]
@@ -1136,9 +1233,23 @@ internal static partial class HumanEquivalentRuntime
         if (role is "target" or "targetable_enemy")
             return "target";
         if (role is "entity" && !string.IsNullOrWhiteSpace(parentKey))
-            role = parentKey.TrimEnd('s');
+            role = SingularRole(parentKey);
         return PublicRole(role);
     }
+
+    private static string SingularRole(string value) => value switch
+    {
+        "enemies" => "enemy",
+        "characters" => "character",
+        "cards" => "card",
+        "options" or "choices" or "next_options" => "option",
+        "nodes" => "node",
+        "rewards" => "reward",
+        "offers" => "offer",
+        "potions" => "potion",
+        "relics" => "relic",
+        _ => value.EndsWith('s') ? value[..^1] : value
+    };
 
     private static string SchemaToken(string value)
     {

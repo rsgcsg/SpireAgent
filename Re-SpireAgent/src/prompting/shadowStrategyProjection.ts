@@ -135,9 +135,9 @@ function removeSurfaceActionSummary(state: JsonObject, omitted: string[]): void 
     delete surface.legalActions;
     omitted.push("surface.legalActions");
   }
-  if ("affordances" in surface) {
-    delete surface.affordances;
-    omitted.push("surface.affordances");
+  if ("boundActions" in surface) {
+    delete surface.boundActions;
+    omitted.push("surface.boundActions");
   }
 }
 

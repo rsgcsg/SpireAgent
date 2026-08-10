@@ -14,6 +14,7 @@
 10. [HE C/A wire and domain freeze reaudit](audits/HUMAN_EQUIVALENT_C_A_WIRE_AND_DOMAIN_FREEZE_REAUDIT_2026-08-09.md)
 11. [Historical Preview.3 Human Environment Contract reaudit](audits/HUMAN_ENVIRONMENT_CONTRACT_REAUDIT_2026-08-10.md)
 12. [Human Environment Interface synthesis and Preview.4](audits/HUMAN_ENVIRONMENT_INTERFACE_SYNTHESIS_AND_PREVIEW4_2026-08-10.md)
+13. [Human Environment core and consumer projection reaudit](audits/HUMAN_ENVIRONMENT_CORE_AND_PROJECTION_REAUDIT_2026-08-11.md)
 
 ## Component Contracts
 

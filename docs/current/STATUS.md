@@ -1,92 +1,87 @@
 # Current Status - Human Environment Contract
 
-Baseline date: 2026-08-10
+Baseline date: 2026-08-11
 
 Branch: `human_equivalent_connector`
 
-Current source protocol is `1.0-preview.4`.
+Current source protocol is `1.0-preview.5`.
 
 ## Verdict
 
-Human-Equivalent C is the only default product path. The canonical architecture
-is one fair-player Human Environment semantic core implemented by Host profiles,
-then consumed through purpose-specific projections. Live and a future Headless
-host share `observe/read/interact/receipt` semantics; lifecycle, branching,
-scenario mutation, acceleration, rewards and tensors are separate ports.
+Human-Equivalent C remains the only default product path. The macro
+architecture is retained, while Preview.5 corrects a structural coupling in
+Preview.4: canonical visible truth and current interaction grammar no longer
+derive their meaning from Re's finite action menu.
 
-The verdict is **conditional freeze**. The execution core is retained, but the
-public contract remains preview until a second Host and conformance fixtures
-test host neutrality. Preview.4 corrects a real Preview.3 information defect:
-visible enemies and other facts could exist only in `surface.content`, while
-affordances exposed one ambiguous target. The public model now separates one
-current `interaction`, observable `referents`, and affordance `subject_ref` plus
-role-labelled arguments.
+The freeze verdict remains **conditional freeze**. Core delivery invariants are
+stable; the wire remains preview until Preview.5 is cold-loaded and exercised,
+information parity improves, and a second Host or deterministic conformance
+host tests the host-neutral meanings.
 
-## Source And Automated Truth
+## Current Source And Automated Truth
 
-Preview.4 implements:
+Preview.5 implements:
 
 - capabilities-owned Host/game/Modset/runtime identity;
-- compact snapshot/session identity and one current interaction;
-- persistent visible state plus revisioned interaction content;
-- referents discovered from visible facts before action projection;
-- opaque affordances with exact public subject/argument referents while native
-  operands stay Host-local;
-- one advertised, snapshot-bound `/api/he/reads/{read_id}` path;
-- stale rejection, one controller, execute-time revalidation, idempotent
-  requests, `applied/not_applied/unknown`, and unknown-no-retry;
-- strict Re decoding, visible combat-context projection and finite opaque
-  choice projection without V2/V3 wire or action-ID lookup.
+- an independently meaningful snapshot, persistent visible summary, current
+  interaction content, referents and reads;
+- strategy-free `interaction.capabilities`;
+- referent visible state with optional observed enabled/selected/focused state,
+  never global actionability inferred from action tuples;
+- a deterministic `bound_actions` projection with complete/truncated status,
+  exact counts, limit and ordering;
+- mutation authority only from a complete projection and one Host-local native
+  binding/executor path;
+- snapshot identity that includes canonical current binding authority but not
+  consumer labels or finite projection order;
+- stale rejection, execute-time revalidation, one controller, idempotent
+  requests, applied/not-applied/unknown and unknown-no-retry;
+- strict Re decoding and finite opaque choices using `bound_action_id`.
 
-Gateway, Re, schema, MCP and boundary tests cover these source claims. They do
-not prove a Preview.4 artifact is loaded or Live-exercised.
+Gateway `303/303` tests and Re `295/295` tests, typecheck, build, Python syntax
+and HE boundary checks cover these source claims. They are not loaded or Live
+evidence.
 
 ## Latest Exact Live Evidence
 
-The latest exact loaded artifact is historical Preview.3 source
-`d650b5dc6b2104c61ee9ec16377d424d21396971`, SHA
-`3a49b93c83d6a13bbd91db7fe6fbf8f5eebf6c3e435bb26dab5b977c0ff5d8eb`,
-MVID `40b80c24-bc6b-4fa5-901c-7d608b2c6033`, runtime
-`a0511ed3023545afb29feacc1725e4a7`, game `v0.110.1/db5d3552`, Modset status
-`additional_loaded_mods`, fingerprint
-`827732dae8bae2ab8f639fa956aae1da5f8ffc207f4159c9593e61870811b665`.
+The latest loaded artifact is Preview.4 SHA
+`a74a6452f4e514e7bd74de6ba9206e24544df50ec9e46d95c9d4c5598b3f8a34`,
+MVID `f7962056-bede-4793-b925-312f62e787e3`, runtime
+`458866c580fd447d9e70e980608783b7`, game `v0.110.1/db5d3552`, Modset
+`additional_loaded_mods` with fingerprint
+`c8cd0ce0d4b5b71d8aecaacc06bfff85bbe0007b363e028f5446b062dfc181c3`.
 
-- `run-20260810075847-w6wvn3`: `he_pure`, 139 decisions, 98 settled, 7
-  checkpoint-pending, 33 non-actionable polls, one safe stale refusal; stopped
-  by repeated selector transitions.
-- `run-20260810080417-5y3to9`: `he_pure`, 7 settled selector decisions;
-  reproduced the repeated select/deselect supervision stop.
-- `run-20260810080457-fr1fog`: `he_pure`, 22 decisions, 11 settled, 2
-  checkpoint-pending and 9 transition polls; reached the completed-run
-  `main_menu` boundary.
+- `run-20260810090056-n0qf8t`: one character-select decision attempt; provider
+  `fetch failed`, no mutation. This is A/provider failure evidence.
+- `run-20260810090428-4i8i9a`: 152 decisions, 115 settled, 11 delivery
+  checkpoints, 25 transition polls, one safe stale refusal, completed boundary.
+  It includes exact card-subject/enemy-target delivery and successor evidence.
+- `run-20260810105732-l1zl09`: 213 decisions, 138 settled, 19 delivery
+  checkpoints, 53 transition polls, three safe stale refusals, no unknown,
+  completed boundary after game over and return to menu.
 
-These runs prove Preview.3 observation, affordance delivery, receipts,
-successors, stale refusal and a resumed bounded journey on that exact runtime.
-They also prove the Preview.3 combat projection dropped visible enemy context
-and could not represent card subject versus enemy target. They do not prove
-Preview.4, a from-menu full journey, Organic evidence, conformance, durable
-qualification or another environment.
+These runs prove broad Preview.4 HE observation, bound predecessor affordance
+delivery, receipts, successors and bounded journeys on that exact artifact.
+They do not prove Preview.5, another Host, conformance or qualification.
 
 ## Remaining Limits
 
-- Preview.4 requires per-machine build/install verification, cold-load and
-  exact-runtime mutation tests. Repository truth does not imply a particular
-  machine has installed or loaded the artifact; local deployment records are
-  authoritative for those two evidence levels.
-- The Live Host still reuses five checked V3-owned adapter-library functions.
-  They are internal implementation debt, not public wire or authority.
-- `interaction.content` is revisioned JSON rather than generated tagged SDK
-  types; Re currently projects complete combat facts but not every context kind.
-- hover, focus, tooltip, scroll and native-page open/read/return parity remains
-  incomplete.
-- no Headless Host, Live/Headless conformance suite, Training adapter, Search
-  adapter, clone/fork port or qualification exists.
+- Preview.5 needs Release build/install, cold-load identity verification and an
+  exact-runtime mutation journey; no Preview.4 evidence transfers.
+- hover/focus/tooltip/scroll and native-page open/read/return parity is partial.
+- the Live Host still reuses five checked V3-owned adapter-library seams; they
+  are implementation debt, not public wire or a second authority.
+- interaction content remains revisioned JSON rather than generated tagged SDK
+  types.
+- no Headless Host, cross-Host conformance suite, Training/Search adapter,
+  clone/fork port or durable qualification exists.
 
 Source, test, build, installed, loaded, Live mutation, journey, conformance and
 qualification remain separate evidence levels.
 
 ## Per-machine Deployment Truth
 
-The loaded tuple above belongs only to its recorded machine and historical
-runtime. Every checkout must run `npm run doctor`, `npm run deploy`, cold-start
-STS2 and run `npm run verify:loaded`; build or install never proves load.
+Every checkout must independently run `npm run doctor`, deploy while the game
+is closed, cold-start STS2 and run `npm run verify:loaded`. Repository source,
+tests or Release output never prove another machine's installed or loaded
+artifact. The Preview.4 tuple above is evidence only for its recorded runtime.

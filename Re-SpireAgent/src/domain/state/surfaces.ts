@@ -163,7 +163,7 @@ export interface HumanUiSurface {
     kind: "entity" | "control";
     label?: string;
     visible: boolean;
-    actionable: boolean;
+    enabled?: boolean;
     selected?: boolean;
     focused?: boolean;
     observationBasis: "native_visible_fact" | "native_ui_actionability";
@@ -179,8 +179,20 @@ export interface HumanUiSurface {
     orderingSemantics: string;
     hiddenByPolicy: string[];
   }>;
-  affordances: Array<{
-    affordanceId: string;
+  capabilities: Array<{
+    action: string;
+    subjectRole?: string;
+    arguments: Array<{ role: string; required: boolean }>;
+    availabilityBasis: "current_native_interaction";
+  }>;
+  boundActionProjection: {
+    status: "complete" | "truncated" | "unavailable";
+    totalCount: number;
+    limit: number;
+    orderingSemantics: string;
+  };
+  boundActions: Array<{
+    boundActionId: string;
     snapshotId: string;
     action: string;
     label: string;

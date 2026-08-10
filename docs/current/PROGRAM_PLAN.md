@@ -8,18 +8,19 @@ Host control, strategy, training and evaluation remain orthogonal.
 
 ## Current State
 
-Preview.3 completed broad exact-runtime HE mutation and a resumed `he_pure`
-journey, but exposed ambiguous targeted actions and discarded visible combat
-context in Re. Preview.4 fixes those contract/consumer defects and unifies the
-read path. It has source and automated evidence only until cold-loaded.
+Preview.4 completed two broad exact-runtime HE journeys and proved exact
+card-subject/enemy-target delivery without unknown mutation. It also exposed a
+remaining architecture defect: finite action expansion still defined parts of
+canonical observation and silently capped combinations. Preview.5 fixes that
+coupling and has source/automated evidence only until cold-loaded.
 
 ## Delivery Order
 
-1. Build, install and cold-load Preview.4; verify exact SHA/MVID/runtime.
-2. Run a short multi-enemy combat action and one state-bound read, including a
-   stale-read refusal.
-3. Run one ordinary `he_pure` journey and retain selector-loop failures as A/Re
-   evidence rather than changing C authority.
+1. Build, install and cold-load Preview.5; verify exact SHA/MVID/runtime.
+2. Run one action using a complete bound-action projection and one state-bound
+   read, including stale refusal.
+3. Run one ordinary `he_pure` journey and confirm no truncated projection or
+   unknown delivery.
 4. Complete missing human information parity.
 5. Shift normal product work to A strategy, planning and recovery.
 6. Add a second Host and conformance fixtures before freezing C 1.0.
@@ -28,7 +29,9 @@ read path. It has source and automated evidence only until cold-loaded.
 
 - Game/Host owns native truth and legality; C owns fair-player truth and input.
 - Exact operands remain Host-local.
-- Observation facts do not depend on candidate publication.
+- Observation facts and interaction capabilities do not depend on finite
+  consumer projection.
+- An incomplete finite projection never grants authority.
 - Publication and execution both bind the current snapshot and interaction.
 - Requests are idempotent; unknown delivery is never retried.
 - D never authorizes or executes.

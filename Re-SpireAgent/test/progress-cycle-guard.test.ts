@@ -99,8 +99,10 @@ function humanShopState(
       content: { uiKind, gold },
       referents: [],
       reads: [],
-      affordances: [{
-        affordanceId,
+      capabilities: [{ action: verb, subjectRole: "control", arguments: [], availabilityBasis: "current_native_interaction" }],
+      boundActionProjection: { status: "complete", totalCount: 1, limit: 512, orderingSemantics: "fixture" },
+      boundActions: [{
+        boundActionId: affordanceId,
         snapshotId: stateToken,
         action: verb,
         label: verb,
@@ -122,7 +124,7 @@ function humanAction(kind: string, affordanceId: string, stateToken: string): Al
       kind: "human_ui_action",
       choiceId: affordanceId,
       expectedSnapshotId: stateToken,
-      affordanceId
+      boundActionId: affordanceId
     }
   };
 }

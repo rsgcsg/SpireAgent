@@ -4,12 +4,12 @@ import type { AdapterDescriptor, GameAdapter, GameExecutionResult } from "../../
 import type { JsonObject } from "../../shared/json.js";
 import { GatewayControlSession, type GatewayControllerCredentials } from "./gatewayControlSession.js";
 import { HumanEquivalentHttpError, HumanEquivalentRestClient } from "./humanEquivalentClient.js";
-import type { HumanEquivalentAffordance, HumanEquivalentCapabilities } from "./humanEquivalentProtocol.js";
+import type { HumanEnvironmentBoundAction, HumanEquivalentCapabilities } from "./humanEquivalentProtocol.js";
 import { wrapHumanEquivalentState, type Sts2McpRawState } from "./rawState.js";
 
 interface HumanInvocation {
   expectedSnapshotId: string;
-  affordanceId: string;
+  boundActionId: string;
 }
 
 export interface HumanEquivalentAdapterOptions {
@@ -104,23 +104,26 @@ export class Sts2HumanEquivalentAdapter implements GameAdapter<Sts2McpRawState, 
     assertIdentity(observed.data, capabilities.data);
     this.capabilities = capabilities.data;
     this.latestStateToken = observed.data.snapshot_id;
-    this.invocations = new Map(observed.data.affordances.map((affordance) => [
-      affordance.affordance_id,
-      invocation(observed.data, affordance)
+    const executableActions = observed.data.bound_actions.status === "complete"
+      ? observed.data.bound_actions.actions
+      : [];
+    this.invocations = new Map(executableActions.map((boundAction) => [
+      boundAction.bound_action_id,
+      invocation(observed.data, boundAction)
     ]));
     return wrapHumanEquivalentState({ snapshot: observed.raw });
   }
 
   async execute(action: ExecutableGameAction): Promise<GameExecutionResult> {
     if (action.kind !== "human_ui_action") {
-      return rejected("action_authority_mismatch", "Human-Equivalent Re accepts only current UI affordances.");
+      return rejected("action_authority_mismatch", "Human-Equivalent Re accepts only current bound UI actions.");
     }
     const invocation = this.invocations.get(action.choiceId);
     if (!invocation
-        || action.affordanceId !== invocation.affordanceId
+        || action.boundActionId !== invocation.boundActionId
         || action.expectedSnapshotId !== invocation.expectedSnapshotId
         || this.latestStateToken !== invocation.expectedSnapshotId) {
-      return rejected("stale_snapshot", "The selected UI affordance is not bound to the latest snapshot.");
+      return rejected("stale_snapshot", "The selected UI action is not bound to the latest snapshot.");
     }
     await this.initialize();
     if (!this.capabilities?.execution_available) {
@@ -149,7 +152,7 @@ export class Sts2HumanEquivalentAdapter implements GameAdapter<Sts2McpRawState, 
       return unknown(requestId, invocation, "action_submit_transport_unknown", safeMessage(error));
     }
     if (receipt.data.request_id !== requestId
-        || receipt.data.action.affordance_id !== invocation.affordanceId
+        || receipt.data.action.bound_action_id !== invocation.boundActionId
         || receipt.data.delivery === "unknown" && receipt.data.retry.allowed
         || !receipt.data.attribution
         || receipt.data.attribution.controller_lease_id !== controller.controllerLeaseId) {
@@ -182,11 +185,11 @@ export class Sts2HumanEquivalentAdapter implements GameAdapter<Sts2McpRawState, 
 
 function invocation(
   observation: { snapshot_id: string },
-  affordance: HumanEquivalentAffordance
+  boundAction: HumanEnvironmentBoundAction
 ): HumanInvocation {
   return {
     expectedSnapshotId: observation.snapshot_id,
-    affordanceId: affordance.affordance_id
+    boundActionId: boundAction.bound_action_id
   };
 }
 
@@ -210,7 +213,7 @@ function unknown(requestId: string, action: HumanInvocation, code: string, detai
   return {
     accepted: false,
     outcome: "unknown",
-    response: { status: "unknown", request_id: requestId, affordance_id: action.affordanceId, code, detail, retry_allowed: false, ...(lastReceipt ? { last_receipt: lastReceipt } : {}) }
+    response: { status: "unknown", request_id: requestId, bound_action_id: action.boundActionId, code, detail, retry_allowed: false, ...(lastReceipt ? { last_receipt: lastReceipt } : {}) }
   };
 }
 

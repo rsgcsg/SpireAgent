@@ -4,7 +4,7 @@ import { stateHash } from "./stateHash.js";
 
 const TRANSPORT_IDENTITY_KEYS = new Set([
   "actionId",
-  "affordanceId",
+  "boundActionId",
   "bridgeStateId",
   "expectedStateId",
   "inspectionId",

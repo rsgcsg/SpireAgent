@@ -3,7 +3,7 @@ export type ExecutableGameAction =
       kind: "human_ui_action";
       choiceId: string;
       expectedSnapshotId: string;
-      affordanceId: string;
+      boundActionId: string;
     }
   | {
       kind: "connector_v3_command";

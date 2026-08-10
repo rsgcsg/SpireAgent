@@ -94,13 +94,13 @@ public static partial class McpMod
             return;
         if (!IsSafeBridgeIdentifier(action.RequestId, 128)
             || !IsSafeBridgeIdentifier(action.ExpectedSnapshotId, 128)
-            || !IsSafeBridgeIdentifier(action.AffordanceId, 128))
+            || !IsSafeBridgeIdentifier(action.BoundActionId, 128))
         {
             SendConnectorV3Error(
                 response,
                 400,
                 "invalid_human_action",
-                "Exact request, snapshot and advertised affordance identifiers are required.");
+                "Exact request, snapshot and advertised bound-action identifiers are required.");
             return;
         }
         try

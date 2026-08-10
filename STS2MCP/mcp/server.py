@@ -1,7 +1,7 @@
 """Thin MCP transport for the STS2 Human-Equivalent Connector.
 
 The adapter forwards state-bound HumanSnapshot reads and exact advertised UI
-affordances. It owns no game rules, source semantics, authority or completion.
+bound actions. It owns no game rules, source semantics, authority or completion.
 """
 
 import argparse
@@ -21,7 +21,7 @@ _trust_env: bool = True
 _http: httpx.AsyncClient | None = None
 _control_lock: asyncio.Lock | None = None
 _control: dict | None = None
-_CONTROL_PROTOCOL = "1.0-preview.4"
+_CONTROL_PROTOCOL = "1.0-preview.5"
 _CONTROL_SCHEMA = "sts2.human-environment/control-1"
 
 
@@ -161,7 +161,7 @@ async def get_sts2_human_capabilities() -> str:
 
 @mcp.tool()
 async def get_sts2_human_snapshot() -> str:
-    """Read current player-visible UI facts and exact finite affordances."""
+    """Read current player-visible facts, interaction grammar and bound actions."""
     try:
         return await _he_get("observation")
     except Exception as error:
@@ -185,12 +185,12 @@ async def read_sts2_human_information(
 
 
 @mcp.tool()
-async def apply_sts2_ui_affordance(
+async def apply_sts2_bound_action(
     request_id: str,
     expected_snapshot_id: str,
-    affordance_id: str,
+    bound_action_id: str,
 ) -> str:
-    """Deliver one exact affordance advertised by the same HumanSnapshot.
+    """Deliver one exact bound action advertised by the same snapshot.
 
     Native operands stay inside C. An unknown delivery must never be retried.
     """
@@ -203,7 +203,7 @@ async def apply_sts2_ui_affordance(
             {
                 "request_id": request_id,
                 "expected_snapshot_id": expected_snapshot_id,
-                "affordance_id": affordance_id,
+                "bound_action_id": bound_action_id,
                 "client_session_id": control["client_session_id"],
                 "controller_lease_id": lease["controller_lease_id"],
                 "controller_generation": lease["controller_generation"],

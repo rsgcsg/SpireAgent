@@ -46,7 +46,7 @@ export class HumanEquivalentRestClient {
   async submit(input: {
     requestId: string;
     expectedSnapshotId: string;
-    affordanceId: string;
+    boundActionId: string;
     clientSessionId: string;
     controllerLeaseId: string;
     controllerGeneration: number;
@@ -54,7 +54,7 @@ export class HumanEquivalentRestClient {
     return decodeHumanReceipt(await this.post("/api/he/actions", {
       request_id: input.requestId,
       expected_snapshot_id: input.expectedSnapshotId,
-      affordance_id: input.affordanceId,
+      bound_action_id: input.boundActionId,
       client_session_id: input.clientSessionId,
       controller_lease_id: input.controllerLeaseId,
       controller_generation: input.controllerGeneration

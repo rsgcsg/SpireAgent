@@ -2,7 +2,7 @@
 
 ## C-0: Execution Core
 
-Status: architecture and Preview.3 Live behavior proven; Preview.4 exact-runtime
+Status: architecture and Preview.4 Live behavior proven; Preview.5 exact-runtime
 evidence pending.
 
 Retain snapshot binding, current interaction, one controller, execute-time
@@ -10,13 +10,13 @@ validation, idempotency, delivery receipts, unknown-no-retry and successor.
 
 ## C-1: Contract Convergence
 
-Status: Preview.4 source/test complete.
+Status: Preview.5 source/test complete.
 
-Preview.4 separates interaction, referents and affordance arguments; derives
-observable referents before authority; unifies read discovery and transport;
-and preserves complete visible combat context in Re. Per-machine deployment,
-cold-load and a targeted multi-enemy regression are next; repository source
-does not claim a portable installed identity.
+Preview.5 separates canonical HE truth, current interaction capabilities, the
+Host-local binding authority and a finite bound-action consumer projection.
+Projection truncation is explicit and fail closed; common `entity_id` facts no
+longer depend on candidate materialization. Per-machine deployment, cold-load
+and exact-runtime regression are next.
 
 ## C-2: Human Information Parity
 
@@ -31,7 +31,8 @@ and keep reads non-authorizing.
 Status: design only.
 
 Implement a second fair-player Host before freezing 1.0. Compare snapshots,
-referents, affordances, reads, stale behavior and hidden-information policy.
+referents, interaction capabilities, bound actions, reads, stale behavior and
+hidden-information policy.
 Keep reset/seed/clone/fork/fast-step outside C.
 
 ## C-4: Internal Ownership
@@ -44,7 +45,7 @@ names.
 
 ## A Mainline
 
-After Preview.4 target-selection and read regressions, shift primary effort to
+After Preview.5 bound-action and read regressions, shift primary effort to
 A strategy, planning and selector recovery. The latest Live failures were A/Re
 cycle-supervision failures, not C delivery uncertainty.
 

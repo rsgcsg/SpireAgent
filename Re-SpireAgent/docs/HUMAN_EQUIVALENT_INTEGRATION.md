@@ -1,10 +1,10 @@
 # Re Human Environment Integration
 
-Re strictly accepts `1.0-preview.4`.
+Re strictly accepts `1.0-preview.5`.
 
 The adapter reads `/api/he/observation`, verifies exact runtime/environment
-coherence, and normalizes persistent facts, one interaction, referents,
-affordances and read opportunities. It projects finite choices from public
+coherence, and normalizes persistent facts, one interaction, capabilities,
+referents, bound actions and read opportunities. It projects finite choices from public
 subject/argument referents; exact native operands never leave C.
 
 ```text
@@ -12,12 +12,14 @@ C observation
 -> A strict decode and consumer projection
 -> finite model choices
 -> LLM selects one opaque ID
--> A submits snapshot ID + affordance ID
+-> A submits snapshot ID + bound-action ID
 -> C revalidates and delivers
 -> delivery receipt + successor
 -> A interprets readiness and progress
 ```
 
+Preview.5 retains Preview.4's complete visible combat context and additionally
+refuses finite action authority when the bound-action projection is truncated.
 Preview.4 projects complete visible combat enemy/status/intent context rather
 than replacing it with placeholders. A targeted action includes a `subject`
 binding and role-labelled argument bindings, so equal UI verbs against distinct
@@ -28,7 +30,7 @@ targets remain distinguishable to the model.
 
 `SPIREAGENT_HE_MODE=he_pure|he_assisted` is an A composition setting. Both use
 the same pure C contract. Assisted may add separately supplied D annotations;
-D cannot add, remove or authorize an affordance.
+D cannot add, remove or authorize a bound action.
 
 V3 is not a fallback. Retained V3 protocol/normalization is historical replay
 support only. The normal client also exposes the unified, advertised

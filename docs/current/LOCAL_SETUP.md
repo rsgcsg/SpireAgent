@@ -170,7 +170,7 @@ npm run agent:run
 ```
 
 The wrapper verifies exact identity and HE execution availability before
-invoking the provider. Re consumes snapshots, finite opaque affordances,
+invoking the provider. Re consumes snapshots, complete finite opaque bound actions,
 delivery receipts and successors. It may query the same pending request, but
 unknown delivery terminates the run and is never resubmitted.
 

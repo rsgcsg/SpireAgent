@@ -66,7 +66,7 @@ forbidText(
 );
 
 const pythonMcp = "STS2MCP/mcp/server.py";
-requireText(pythonMcp, '_CONTROL_PROTOCOL = "1.0-preview.4"', "Human Environment MCP control protocol");
+requireText(pythonMcp, '_CONTROL_PROTOCOL = "1.0-preview.5"', "Human Environment MCP control protocol");
 requireText(pythonMcp, 'f"reads/{encoded_read}', "unified MCP read route");
 forbidText(pythonMcp, "inspections/", "split legacy inspection route");
 forbidText(pythonMcp, "linked-details/", "split legacy linked-detail route");
@@ -106,7 +106,7 @@ forbidText(
 );
 const humanNormalizer = "Re-SpireAgent/src/normalization/normalizeHumanEquivalentCurrentState.ts";
 forbidText(humanNormalizer, "legalActions", "legacy action model in the HE normalizer");
-requireText(humanNormalizer, "affordances", "HE-native affordance projection");
+requireText(humanNormalizer, "bound_actions", "HE-native finite bound-action projection");
 if (existsSync(path.join(workspace, "Re-SpireAgent/src/runtime/settlementWatcher.ts"))) {
   failures.push("Re-SpireAgent/src/runtime/settlementWatcher.ts: legacy business-settlement owner remains");
 }
@@ -133,7 +133,7 @@ for (const legacyNamespace of [
 for (const requiredContractName of [
   "HumanEnvironmentInteraction",
   "HumanEnvironmentReferent",
-  "HumanEnvironmentAffordanceArgument",
+  "HumanEnvironmentBoundActionArgument",
   "HumanEnvironmentReadOpportunity",
   "HumanEnvironmentSessionReference",
   "HumanEnvironmentImplementationIdentity",

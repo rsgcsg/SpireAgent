@@ -11,12 +11,12 @@ namespace STS2_MCP.HumanEquivalent.Protocol;
 /// </summary>
 public static class HumanEquivalentContract
 {
-    public const string ProtocolVersion = "1.0-preview.4";
+    public const string ProtocolVersion = "1.0-preview.5";
     public const string GatewayId = "sts2_human_environment";
     public const string GatewayName = "STS2 Human Environment";
-    public const string ObservationSchema = "sts2.human-environment/observation-2";
-    public const string ActionSchema = "sts2.human-environment/action-1";
-    public const string ReceiptSchema = "sts2.human-environment/receipt-2";
+    public const string ObservationSchema = "sts2.human-environment/observation-3";
+    public const string ActionSchema = "sts2.human-environment/action-2";
+    public const string ReceiptSchema = "sts2.human-environment/receipt-3";
     public const string ReadSchema = "sts2.human-environment/read-2";
     public const string ControlSchema = "sts2.human-environment/control-1";
 }
@@ -146,7 +146,23 @@ public sealed record HumanEnvironmentInteraction(
     string Stage,
     string? Prompt,
     string ContentSchema,
-    JsonNode Content);
+    JsonNode Content,
+    IReadOnlyList<HumanEnvironmentInteractionCapability> Capabilities);
+
+/// <summary>
+/// Strategy-free grammar for an input currently accepted by this interaction.
+/// It describes roles, not executable operand combinations. Exact bindings stay
+/// private to the host and are exposed separately through a finite projection.
+/// </summary>
+public sealed record HumanEnvironmentInteractionCapability(
+    string Action,
+    string? SubjectRole,
+    IReadOnlyList<HumanEnvironmentCapabilityArgument> Arguments,
+    string AvailabilityBasis);
+
+public sealed record HumanEnvironmentCapabilityArgument(
+    string Role,
+    bool Required);
 
 public sealed record HumanEnvironmentContent(
     string ContentSchema,
@@ -154,7 +170,7 @@ public sealed record HumanEnvironmentContent(
 
 public sealed record HumanEnvironmentReferentState(
     bool Visible,
-    bool Actionable,
+    bool? Enabled,
     bool? Selected,
     bool? Focused,
     string ObservationBasis);
@@ -173,17 +189,30 @@ public sealed record HumanEnvironmentReferent(
     string? PropertiesSchema,
     JsonNode? Properties);
 
-public sealed record HumanEnvironmentAffordanceArgument(
+public sealed record HumanEnvironmentBoundActionArgument(
     string Role,
     string ReferentId);
 
-public sealed record HumanEquivalentAffordance(
-    string AffordanceId,
+public sealed record HumanEnvironmentBoundAction(
+    string BoundActionId,
     string Action,
     string InteractionId,
     string? SubjectRef,
-    IReadOnlyList<HumanEnvironmentAffordanceArgument> Arguments,
+    IReadOnlyList<HumanEnvironmentBoundActionArgument> Arguments,
     string Label);
+
+/// <summary>
+/// A deterministic finite consumer projection over the current C-local
+/// execution bindings. Truncated projections never grant action authority.
+/// </summary>
+public sealed record HumanEnvironmentBoundActionProjection(
+    string Schema,
+    string Status,
+    int MaterializedCount,
+    long TotalCount,
+    int Limit,
+    string OrderingSemantics,
+    IReadOnlyList<HumanEnvironmentBoundAction> Actions);
 
 public sealed record HumanEnvironmentReadOpportunity(
     string ReadId,
@@ -212,7 +241,7 @@ public sealed record HumanEquivalentObservationResponse(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] HumanEnvironmentContent? Persistent,
     HumanEnvironmentInteraction Interaction,
     IReadOnlyList<HumanEnvironmentReferent> Referents,
-    IReadOnlyList<HumanEquivalentAffordance> Affordances,
+    HumanEnvironmentBoundActionProjection BoundActions,
     IReadOnlyList<HumanEnvironmentReadOpportunity> Reads,
     HumanEnvironmentCompleteness Completeness,
     HumanEnvironmentSessionReference Session,
@@ -238,16 +267,16 @@ public sealed record HumanEnvironmentReadResponse(
 public sealed record HumanEquivalentActionRequest(
     string? RequestId,
     string? ExpectedSnapshotId,
-    string? AffordanceId,
+    string? BoundActionId,
     string? ClientSessionId,
     string? ControllerLeaseId,
     long? ControllerGeneration);
 
 public sealed record HumanEquivalentActionSummary(
-    string AffordanceId,
+    string BoundActionId,
     string Action,
     string? SubjectRef,
-    IReadOnlyList<HumanEnvironmentAffordanceArgument> Arguments);
+    IReadOnlyList<HumanEnvironmentBoundActionArgument> Arguments);
 
 public sealed record HumanEquivalentRetryPolicy(
     bool Allowed,

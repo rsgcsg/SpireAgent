@@ -194,3 +194,36 @@ Preview.4 is not frozen as 1.0 until a second Host or deterministic conformance
 probe demonstrates equivalent fair-player meaning. Five V3-owned adapter calls
 remain Live Host implementation debt and may not define public types, action
 authority or Headless requirements.
+
+## C-Core And Consumer Projection Amendment (2026-08-11)
+
+Preview.4 is superseded as source truth by Preview.5. Preview.4 still allowed
+one finite LLM choice representation to define referent `actionable`, top-level
+observation status and part of snapshot identity. Its parameter expansion also
+silently capped output at 512 combinations. This violated the intended
+separation between HE truth and a particular consumer projection.
+
+The canonical model is now:
+
+```text
+HE frame = persistent visible summary + interaction content + referents + reads
+interaction grammar = strategy-free current capabilities and participant roles
+execution authority = one Host-local exact binding table and executor
+finite Re projection = complete/truncated bound_actions + opaque handles
+```
+
+`interaction.capabilities` and canonical facts remain meaningful without a
+finite menu. Referents expose observed `enabled/selected/focused` state rather
+than global tuple-derived actionability. `bound_actions` must declare its
+completeness; a truncated projection never authorizes input. Requests and
+receipts use `bound_action_id`, which resolves only to the same C-local binding
+table used for execute-time native revalidation.
+
+Typed intent is an optional future consumer interface, not a second authority
+and not required by the current LLM. Any future typed, RL or Search projection
+must resolve to the same binding/executor/receipt path. Consumer labels and
+projection ordering do not define canonical stale identity.
+
+This amendment preserves the Live/Headless semantic-core direction. It does
+not move reset, seed, save/load, clone/fork, scenario mutation, acceleration,
+reward, termination or search policy into C.

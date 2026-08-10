@@ -221,13 +221,13 @@ assert.equal(isTransientAgentObservation({
   surface: { kind: "unknown_visible_panel" }
 }), false);
 assert.equal(isTransientAgentObservation({
-  status: "actionable",
+  status: "interactive",
   surface: { kind: "main_menu" },
-  affordances: [{}]
+  bound_actions: { status: "complete", actions: [{}] }
 }), false);
 
 const humanReady = evaluateEnvironmentReadiness({
-  protocol_version: "1.0-preview.4",
+  protocol_version: "1.0-preview.5",
   execution_available: true,
   game: {
     compatibility: { observation_allowed: true },
@@ -236,7 +236,7 @@ const humanReady = evaluateEnvironmentReadiness({
 });
 assert.equal(humanReady.environment_ready, true);
 assert.equal(humanReady.mutation_ready, true);
-const humanOffline = evaluateEnvironmentReadiness(null, "1.0-preview.4");
+const humanOffline = evaluateEnvironmentReadiness(null, "1.0-preview.5");
 assert.deepEqual(humanOffline.blockers, [
   "gateway_unreachable",
   "human_observation_disabled",
@@ -245,7 +245,7 @@ assert.deepEqual(humanOffline.blockers, [
 assert.equal(humanOffline.exact_permission_eligible, null);
 assert.deepEqual(agentRunPreflightErrors({
   ...humanReady,
-  loaded_protocol: "1.0-preview.4",
+  loaded_protocol: "1.0-preview.5",
   errors: [],
   mod_installation: { exact_permission_blocker: false }
 }, { requireMutation: true }), []);

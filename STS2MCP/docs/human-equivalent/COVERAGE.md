@@ -5,17 +5,19 @@
 The Live Host projects menu/run entry, combat cards/potions/end turn, map,
 event, reward/card reward, shop, rest, treasure, generated choices, combat
 hand/piles, upgrade/removal/transform/enchant/bundle selectors and game over.
-Unknown business source does not suppress an exact current UI affordance.
+Unknown business source does not suppress an exact current UI interaction.
 
-Preview.4 discovers player-visible referents from facts before affordances and
-expresses exact public subject/argument combinations. Source-free one-of-N,
+Preview.5 discovers player-visible referents from facts before finite action
+projection, exposes strategy-free interaction capabilities, and expresses
+exact public subject/argument combinations through complete bound actions.
+Source-free one-of-N,
 deck-card and combat-pile mechanics remain supported. STS2 owns all effects; C
 claims delivery only.
 
 ## Information
 
 Implemented: persistent run/player summary, revisioned current interaction
-content, visible/actionable referents, complete combat enemy context,
+content, visible referents with optional observed UI state, complete combat enemy context,
 state-bound run-deck/combat-pile/shop reads and current card detail through one
 advertised read route.
 
@@ -24,10 +26,11 @@ normal Agent native-page open/read/return and generated typed SDKs.
 
 ## Evidence
 
-Preview.3 exact artifact `3a49b93c...` has broad `he_pure` mutation evidence,
-safe stale refusal, selector-loop failure evidence and a resumed completed-run
-boundary. Preview.4 has source and automated evidence only until cold-loaded.
-No Live evidence transfers across the breaking protocol revision.
+Preview.4 exact artifact `a74a6452...` has two broad completed-boundary
+journeys, exact subject/target mutation, receipts, successors and safe stale
+refusals without unknown delivery. Preview.5 has source and automated evidence
+only until cold-loaded. No Live evidence transfers across the breaking protocol
+revision.
 
 ## Unsupported
 

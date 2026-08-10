@@ -49,16 +49,17 @@ export function normalizeHumanEquivalentCurrentState(
     else diagnostics.invalid("human_snapshot.interaction.content.context", rawContext, parsed.error.message);
   }
   const built = diagnostics.build();
-  const actionable = observation?.status === "actionable"
-    && observation.affordances.length > 0
+  const actionable = observation?.status === "interactive"
+    && observation.bound_actions.status === "complete"
+    && observation.bound_actions.actions.length > 0
     && built.status !== "invalid";
-  const affordances = observation?.affordances.map((affordance) => ({
-    affordanceId: affordance.affordance_id,
+  const boundActions = observation?.bound_actions.actions.map((boundAction) => ({
+    boundActionId: boundAction.bound_action_id,
     snapshotId: observation.snapshot_id,
-    action: affordance.action,
-    label: affordance.label,
-    ...(affordance.subject_ref ? { subjectRef: affordance.subject_ref } : {}),
-    arguments: affordance.arguments.map((argument) => ({
+    action: boundAction.action,
+    label: boundAction.label,
+    ...(boundAction.subject_ref ? { subjectRef: boundAction.subject_ref } : {}),
+    arguments: boundAction.arguments.map((argument) => ({
       role: argument.role,
       referentId: argument.referent_id
     }))
@@ -100,7 +101,7 @@ export function normalizeHumanEquivalentCurrentState(
             kind: referent.kind,
             ...(referent.label ? { label: referent.label } : {}),
             visible: referent.state.visible,
-            actionable: referent.state.actionable,
+            ...(typeof referent.state.enabled === "boolean" ? { enabled: referent.state.enabled } : {}),
             ...(referent.state.selected !== null ? { selected: referent.state.selected } : {}),
             ...(referent.state.focused !== null ? { focused: referent.state.focused } : {}),
             observationBasis: referent.state.observation_basis,
@@ -116,7 +117,19 @@ export function normalizeHumanEquivalentCurrentState(
             orderingSemantics: read.ordering_semantics,
             hiddenByPolicy: [...read.hidden_by_policy]
           })),
-          affordances
+          capabilities: observation.interaction.capabilities.map((capability) => ({
+            action: capability.action,
+            ...(capability.subject_role ? { subjectRole: capability.subject_role } : {}),
+            arguments: capability.arguments.map((argument) => ({ ...argument })),
+            availabilityBasis: capability.availability_basis
+          })),
+          boundActionProjection: {
+            status: observation.bound_actions.status,
+            totalCount: observation.bound_actions.total_count,
+            limit: observation.bound_actions.limit,
+            orderingSemantics: observation.bound_actions.ordering_semantics
+          },
+          boundActions
         }
       : {
           kind: "unsupported",
@@ -135,7 +148,7 @@ export function normalizeHumanEquivalentCurrentState(
     stateHash: stateHash({
       snapshotId: observation?.snapshot_id ?? null,
       interactionId: observation?.interaction.interaction_id ?? null,
-      affordances: observation?.affordances.map((item) => item.affordance_id) ?? []
+      boundActions: observation?.bound_actions.actions.map((item) => item.bound_action_id) ?? []
     }),
     normalizedStateHash: stateHash(currentState)
   };

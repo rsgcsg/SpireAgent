@@ -1,7 +1,9 @@
 using STS2_MCP.BridgeV2.Protocol;
+using STS2_MCP.ConnectorV3.Protocol;
 using STS2_MCP.ConnectorV3.Runtime;
 using STS2_MCP.HumanEquivalent.Protocol;
 using STS2_MCP.HumanEquivalent.Runtime;
+using System.Text.Json.Nodes;
 
 namespace STS2_MCP.Tests;
 
@@ -18,7 +20,7 @@ public sealed class HumanEquivalentContractTests
             .GetProperties()
             .Select(property => property.Name)
             .ToArray();
-        string[] affordanceProperties = typeof(HumanEquivalentAffordance)
+        string[] boundActionProperties = typeof(HumanEnvironmentBoundAction)
             .GetProperties()
             .Select(property => property.Name)
             .ToArray();
@@ -30,9 +32,9 @@ public sealed class HumanEquivalentContractTests
         Assert.DoesNotContain("ExpectedFrameId", requestProperties);
         Assert.DoesNotContain("ExpectedOwnerId", requestProperties);
         Assert.DoesNotContain("Parameters", requestProperties);
-        Assert.DoesNotContain("Parameters", affordanceProperties);
-        Assert.DoesNotContain("ParameterDomains", affordanceProperties);
-        Assert.DoesNotContain("EntityBindings", affordanceProperties);
+        Assert.DoesNotContain("Parameters", boundActionProperties);
+        Assert.DoesNotContain("ParameterDomains", boundActionProperties);
+        Assert.DoesNotContain("EntityBindings", boundActionProperties);
         Assert.Contains("SnapshotId", observationProperties);
         Assert.Contains("Referents", observationProperties);
         Assert.Contains("Interaction", observationProperties);
@@ -68,10 +70,10 @@ public sealed class HumanEquivalentContractTests
     [Fact]
     public void BreakingWireCleanupUsesRevisionedSchemas()
     {
-        Assert.Equal("1.0-preview.4", HumanEquivalentContract.ProtocolVersion);
-        Assert.Equal("sts2.human-environment/observation-2", HumanEquivalentContract.ObservationSchema);
-        Assert.Equal("sts2.human-environment/action-1", HumanEquivalentContract.ActionSchema);
-        Assert.Equal("sts2.human-environment/receipt-2", HumanEquivalentContract.ReceiptSchema);
+        Assert.Equal("1.0-preview.5", HumanEquivalentContract.ProtocolVersion);
+        Assert.Equal("sts2.human-environment/observation-3", HumanEquivalentContract.ObservationSchema);
+        Assert.Equal("sts2.human-environment/action-2", HumanEquivalentContract.ActionSchema);
+        Assert.Equal("sts2.human-environment/receipt-3", HumanEquivalentContract.ReceiptSchema);
     }
 
     [Fact]
@@ -83,10 +85,10 @@ public sealed class HumanEquivalentContractTests
             "request-a",
             "unknown",
             new HumanEquivalentActionSummary(
-                "affordance-a",
+                "bound-action-a",
                 "activate",
                 "control-a",
-                Array.Empty<HumanEnvironmentAffordanceArgument>()),
+                Array.Empty<HumanEnvironmentBoundActionArgument>()),
             "input_delivery_unknown",
             "Delivery may have occurred.",
             new HumanEquivalentRetryPolicy(false, "unknown_delivery_never_retry"),
@@ -272,6 +274,81 @@ public sealed class HumanEquivalentContractTests
         Assert.DoesNotContain("mutation_kind", facts);
         Assert.DoesNotContain("commit_mode", facts);
     }
+
+    [Fact]
+    public void VisibleEntityFactsExistWithoutActionMaterialization()
+    {
+        JsonNode facts = JsonNode.Parse("""
+        {"context":{"enemies":[{"entity_id":"enemy-a","name":"Visible enemy","hp":12}]}}
+        """)!;
+
+        IReadOnlyDictionary<string, HumanEnvironmentReferent> referents =
+            HumanEquivalentRuntime.ProjectFactReferents(facts);
+
+        HumanEnvironmentReferent enemy = Assert.Contains("enemy-a", referents);
+        Assert.Equal("enemy", enemy.Role);
+        Assert.Equal("Visible enemy", enemy.Label);
+        Assert.Null(enemy.State.Enabled);
+        Assert.Equal("native_visible_fact", enemy.State.ObservationBasis);
+    }
+
+    [Fact]
+    public void FiniteProjectionCountExposesRatherThanHidesExpansionOverflow()
+    {
+        string[] cards = Enumerable.Range(0, 24).Select(i => $"card-{i}").ToArray();
+        string[] targets = Enumerable.Range(0, 24).Select(i => $"target-{i}").ToArray();
+        var candidate = Candidate(
+            "candidate-many",
+            "Choose",
+            new Dictionary<string, ConnectorV3OperandDomain>
+            {
+                ["card_id"] = new("entity_id", cards),
+                ["target_id"] = new("entity_id", targets)
+            }) with
+        {
+            EntityBindings = cards.Select(id => new ActionEntityBinding("card", id))
+                .Concat(targets.Select(id => new ActionEntityBinding("target", id)))
+                .ToArray()
+        };
+
+        Assert.Equal(576, HumanEquivalentRuntime.CountParameterCombinations(candidate));
+        HumanBoundActionProjectionResult projection = HumanEquivalentRuntime.ProjectBoundActions(
+            new[] { new ConnectorV3BoundCommand(candidate, null, null) },
+            "interaction-a",
+            new Dictionary<string, HumanEnvironmentReferent>());
+        Assert.Equal("truncated", projection.Projection.Status);
+        Assert.Equal(512, projection.Projection.MaterializedCount);
+        Assert.Equal(576, projection.Projection.TotalCount);
+        Assert.Equal(512, projection.Bindings.Count);
+    }
+
+    [Fact]
+    public void ConsumerLabelsDoNotChangeCanonicalActionAuthorityIdentity()
+    {
+        ConnectorV3CommandCandidate left = Candidate("candidate-a", "Old label");
+        ConnectorV3CommandCandidate right = left with { Label = "Consumer-friendly new label" };
+
+        string leftSignature = HumanEquivalentRuntime.CanonicalAuthoritySignature(
+            new[] { new ConnectorV3BoundCommand(left, null, null) });
+        string rightSignature = HumanEquivalentRuntime.CanonicalAuthoritySignature(
+            new[] { new ConnectorV3BoundCommand(right, null, null) });
+
+        Assert.Equal(leftSignature, rightSignature);
+    }
+
+    private static ConnectorV3CommandCandidate Candidate(
+        string id,
+        string label,
+        IReadOnlyDictionary<string, ConnectorV3OperandDomain>? domains = null) => new(
+        id,
+        "choose",
+        "test_choose",
+        label,
+        new Dictionary<string, string>(),
+        domains ?? new Dictionary<string, ConnectorV3OperandDomain>(),
+        Array.Empty<ActionEntityBinding>(),
+        "native_ui",
+        "current");
 
     private static STS2_MCP.BridgeV2.Protocol.VisibleCard TestCard(
         string entityId,

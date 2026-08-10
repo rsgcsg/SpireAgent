@@ -1,28 +1,32 @@
 # Human Environment Contract Implementation Plan
 
-Status: Preview.4 source/test complete; build/install/cold-load and Live pending
+Status: Preview.5 source/test complete; build/install/cold-load and Live pending
 
 Authority: [ADR-0008](decisions/ADR-0008-human-equivalent-ui-first-connector.md)
 
 ## Delivered Core
 
 ```text
-Host observe -> snapshot/interaction/referents/affordances/reads
--> consumer chooses opaque affordance
+Host observe -> snapshot/interaction/referents/capabilities/reads
+-> complete finite bound-action projection
+-> consumer chooses opaque bound action
 -> Host revalidates exact local binding
 -> input delivery -> receipt + successor
 ```
 
 Public records import no BridgeV2/ConnectorV3 types. Re strictly consumes
-Preview.4 without aliases or silent fallback. Observable referents are produced
-before affordance authority, and public subject/argument bindings never expose
-native operands.
+Preview.5 without aliases or silent fallback. Observable referents and current
+interaction grammar exist before finite action materialization; public
+subject/argument bindings never expose native operands.
 
 ## Automated Acceptance
 
 - strict schemas reject legacy fields, dangling referents, unversioned
   extensible content and identity drift;
-- affordance interaction/subject/arguments bind the same current snapshot;
+- bound-action interaction/subject/arguments bind the same current snapshot;
+- finite projection counts and truncation are explicit and fail closed;
+- common visible `entity_id` facts survive without action materialization;
+- consumer labels do not alter canonical authority identity;
 - multi-enemy actions remain semantically distinguishable;
 - complete visible combat context reaches A rather than placeholder state;
 - unknown source does not gate current exact UI mechanics;
@@ -32,8 +36,8 @@ native operands.
 
 ## Remaining Work
 
-1. Release build/install/cold-load Preview.4.
-2. Multi-enemy delivery and stale-read exact-runtime regression.
+1. Release build/install/cold-load Preview.5.
+2. Complete bound-action delivery and stale-read exact-runtime regression.
 3. One ordinary `he_pure` journey.
 4. Hover/focus/tooltip/scroll/native-page information parity.
 5. Neutralize the five real V3-owned Host adapter seams without wrappers.

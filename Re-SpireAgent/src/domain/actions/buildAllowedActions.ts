@@ -117,23 +117,23 @@ function bridgeActions(state: NormalizedCurrentState, sourceStateHash: string): 
 
 function humanUiActions(state: NormalizedCurrentState, sourceStateHash: string): AllowedAction[] {
   if (state.surface.kind !== "human_ui") return [];
-  return state.surface.affordances.map((affordance) => ({
-    id: affordance.affordanceId,
-    kind: affordance.action,
-    label: affordance.label,
-    description: `Current human UI: ${affordance.action}`,
+  return state.surface.boundActions.map((boundAction) => ({
+    id: boundAction.boundActionId,
+    kind: boundAction.action,
+    label: boundAction.label,
+    description: `Current human UI: ${boundAction.action}`,
     entityBindings: [
-      ...(affordance.subjectRef ? [{ role: "subject", entityId: affordance.subjectRef }] : []),
-      ...affordance.arguments.map((argument) => ({
+      ...(boundAction.subjectRef ? [{ role: "subject", entityId: boundAction.subjectRef }] : []),
+      ...boundAction.arguments.map((argument) => ({
         role: argument.role,
         entityId: argument.referentId
       }))
     ],
     action: {
       kind: "human_ui_action",
-      choiceId: affordance.affordanceId,
-      expectedSnapshotId: affordance.snapshotId,
-      affordanceId: affordance.affordanceId
+      choiceId: boundAction.boundActionId,
+      expectedSnapshotId: boundAction.snapshotId,
+      boundActionId: boundAction.boundActionId
     },
     sourceStateHash
   }));

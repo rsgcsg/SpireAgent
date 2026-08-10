@@ -26,12 +26,12 @@ const SOURCE: AdapterDescriptor = {
 
 function snapshot(): JsonObject {
   return {
-    protocol_version: "1.0-preview.4",
-    schema: "sts2.human-environment/observation-2",
+    protocol_version: "1.0-preview.5",
+    schema: "sts2.human-environment/observation-3",
     snapshot_id: "state-he-1",
     sequence: 1,
     observed_at: "2026-08-04T00:00:00Z",
-    status: "actionable",
+    status: "interactive",
     persistent: null,
     interaction: {
       interaction_id: "screen-current",
@@ -42,25 +42,34 @@ function snapshot(): JsonObject {
       content: {
         surface: { kind: "generated_card_choice", cards: [{ entity_id: "card-1", name: "Visible card" }] },
         context: { kind: "event", name: "Unknown new event" }
-      }
+      },
+      capabilities: [{ action: "select", subject_role: "card", arguments: [], availability_basis: "current_native_interaction" }]
     },
     referents: [{
       referent_id: "card-1",
       role: "card",
       kind: "entity",
       label: "Visible card",
-      state: { visible: true, actionable: true, selected: false, observation_basis: "native_visible_fact" },
+      state: { visible: true, enabled: true, selected: false, observation_basis: "native_visible_fact" },
       properties_schema: "sts2.human-environment/referent/card-1",
       properties: {}
     }],
-    affordances: [{
-      affordance_id: "affordance-card-1",
-      action: "select",
-      interaction_id: "screen-current",
-      subject_ref: "card-1",
-      arguments: [],
-      label: "Choose Visible card"
-    }],
+    bound_actions: {
+      schema: "sts2.human-environment/bound-actions-1",
+      status: "complete",
+      materialized_count: 1,
+      total_count: 1,
+      limit: 512,
+      ordering_semantics: "candidate_id_then_operand_name_then_referent_id",
+      actions: [{
+        bound_action_id: "bound-action-card-1",
+        action: "select",
+        interaction_id: "screen-current",
+        subject_ref: "card-1",
+        arguments: [],
+        label: "Choose Visible card"
+      }]
+    },
     reads: [],
     completeness: { status: "complete", visible_information: "complete_current_structured_ui", interaction_discovery: "derived_from_current_visible_enabled_controls", missing: [], hidden_by_policy: [] },
     session: { runtime_instance_id: "fixture-runtime", environment_fingerprint: "fixture-environment" },
@@ -70,10 +79,10 @@ function snapshot(): JsonObject {
 
 function capabilities(): JsonObject {
   return {
-    protocol_version: "1.0-preview.4",
-    observation_schema: "sts2.human-environment/observation-2",
-    action_schema: "sts2.human-environment/action-1",
-    receipt_schema: "sts2.human-environment/receipt-2",
+    protocol_version: "1.0-preview.5",
+    observation_schema: "sts2.human-environment/observation-3",
+    action_schema: "sts2.human-environment/action-2",
+    receipt_schema: "sts2.human-environment/receipt-3",
     control_schema: "sts2.human-environment/control-1",
     status: "ready",
     host: { id: "sts2_human_environment", name: "STS2 Human Environment", version: "fixture", runtime_instance_id: "fixture-runtime", host_kind: "live_ui", implementation: { source_revision: "fixture", module_version_id: "fixture-mvid", artifact_sha256: "a".repeat(64) } },
@@ -105,13 +114,13 @@ describe("Human-Equivalent C", () => {
 
     expect(decodeHumanObservation(current).data.referents[0]).toMatchObject({
       referent_id: "card-1",
-      state: { visible: true, actionable: true }
+      state: { visible: true, enabled: true }
     });
   });
 
   it("accepts an unknown business source when current native UI is exact and operable", () => {
     const decoded = decodeHumanObservation(snapshot()).data;
-    expect(decoded.affordances).toHaveLength(1);
+    expect(decoded.bound_actions.actions).toHaveLength(1);
     expect(decoded.interaction.content).not.toHaveProperty("source_kind");
   });
 
@@ -120,9 +129,9 @@ describe("Human-Equivalent C", () => {
       .toThrow();
   });
 
-  it("rejects affordances and reads that do not bind a current referent", () => {
+  it("rejects bound actions and reads that do not bind a current referent", () => {
     const missingTarget = snapshot();
-    (missingTarget.affordances as JsonObject[])[0]!.subject_ref = "missing-referent";
+    (((missingTarget.bound_actions as JsonObject).actions as JsonObject[])[0]!).subject_ref = "missing-referent";
     expect(() => decodeHumanObservation(missingTarget)).toThrow(/current referent/u);
 
     const missingReadTarget = snapshot();
@@ -154,7 +163,7 @@ describe("Human-Equivalent C", () => {
     })).toThrow();
   });
 
-  it("projects current UI affordances to opaque Re choices without V2 legal_actions wire data", () => {
+  it("projects current bound actions to opaque Re choices without V2 legal_actions wire data", () => {
     const raw = wrapHumanEquivalentState({ snapshot: snapshot() });
     const normalized = normalizeCurrentState(raw, SOURCE, "2026-08-04T00:00:00Z");
     expect(normalized.currentState.surface.kind).toBe("human_ui");
@@ -163,10 +172,28 @@ describe("Human-Equivalent C", () => {
     expect(actions[0]).toMatchObject({ kind: "select" });
     expect(actions[0]?.action).toEqual({
       kind: "human_ui_action",
-      choiceId: "affordance-card-1",
+      choiceId: "bound-action-card-1",
       expectedSnapshotId: "state-he-1",
-      affordanceId: "affordance-card-1"
+      boundActionId: "bound-action-card-1"
     });
+  });
+
+  it("keeps semantic observation valid but withholds Re authority for a truncated finite projection", () => {
+    const current = snapshot();
+    const projection = current.bound_actions as JsonObject;
+    projection.status = "truncated";
+    projection.total_count = 600;
+
+    const normalized = normalizeCurrentState(
+      wrapHumanEquivalentState({ snapshot: current }),
+      SOURCE,
+      "2026-08-04T00:00:00Z"
+    );
+
+    expect(normalized.currentState.context.kind).toBe("event");
+    expect(normalized.currentState.stability).toBe("non_actionable");
+    expect(normalized.currentState.actionAuthority).toBe("none");
+    expect(buildAllowedActions(normalized.currentState, normalized.stateHash)).toEqual([]);
   });
 
   it("preserves complete visible combat facts and distinguishes exact target referents", () => {
@@ -205,12 +232,15 @@ describe("Human-Equivalent C", () => {
     };
     current.referents = [
       ...(current.referents as JsonObject[]),
-      { referent_id: "enemy-1", role: "enemy", kind: "entity", label: "Left enemy", state: { visible: true, actionable: true, observation_basis: "native_visible_fact" }, properties_schema: "sts2.human-environment/referent/enemy-1", properties: { hp: 11 } },
-      { referent_id: "enemy-2", role: "enemy", kind: "entity", label: "Right enemy", state: { visible: true, actionable: true, observation_basis: "native_visible_fact" }, properties_schema: "sts2.human-environment/referent/enemy-1", properties: { hp: 9 } }
+      { referent_id: "enemy-1", role: "enemy", kind: "entity", label: "Left enemy", state: { visible: true, observation_basis: "native_visible_fact" }, properties_schema: "sts2.human-environment/referent/enemy-1", properties: { hp: 11 } },
+      { referent_id: "enemy-2", role: "enemy", kind: "entity", label: "Right enemy", state: { visible: true, observation_basis: "native_visible_fact" }, properties_schema: "sts2.human-environment/referent/enemy-1", properties: { hp: 9 } }
     ];
-    current.affordances = [
-      { affordance_id: "play-left", action: "play", interaction_id: "screen-current", subject_ref: "card-1", arguments: [{ role: "target", referent_id: "enemy-1" }], label: "Play Visible card -> Left enemy" },
-      { affordance_id: "play-right", action: "play", interaction_id: "screen-current", subject_ref: "card-1", arguments: [{ role: "target", referent_id: "enemy-2" }], label: "Play Visible card -> Right enemy" }
+    const boundActions = current.bound_actions as JsonObject;
+    boundActions.materialized_count = 2;
+    boundActions.total_count = 2;
+    boundActions.actions = [
+      { bound_action_id: "play-left", action: "play", interaction_id: "screen-current", subject_ref: "card-1", arguments: [{ role: "target", referent_id: "enemy-1" }], label: "Play Visible card -> Left enemy" },
+      { bound_action_id: "play-right", action: "play", interaction_id: "screen-current", subject_ref: "card-1", arguments: [{ role: "target", referent_id: "enemy-2" }], label: "Play Visible card -> Right enemy" }
     ];
 
     const normalized = normalizeCurrentState(
@@ -233,14 +263,14 @@ describe("Human-Equivalent C", () => {
 
   it("uses the Human-Equivalent control schema without a V3 wire dependency", () => {
     const registration = decodeHumanClientRegistration({
-      protocol_version: "1.0-preview.4",
+      protocol_version: "1.0-preview.5",
       schema: "sts2.human-environment/control-1",
       runtime_instance_id: "runtime-he",
       client: { client_session_id: "client-session", client_instance_id: "client-instance" },
       controller: null
     }).data;
     const lease = decodeHumanControllerLeaseResponse({
-      protocol_version: "1.0-preview.4",
+      protocol_version: "1.0-preview.5",
       schema: "sts2.human-environment/control-1",
       runtime_instance_id: "runtime-he",
       status: "controller_acquired",
@@ -281,6 +311,32 @@ describe("Human-Equivalent C", () => {
     await adapter.close();
   });
 
+  it("keeps a truncated observation readable while withholding adapter invocations", async () => {
+    const current = snapshot();
+    const projection = current.bound_actions as JsonObject;
+    projection.status = "truncated";
+    projection.total_count = 600;
+    const adapter = new Sts2HumanEquivalentAdapter(
+      "http://fixture.invalid",
+      1_000,
+      { mode: "he_pure", commandPollMs: 1, commandTimeoutMs: 100 },
+      async (input) => {
+        const url = String(input);
+        if (url.endsWith("/api/he/capabilities")) return json(capabilities());
+        if (url.endsWith("/api/he/observation")) return json(current);
+        throw new Error(`Unexpected request ${url}`);
+      }
+    );
+
+    const raw = await adapter.readCurrentState();
+    const normalized = normalizeCurrentState(raw, adapter.describe());
+    await adapter.close();
+
+    expect(normalized.currentState.surface.kind).toBe("human_ui");
+    expect(normalized.currentState.actionAuthority).toBe("none");
+    expect(buildAllowedActions(normalized.currentState, normalized.stateHash)).toEqual([]);
+  });
+
   it("treats applied HE input as delivered while successor readiness remains separate", async () => {
     const current = snapshot();
     const successor = {
@@ -301,7 +357,7 @@ describe("Human-Equivalent C", () => {
         if (url.endsWith("/api/he/clients/register")) {
           const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
           return json({
-            protocol_version: "1.0-preview.4",
+            protocol_version: "1.0-preview.5",
             schema: "sts2.human-environment/control-1",
             runtime_instance_id: "fixture-runtime",
             client: {
@@ -313,7 +369,7 @@ describe("Human-Equivalent C", () => {
         }
         if (url.endsWith("/api/he/controller/acquire")) {
           return json({
-            protocol_version: "1.0-preview.4",
+            protocol_version: "1.0-preview.5",
             schema: "sts2.human-environment/control-1",
             runtime_instance_id: "fixture-runtime",
             status: "controller_acquired",
@@ -334,12 +390,12 @@ describe("Human-Equivalent C", () => {
           const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
           submittedBody = body;
           return json({
-            protocol_version: "1.0-preview.4",
-            schema: "sts2.human-environment/receipt-2",
+            protocol_version: "1.0-preview.5",
+            schema: "sts2.human-environment/receipt-3",
             request_id: String(body.request_id),
             delivery: "applied",
             action: {
-              affordance_id: "affordance-card-1",
+              bound_action_id: "bound-action-card-1",
               action: "select",
               subject_ref: "card-1",
               arguments: []
@@ -378,7 +434,7 @@ describe("Human-Equivalent C", () => {
     });
     expect(submittedBody).toMatchObject({
       expected_snapshot_id: "state-he-1",
-      affordance_id: "affordance-card-1"
+      bound_action_id: "bound-action-card-1"
     });
     expect(submittedBody).not.toHaveProperty("mode");
     expect(submittedBody).not.toHaveProperty("parameters");

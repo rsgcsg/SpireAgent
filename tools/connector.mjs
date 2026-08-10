@@ -822,7 +822,7 @@ async function inspect(options, requireLoaded = false) {
     qualification_status: null,
     semantic_state_id: null,
     authority_projection_id: null,
-    note: "Human-Equivalent C is the default path. It binds current UI affordances to an exact state and C-local owner/target/operands, then returns delivery plus successor; V3 is explicit rollback only."
+    note: "Human-Equivalent C is the default path. It exposes canonical UI facts and capabilities, then binds a complete finite action projection to exact C-local operands and returns delivery plus successor; V3 is explicit rollback only."
   };
 }
 
@@ -1347,7 +1347,7 @@ async function prepareAgentRun(options) {
     compatibility_status: after.compatibility_status,
     permission_mode: after.permission_mode,
     qualification_status: after.qualification_status,
-    authority_path: "current_native_ui_affordance",
+    authority_path: "current_complete_bound_action_projection",
     observation_wait: observationWait
       ? {
           attempts: observationWait.attempts,

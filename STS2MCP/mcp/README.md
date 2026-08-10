@@ -10,7 +10,7 @@ legality, business source, action authorization, strategy or completion rule.
 | `get_sts2_human_capabilities()` | exact loaded Gateway/game/Modset identity |
 | `get_sts2_human_snapshot()` | player-visible UI facts and current finite affordances |
 | `read_sts2_human_information(read_id, expected_snapshot_id)` | execute one advertised, state-bound read opportunity |
-| `apply_sts2_ui_affordance(...)` | deliver one exact advertised affordance |
+| `apply_sts2_bound_action(...)` | deliver one exact advertised bound action |
 | `get_sts2_ui_delivery_receipt(request_id)` | read the original delivery result |
 
 `unknown` delivery is terminal and must not be retried. No tool accepts a game
