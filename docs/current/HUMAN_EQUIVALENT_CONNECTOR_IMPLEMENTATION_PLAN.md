@@ -1,6 +1,7 @@
 # Human Environment Contract Implementation Plan
 
-Status: Preview.5 source/test complete; build/install/cold-load and Live pending
+Status: Preview.5 source/test complete; current-machine build/install verified;
+cold-load and Live pending
 
 Authority: [ADR-0008](decisions/ADR-0008-human-equivalent-ui-first-connector.md)
 
@@ -36,7 +37,7 @@ subject/argument bindings never expose native operands.
 
 ## Remaining Work
 
-1. Release build/install/cold-load Preview.5.
+1. Cold-load Preview.5 and verify exact source/build/install/load identity.
 2. Complete bound-action delivery and stale-read exact-runtime regression.
 3. One ordinary `he_pure` journey.
 4. Hover/focus/tooltip/scroll/native-page information parity.

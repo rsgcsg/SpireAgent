@@ -38,7 +38,7 @@ Preview.5 implements:
   requests, applied/not-applied/unknown and unknown-no-retry;
 - strict Re decoding and finite opaque choices using `bound_action_id`.
 
-Gateway `303/303` tests and Re `295/295` tests, typecheck, build, Python syntax
+Gateway `303/303` tests and Re `296/296` tests, typecheck, build, Python syntax
 and HE boundary checks cover these source claims. They are not loaded or Live
 evidence.
 
@@ -66,8 +66,9 @@ They do not prove Preview.5, another Host, conformance or qualification.
 
 ## Remaining Limits
 
-- Preview.5 needs Release build/install, cold-load identity verification and an
-  exact-runtime mutation journey; no Preview.4 evidence transfers.
+- On this machine Preview.5 Release build/install is verified by local
+  deployment records; cold-load identity and Live mutation remain pending. No
+  Preview.4 evidence transfers.
 - hover/focus/tooltip/scroll and native-page open/read/return parity is partial.
 - the Live Host still reuses five checked V3-owned adapter-library seams; they
   are implementation debt, not public wire or a second authority.
@@ -85,3 +86,5 @@ Every checkout must independently run `npm run doctor`, deploy while the game
 is closed, cold-start STS2 and run `npm run verify:loaded`. Repository source,
 tests or Release output never prove another machine's installed or loaded
 artifact. The Preview.4 tuple above is evidence only for its recorded runtime.
+Final source/build/install identity is recorded by the deployment tool rather
+than treated as portable repository truth.

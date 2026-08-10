@@ -16,7 +16,8 @@ coupling and has source/automated evidence only until cold-loaded.
 
 ## Delivery Order
 
-1. Build, install and cold-load Preview.5; verify exact SHA/MVID/runtime.
+1. Cold-load Preview.5 and verify exact source/build/install/load SHA/MVID and
+   runtime. Current-machine build/install has succeeded.
 2. Run one action using a complete bound-action projection and one state-bound
    read, including stale refusal.
 3. Run one ordinary `he_pure` journey and confirm no truncated projection or
