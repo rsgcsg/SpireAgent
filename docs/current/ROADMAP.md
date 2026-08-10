@@ -2,15 +2,16 @@
 
 ## C-0: Execution Core
 
-Status: architecture and Preview.5 assisted Live behavior proven; current
-source-free rest repair and default `he_pure` still need exact-runtime evidence.
+Status: **temporarily frozen** on the exact Preview.5 Live artifact and default
+`he_pure` completed journey.
 
 Retain snapshot binding, current interaction, one controller, execute-time
 validation, idempotency, delivery receipts, unknown-no-retry and successor.
 
 ## C-1: Contract Convergence
 
-Status: Preview.5 source/test and assisted Live complete.
+Status: **temporarily frozen**; source/test and final-artifact `he_pure` Live
+evidence complete.
 
 Preview.5 separates canonical HE truth, current interaction capabilities, the
 Host-local binding authority and a finite bound-action consumer projection.
@@ -48,9 +49,9 @@ names.
 
 ## A Mainline
 
-After Preview.5 bound-action and read regressions, shift primary effort to
-A strategy, planning and selector recovery. The latest Live failures were A/Re
-cycle-supervision failures, not C delivery uncertainty.
+Shift primary effort to A strategy, planning and recovery. Reopen C only for a
+contract invariant regression, material Human information gap, or second-Host
+conformance evidence that cannot preserve the current semantics.
 
 Training, Search, Headless lifecycle, learning and arbitrary Mod support are
 separate programs that may consume C without changing its authority.

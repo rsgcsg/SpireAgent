@@ -13,11 +13,11 @@ architecture is retained, while Preview.5 corrects a structural coupling in
 Preview.4: canonical visible truth and current interaction grammar no longer
 derive their meaning from Re's finite action menu.
 
-The freeze verdict remains **conditional freeze**. Core delivery invariants are
-stable and Preview.5 is Live-exercised, but the current source adds a
-source-free rest-site adapter after Live evidence exposed an inherited business
-completion gate. That repair still requires a new cold-load and `he_pure`
-journey before temporary freeze.
+The verdict is **temporary freeze** for the Human Environment core and ordinary
+Live STS2 production path. The source-free rest repair, state-bound read path
+and default `he_pure` composition are now exact-runtime exercised on the final
+artifact. This is not a 1.0 wire freeze, cross-Host conformance result, arbitrary
+version/Mod claim or durable qualification.
 
 ## Current Source And Automated Truth
 
@@ -45,43 +45,39 @@ evidence.
 
 ## Latest Exact Live Evidence
 
-Preview.5 SHA
-`12fab40bb5e93f255fc55c670d98fc0590ffcc8614a8a921b983867cc8c90e26`,
-MVID `15958f14-80d6-46b9-a333-480893aaf8e5`, runtime
-`d68d74321189495eaa0fced41bd08a71`, game `v0.110.1/db5d3552`, Modset
-`additional_loaded_mods` with fingerprint
-`07ec7548225bd7b9b840478080b529d55f17b7a458605f716dc2921046e0e246`
-was exact-runtime exercised by four `he_assisted` runs:
+Source revision `b1ba05a5822cf47cc7ff398f502790ffe9f67064`, SHA
+`7ffffd4ffd933ff37c4ea603314a3327e5f2851d9c6630b6407eef1a651b6179`,
+MVID `049710a0-32bb-4c1a-b6ef-53a8bb78c913`, runtime
+`f52f176ea7954b8abb6b435ec7c1db68`, game `v0.110.1/db5d3552` and Modset
+fingerprint `03703861bdc1095f0db03ced528298590c7db72914cead479f4af9454de5ec31`
+were exact source/build/install/load verified.
 
-- `run-20260810154103-ze7gm1`: no mutation; cold-start UI remained unmapped for
-  eight ticks and Re stopped too early. The current source gives only this
-  initial unknown state a bounded readiness grace.
-- `run-20260810154139-ecfct9`: 104 decisions, 75 settled, 11 delivery
-  checkpoints, completed boundary, no unknown.
-- `run-20260810154631-kln5u6`: 246 decisions, 171 settled, 16 delivery
-  checkpoints, four safe stale refusals; stopped at visible `DIG` because the
-  inherited rest provider demanded a business completion witness. Current
-  source replaces that HE gate with exact visible-button authority.
-- `run-20260810155642-8f15nw`: 28 decisions, 13 settled, two delivery
-  checkpoints, completed boundary, no unknown.
+`run-20260810165150-wwevk7` used default `he_pure` and ordinary-gameplay
+provenance. It reached the completed-run menu boundary after 323 decisions:
+186 settled, 27 delivery checkpoints, 108 typed native-settling observations,
+two safe stale refusals and zero unknown outcomes. It exercised combat, event,
+map, reward/card reward, shop, rest, treasure, selectors and game-over/menu
+return. Both current-artifact rest option/proceed deliveries completed.
 
-These runs prove Preview.5 observation, complete finite projection, delivery,
-receipts, successors, safe stale refusal and bounded journeys on that exact
-artifact. They do not prove the current rest repair, `he_pure`, another Host,
-conformance or qualification.
+On the same runtime, current `read:run_deck` returned complete content and its
+old token returned HTTP 409 `stale_state` after the snapshot advanced. The
+machine identity audit found no missing identities and confirmed both stale
+actions remained recoverable only through fresh publication.
+
+See [the temporary freeze closeout](audits/HUMAN_ENVIRONMENT_TEMPORARY_FREEZE_CLOSEOUT_2026-08-11.md)
+for exact counts, evidence boundaries and reopen conditions.
 
 ## Remaining Limits
 
-- The current source/rest repair is not loaded; its Release identity is pending.
 - hover/focus/tooltip/scroll and native-page open/read/return parity is partial.
 - the Live Host still reuses five checked V3-owned adapter-library seams; they
   are implementation debt, not public wire or a second authority.
 - interaction content remains revisioned JSON rather than generated tagged SDK
   types.
-- no Headless Host, cross-Host conformance suite, Training/Search adapter,
-  clone/fork port or durable qualification exists.
+- no Headless Host, cross-Host conformance suite, production Training/Search
+  adapter, clone/fork port or durable qualification exists.
 
-The exported eager read aggregator is consumer-side conformance evidence for
+The exported eager read aggregator is consumer-side automated evidence for
 memoryless policies; it is not a Training system or a second C authority.
 
 Source, test, build, installed, loaded, Live mutation, journey, conformance and
@@ -92,6 +88,6 @@ qualification remain separate evidence levels.
 Every checkout must independently run `npm run doctor`, deploy while the game
 is closed, cold-start STS2 and run `npm run verify:loaded`. Repository source,
 tests or Release output never prove another machine's installed or loaded
-artifact. The Preview.4 tuple above is evidence only for its recorded runtime.
+artifact. The exact tuple above is evidence only for its recorded runtime.
 Final source/build/install identity is recorded by the deployment tool rather
 than treated as portable repository truth.

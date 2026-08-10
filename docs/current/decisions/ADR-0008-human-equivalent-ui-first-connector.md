@@ -242,3 +242,19 @@ may eagerly aggregate every selected advertised read for one snapshot. That
 adapter must reject mixed snapshot/runtime/environment results and cannot add
 facts, legality or action bindings. LLM finite menus, RL feature/mask adapters
 and Search edges remain projections over the same C truth and binding table.
+
+## Temporary Freeze Amendment (2026-08-11)
+
+Protocol `1.0-preview.5` C core and the ordinary Live production path are
+temporarily frozen after automated suites plus exact-artifact `he_pure`
+`run-20260810165150-wwevk7` reached the completed-run boundary with source-free
+rest, safe stale recovery, receipts/successors and no unknown delivery. A
+current `run_deck` read and stale-token rejection were also exercised on that
+runtime.
+
+This freezes the semantic and authority boundaries above, not the 1.0 wire,
+all Human information parity, another Host, arbitrary version/Mod behavior or
+durable qualification. Reopen only for evidence of hidden-state leakage,
+missing/false visible truth, projection completeness error, stale/idempotency
+or unknown-no-retry failure, duplicate authority/execution, broken information
+reachability, or second-Host conformance failure.

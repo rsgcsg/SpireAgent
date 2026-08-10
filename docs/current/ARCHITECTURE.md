@@ -114,3 +114,16 @@ A consumer that cannot issue lazy reads may eagerly aggregate selected
 advertised reads for one snapshot before encoding tensors or search state. The
 aggregation validates snapshot/runtime/environment coherence and stays outside
 C; it cannot change referents, capabilities, bound actions or legality.
+
+## Temporary Freeze Scope
+
+Protocol `1.0-preview.5` freezes the semantic core and ordinary Live production
+path temporarily: canonical visible truth, current interaction capabilities,
+state-bound reads, complete finite bindings, one Host-local executor, delivery
+receipt and successor. Exact-artifact automated plus `he_pure` Live evidence is
+recorded in the
+[temporary freeze closeout](audits/HUMAN_ENVIRONMENT_TEMPORARY_FREEZE_CLOSEOUT_2026-08-11.md).
+
+The wire is not 1.0-frozen. Full hover/focus/tooltip/scroll/native-page parity,
+a second Host, cross-Host conformance, arbitrary version/Mod support, Training
+and Search products, and durable qualification remain outside this freeze.

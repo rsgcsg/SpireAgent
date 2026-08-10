@@ -27,11 +27,15 @@ normal Agent native-page open/read/return and generated typed SDKs.
 
 ## Evidence
 
-Preview.5 exact artifact `12fab40b...` has two assisted completed-boundary
-journeys, broad combat/non-combat coverage, receipts, successors and safe stale
-refusals without unknown delivery. A separate long run exposed the inherited
-`DIG` witness gate; its source-free repair is automated-only until the next
-cold-load. `he_pure` remains pending on that repaired artifact.
+Final Preview.5 artifact `7ffffd4f...`, MVID `049710a0...`, completed
+`run-20260810165150-wwevk7` in `he_pure`: 323 decisions across combat, event,
+map, reward/card reward, shop, rest, treasure, selectors and game-over/menu
+return, with 186 settled, 27 checkpoints, 108 typed settling observations, two
+safe stale refusals and zero unknown. Source-free rest option/proceed and
+current/stale `run_deck` read behavior are exact-runtime exercised.
+
+This is ordinary exact-environment coverage, not cross-version/Mod
+qualification. Other read families retain automated and earlier evidence only.
 
 ## Unsupported
 

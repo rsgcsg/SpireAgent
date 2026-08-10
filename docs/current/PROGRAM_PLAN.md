@@ -8,22 +8,21 @@ Host control, strategy, training and evaluation remain orthogonal.
 
 ## Current State
 
-Preview.5 completed two assisted exact-runtime HE journeys without unknown
-delivery and proved the core/projection split. A longer run exposed a remaining
-HE violation: visible `DIG` was suppressed by a V2 purpose-specific completion
-witness. Current source replaces that gate with source-free current-button
-authority and makes `he_pure` the default.
+Preview.5 is temporarily frozen after a final-artifact `he_pure` journey reached
+the completed-run boundary across ordinary combat and non-combat surfaces with
+zero unknown delivery. Source-free rest authority and current/stale read
+behavior are exact-runtime exercised. This freezes the C core, not protocol
+1.0, arbitrary environments or durable qualification.
 
 ## Delivery Order
 
-1. Build/install/cold-load the current source-free rest repair and verify exact
-   source/build/install/load SHA/MVID and runtime.
-2. Run one state-bound read, including stale refusal.
-3. Run an ordinary default `he_pure` journey and confirm no truncated
-   projection, business witness gate or unknown delivery.
-4. Complete missing human information parity.
-5. Shift normal product work to A strategy, planning and recovery.
-6. Add a second Host and conformance fixtures before freezing C 1.0.
+1. Shift normal product work to A strategy, planning and recovery.
+2. Complete missing human information parity when real Agent use exposes a
+   material gap; keep optional reads non-authorizing.
+3. Move the five remaining V3-owned native adapter seams to neutral ownership
+   when their implementations are next changed, without wrappers or dual paths.
+4. Add a second Host and conformance fixtures before freezing C 1.0.
+5. Reopen the frozen C core only under the documented evidence-based triggers.
 
 ## Invariants
 
