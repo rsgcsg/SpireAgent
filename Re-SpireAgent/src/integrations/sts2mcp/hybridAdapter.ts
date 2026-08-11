@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { ExecutableGameAction } from "../../domain/actions/action.js";
+import type { LegacyExecutableGameAction } from "../../domain/actions/legacyAction.js";
 import type { AdapterDescriptor, GameAdapter, GameExecutionResult } from "../../game-io/adapter.js";
 import { TransientObservationError } from "../../game-io/observationError.js";
 import type { JsonObject } from "../../shared/json.js";
@@ -15,7 +15,7 @@ import {
   type BridgeV2ObservationBundle,
   type BridgeV2State
 } from "./bridgeV2Protocol.js";
-import { wrapBridgeV2State, type Sts2McpRawState } from "./rawState.js";
+import { wrapBridgeV2State, type Sts2McpRawState } from "./legacyRawState.js";
 
 export interface HybridAdapterOptions {
   commandPollMs: number;
@@ -26,7 +26,7 @@ export interface HybridAdapterOptions {
   observationRetryDelayMs?: number;
 }
 
-export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, GameExecutionResult> {
+export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, LegacyExecutableGameAction, GameExecutionResult> {
   private readonly bridge: BridgeV2RestClient;
   private readonly control: GatewayControlSession;
   private capabilitiesPayload?: { data: BridgeV2Capabilities; raw: JsonObject };
@@ -259,7 +259,7 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     throw new Error("Bridge v2 observation retry loop ended without a result");
   }
 
-  async execute(action: ExecutableGameAction): Promise<GameExecutionResult> {
+  async execute(action: LegacyExecutableGameAction): Promise<GameExecutionResult> {
     if (action.kind !== "bridge_v2_action") {
       return rejectedResult("action_authority_mismatch", "Re-SpireAgent accepts only Bridge v2 advertised actions.");
     }
@@ -469,7 +469,7 @@ function isPending(status: BridgeV2Command["status"]): boolean {
 function commandContractError(
   command: BridgeV2Command,
   requestId: string,
-  action: Extract<ExecutableGameAction, { kind: "bridge_v2_action" }>,
+  action: Extract<LegacyExecutableGameAction, { kind: "bridge_v2_action" }>,
   controller: GatewayControllerCredentials
 ): string | undefined {
   if (command.request_id !== requestId
@@ -516,7 +516,7 @@ function terminalRejectionCode(command: BridgeV2Command): string | undefined {
 
 function unknownResult(
   requestId: string,
-  action: Extract<ExecutableGameAction, { kind: "bridge_v2_action" }>,
+  action: Extract<LegacyExecutableGameAction, { kind: "bridge_v2_action" }>,
   code: string,
   detail: string,
   lastCommand?: JsonObject

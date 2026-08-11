@@ -1,0 +1,743 @@
+using System.Collections.Concurrent;
+using System.Text.Json;
+using STS2_MCP.LiveHost.Contracts;
+using STS2_MCP.Authority;
+using STS2_MCP.NativeUi;
+
+namespace STS2_MCP.Tests;
+
+public sealed class EnvironmentQualificationStoreTests
+{
+    private static readonly DateTimeOffset Now =
+        DateTimeOffset.Parse("2026-07-25T00:00:00Z");
+
+    [Fact]
+    public void OperationCatalogProvidesComponentIdentityAndDistinctCompletionModes()
+    {
+        Assert.Null(OperationQualificationCatalog.LoadError);
+        Assert.Matches("^[a-f0-9]{64}$", OperationQualificationCatalog.CatalogDigest);
+        int manifestOperationCount = NativeOperationManifest.Entries.Sum(
+            entry => entry.Operations.Count);
+        IReadOnlyList<OperationQualificationIdentityInfo> catalog =
+            OperationQualificationCatalog.Snapshot();
+        Assert.Equal(manifestOperationCount, catalog.Count);
+        Assert.Equal(
+            catalog.Count,
+            catalog
+                .Select(identity => (identity.SurfaceKind, identity.Operation))
+                .Distinct()
+                .Count());
+
+        OperationQualificationIdentity menu = Assert.IsType<
+            OperationQualificationIdentity>(
+                OperationQualificationCatalog.Describe(
+                    "main_menu",
+                    "continue_run"));
+        OperationQualificationIdentity map = Assert.IsType<
+            OperationQualificationIdentity>(
+                OperationQualificationCatalog.Describe(
+                    "map_navigation",
+                    "choose_map_node"));
+        OperationQualificationIdentity transform = Assert.IsType<
+            OperationQualificationIdentity>(
+                OperationQualificationCatalog.Describe(
+                    "deck_transform_selection",
+                    "confirm_deck_transform"));
+
+        Assert.Equal("continuation_handoff_observed", menu.CompletionBoundary);
+        Assert.Equal(
+            OperationQualificationCatalog.ExplicitNativeContract,
+            menu.ContractKind);
+        Assert.Equal(
+            "saved_singleplayer_run_became_active",
+            menu.WitnessId);
+        Assert.Equal("immediate_postcondition_observed", map.CompletionBoundary);
+        Assert.Equal(
+            OperationQualificationCatalog.ExplicitNativeContract,
+            map.ContractKind);
+        Assert.Equal(
+            "transaction_settled",
+            transform.CompletionBoundary);
+        Assert.Equal(
+            "transform_screen_closed_original_instances_absent_and_deck_count_preserved",
+            transform.WitnessId);
+        Assert.Equal(
+            OperationQualificationCatalog.ExplicitNativeContract,
+            transform.ContractKind);
+        Assert.Equal("persistent_run_mutation", transform.RiskClass);
+        Assert.NotEqual(menu.ContractDigest, map.ContractDigest);
+        Assert.All(
+            catalog,
+            identity => Assert.Matches("^[a-f0-9]{64}$", identity.ContractDigest));
+    }
+
+    [Fact]
+    public void MissingStoreIsVisibleButDoesNotGrantAuthority()
+    {
+        string path = Path.Combine(
+            Path.GetTempPath(),
+            $"missing-qualification-{Guid.NewGuid():N}.json");
+        EnvironmentQualificationStore store =
+            EnvironmentQualificationStore.Load(path, () => Now);
+        GameBuildIdentity applied = store.Apply(Game(), Bridge(), Patch());
+        QualificationSystemInfo snapshot = store.Snapshot();
+
+        Assert.Equal("empty", snapshot.Status);
+        Assert.False(snapshot.PersistentAuthorityEnabled);
+        Assert.Empty(snapshot.Qualifications);
+        Assert.NotEqual("not_observed", snapshot.CurrentEnvironmentDigest);
+        Assert.Empty(applied.Compatibility.ActionPermissionScopes);
+    }
+
+    [Fact]
+    public void ExactPackagePersistsQualifiedOperationAcrossStoreReload()
+    {
+        using var file = new TemporaryLedger();
+        EnvironmentQualificationPackage package = Package(
+            "qualification-a",
+            "main_menu",
+            "continue_run");
+        file.Write(Install(1, package));
+
+        EnvironmentQualificationStore first =
+            EnvironmentQualificationStore.Load(file.Path, () => Now);
+        GameBuildIdentity applied = first.Apply(Game(), Bridge(), Patch());
+        ActionPermissionScope scope = Assert.Single(
+            applied.Compatibility.ActionPermissionScopes);
+        Assert.Equal("qualification_qualification-a", scope.GrantId);
+        Assert.Equal("not_session_bound", scope.RuntimeEpoch);
+        Assert.True(applied.Modset!.PersistentQualificationEligible);
+
+        EnvironmentQualificationStore reloaded =
+            EnvironmentQualificationStore.Load(file.Path, () => Now);
+        GameBuildIdentity reloadedApplied = reloaded.Apply(
+            Game(),
+            Bridge(runtimeEpoch: "runtime-b"),
+            Patch());
+        Assert.Single(reloadedApplied.Compatibility.ActionPermissionScopes);
+        Assert.True(reloaded.Snapshot().PersistentAuthorityEnabled);
+        Assert.True(Assert.Single(
+            reloaded.Snapshot().Qualifications).ApplicableToCurrentEnvironment);
+    }
+
+    [Fact]
+    public void ManifestFallbackQualificationIsRejectedBeforeItCanGrantDurableAuthority()
+    {
+        using var file = new TemporaryLedger();
+        EnvironmentQualificationPackage package = Package(
+            "qualification-reward-claim",
+            "reward_claim",
+            "claim_reward") with
+        {
+            RuntimeEvidence = new[]
+            {
+                Evidence(
+                    "runtime-a",
+                    "request-a",
+                    "reward_claimed_and_surface_updated"),
+                Evidence(
+                    "runtime-b",
+                    "request-b",
+                    "reward_claimed_and_map_opened")
+            }
+        };
+        file.Write(Install(1, package));
+
+        EnvironmentQualificationStore store =
+            EnvironmentQualificationStore.Load(file.Path, () => Now);
+        GameBuildIdentity applied = store.Apply(Game(), Bridge(), Patch());
+
+        Assert.Empty(applied.Compatibility.ActionPermissionScopes);
+        Assert.Equal("invalid_fail_closed", store.Snapshot().Status);
+        Assert.False(store.Snapshot().PersistentAuthorityEnabled);
+    }
+
+    [Fact]
+    public void SameOperationCanRemainActiveInMultipleExactEnvironments()
+    {
+        using var file = new TemporaryLedger();
+        EnvironmentQualificationPackage current = Package(
+            "qualification-current-environment",
+            "main_menu",
+            "continue_run");
+        EnvironmentQualificationPackage other = current with
+        {
+            QualificationId = "qualification-other-environment",
+            GameVersion = "v0.110.0",
+            GameCommit = "other-commit",
+            GameMainAssemblyHash = 42,
+            ModsetFingerprint = "other-modset",
+            PatchDigest = "other-patch",
+            EnvironmentDigest = "other-environment"
+        };
+        file.Write(
+            Install(1, current),
+            Install(2, other));
+
+        EnvironmentQualificationStore store =
+            EnvironmentQualificationStore.Load(file.Path, () => Now);
+        GameBuildIdentity applied = store.Apply(Game(), Bridge(), Patch());
+        QualificationSystemInfo snapshot = store.Snapshot();
+
+        Assert.Equal(
+            "qualification_qualification-current-environment",
+            Assert.Single(
+                applied.Compatibility.ActionPermissionScopes).GrantId);
+        Assert.Equal(2, snapshot.Qualifications.Count);
+        Assert.All(
+            snapshot.Qualifications,
+            qualification => Assert.Equal("active", qualification.Status));
+        Assert.Single(
+            snapshot.Qualifications,
+            qualification => qualification.ApplicableToCurrentEnvironment);
+    }
+
+    [Fact]
+    public void HistoricalProtocolPackageRemainsReadableButCannotAuthorize()
+    {
+        using var file = new TemporaryLedger();
+        EnvironmentQualificationPackage historical = Package(
+            "qualification-preview65",
+            "main_menu",
+            "continue_run") with
+        {
+            GatewayProtocol = "2.0-preview.65"
+        };
+        file.Write(Install(1, historical));
+
+        EnvironmentQualificationStore store =
+            EnvironmentQualificationStore.Load(file.Path, () => Now);
+        GameBuildIdentity applied = store.Apply(Game(), Bridge(), Patch());
+        PersistentQualificationInfo package = Assert.Single(
+            store.Snapshot().Qualifications);
+
+        Assert.Equal("active", store.Snapshot().Status);
+        Assert.Equal("active", package.Status);
+        Assert.False(package.ApplicableToCurrentEnvironment);
+        Assert.Empty(applied.Compatibility.ActionPermissionScopes);
+    }
+
+    [Fact]
+    public void QualifiedStoreKeepsDistinctContinuationAndPostconditionContracts()
+    {
+        using var file = new TemporaryLedger();
+        file.Write(
+            Install(
+                1,
+                Package(
+                    "qualification-menu",
+                    "main_menu",
+                    "continue_run")),
+            Install(
+                2,
+                Package(
+                    "qualification-map",
+                    "map_navigation",
+                    "choose_map_node")));
+
+        EnvironmentQualificationStore store =
+            EnvironmentQualificationStore.Load(file.Path, () => Now);
+        GameBuildIdentity applied = store.Apply(Game(), Bridge(), Patch());
+        QualificationSystemInfo snapshot = store.Snapshot();
+
+        Assert.Equal(2, applied.Compatibility.ActionPermissionScopes.Count);
+        Assert.Contains(
+            snapshot.Qualifications,
+            value => value.Operation == "continue_run"
+                && value.CompletionBoundary == "continuation_handoff_observed");
+        Assert.Contains(
+            snapshot.Qualifications,
+            value => value.Operation == "choose_map_node"
+                && value.CompletionBoundary == "immediate_postcondition_observed");
+    }
+
+    [Fact]
+    public void LowRiskCandidatePackageEntersGatewayOwnedSessionCanary()
+    {
+        using var file = new TemporaryLedger();
+        EnvironmentQualificationPackage candidate = Package(
+            "candidate-shop-open",
+            "shop_room",
+            "open_shop_inventory") with
+        {
+            AuthorityTier = "session_canary",
+            RuntimeEvidence = Array.Empty<QualificationRuntimeEvidence>(),
+            ExpiresAt = Now.AddDays(3)
+        };
+        file.Write(Install(1, candidate));
+
+        EnvironmentQualificationStore store =
+            EnvironmentQualificationStore.Load(file.Path, () => Now);
+        GameBuildIdentity candidateGame = store.Apply(Game(), Bridge(), Patch());
+        ActionPermissionScope installedScope = Assert.Single(
+            candidateGame.Compatibility.ActionPermissionScopes);
+        Assert.Equal("canary", installedScope.Tier);
+        Assert.True(candidateGame.Modset!.QualificationCandidateEligible);
+        Assert.False(candidateGame.Modset.PersistentQualificationEligible);
+        Assert.False(store.Snapshot().PersistentAuthorityEnabled);
+        Assert.True(store.Snapshot().SessionCanaryCandidateEnabled);
+
+        var manager = new EnvironmentPermissionManager("runtime-a");
+        CompatibilityAssessment session = manager.Apply(
+            candidateGame,
+            Bridge(),
+            Patch());
+        ActionPermissionScope runtimeScope = Assert.Single(
+            session.ActionPermissionScopes);
+        Assert.Equal("runtime-a", runtimeScope.RuntimeEpoch);
+        Assert.StartsWith("grant_", runtimeScope.GrantId);
+        Assert.Equal(
+            "session_canary",
+            Assert.Single(manager.Snapshot().Grants).Tier);
+    }
+
+    [Fact]
+    public void WrongEnvironmentLeavesPackageVisibleAndInapplicable()
+    {
+        using var file = new TemporaryLedger();
+        file.Write(Install(
+            1,
+            Package("qualification-a", "main_menu", "continue_run")));
+
+        EnvironmentQualificationStore store =
+            EnvironmentQualificationStore.Load(file.Path, () => Now);
+        GameBuildIdentity wrong = Game(modsetFingerprint: "other-modset");
+        GameBuildIdentity applied = store.Apply(wrong, Bridge(), Patch());
+        PersistentQualificationInfo qualification = Assert.Single(
+            store.Snapshot().Qualifications);
+
+        Assert.Empty(applied.Compatibility.ActionPermissionScopes);
+        Assert.False(store.Snapshot().PersistentAuthorityEnabled);
+        Assert.False(qualification.ApplicableToCurrentEnvironment);
+    }
+
+    [Fact]
+    public void OneRuntimeEpochOrCorruptLedgerFailsClosed()
+    {
+        using var insufficient = new TemporaryLedger();
+        EnvironmentQualificationPackage package = Package(
+            "qualification-a",
+            "main_menu",
+            "continue_run") with
+        {
+            RuntimeEvidence = new[]
+            {
+                Evidence("runtime-a", "request-a", "saved_singleplayer_run_became_active")
+            }
+        };
+        insufficient.Write(Install(1, package));
+        EnvironmentQualificationStore store =
+            EnvironmentQualificationStore.Load(insufficient.Path, () => Now);
+        store.Apply(Game(), Bridge(), Patch());
+        Assert.Equal("invalid_fail_closed", store.Snapshot().Status);
+        Assert.False(store.Snapshot().PersistentAuthorityEnabled);
+
+        using var corrupt = new TemporaryLedger();
+        corrupt.Write(
+            Install(2, Package("qualification-b", "main_menu", "continue_run")));
+        EnvironmentQualificationStore corruptStore =
+            EnvironmentQualificationStore.Load(corrupt.Path, () => Now);
+        corruptStore.Apply(Game(), Bridge(), Patch());
+        Assert.Equal("invalid_fail_closed", corruptStore.Snapshot().Status);
+    }
+
+    [Fact]
+    public void RevokeAndRollbackAreAppendOnlyAndOperationScoped()
+    {
+        using var file = new TemporaryLedger();
+        EnvironmentQualificationPackage first = Package(
+            "qualification-a",
+            "main_menu",
+            "continue_run");
+        EnvironmentQualificationPackage replacement = Package(
+            "qualification-b",
+            "main_menu",
+            "continue_run") with
+        {
+            Version = 2,
+            SupersedesQualificationId = first.QualificationId
+        };
+        file.Write(
+            Install(1, first),
+            Install(2, replacement),
+            new QualificationLedgerEvent(
+                3,
+                "event-3",
+                "rollback",
+                Now,
+                null,
+                first.QualificationId,
+                "regression_detected"));
+
+        EnvironmentQualificationStore store =
+            EnvironmentQualificationStore.Load(file.Path, () => Now);
+        GameBuildIdentity applied = store.Apply(Game(), Bridge(), Patch());
+
+        ActionPermissionScope scope = Assert.Single(
+            applied.Compatibility.ActionPermissionScopes);
+        Assert.Equal("qualification_qualification-a", scope.GrantId);
+        Assert.Contains(
+            store.Snapshot().Qualifications,
+            qualification => qualification.QualificationId == "qualification-b"
+                && qualification.Status == "rolled_back");
+
+        using var revokedFile = new TemporaryLedger();
+        revokedFile.Write(
+            Install(1, first),
+            new QualificationLedgerEvent(
+                2,
+                "event-2",
+                "revoke",
+                Now,
+                null,
+                first.QualificationId,
+                "operator_revoked"));
+        EnvironmentQualificationStore revoked =
+            EnvironmentQualificationStore.Load(revokedFile.Path, () => Now);
+        Assert.Empty(revoked.Apply(
+            Game(),
+            Bridge(),
+            Patch()).Compatibility.ActionPermissionScopes);
+    }
+
+    [Fact]
+    public void FirstValidatedFailureQuarantinesPersistentOperationForSession()
+    {
+        using var file = new TemporaryLedger();
+        file.Write(Install(
+            1,
+            Package("qualification-a", "main_menu", "continue_run")));
+        EnvironmentQualificationStore store =
+            EnvironmentQualificationStore.Load(file.Path, () => Now);
+        ActionPermissionScope scope = Assert.Single(store.Apply(
+            Game(),
+            Bridge(),
+            Patch()).Compatibility.ActionPermissionScopes);
+        var binding = new OperationPermissionBinding(
+            scope.SurfaceKind,
+            scope.Operation,
+            scope.Tier,
+            scope.GrantId,
+            scope.GrantVersion,
+            scope.RuntimeEpoch,
+            scope.EnvironmentDigest,
+            scope.PatchDigest,
+            scope.OperationFingerprint);
+        store.ObserveCommand(
+            "request-timeout",
+            binding,
+            new GatewayCommandOutcomeEvidence(
+                "request-timeout",
+                "state-a",
+                "action-a",
+                "timed_out",
+                "unknown",
+                "state-b",
+                new[]
+                {
+                    new GatewayCommandEvent(
+                        "validated",
+                        Now,
+                        "state_and_action_revalidated",
+                        null,
+                        null),
+                    new GatewayCommandEvent(
+                        "timed_out",
+                        Now,
+                        null,
+                        "completion_timeout",
+                        null)
+                }));
+
+        Assert.Empty(store.Apply(
+            Game(),
+            Bridge(),
+            Patch()).Compatibility.ActionPermissionScopes);
+        PersistentQualificationInfo qualification = Assert.Single(
+            store.Snapshot().Qualifications);
+        Assert.Equal("session_quarantined", qualification.Status);
+        Assert.Equal("session_quarantined", qualification.Applicability);
+        Assert.Equal("completion_timeout", qualification.StatusReason);
+        Assert.False(store.Snapshot().PersistentAuthorityEnabled);
+    }
+
+    [Fact]
+    public void ExplicitTransformQualificationActivatesWithExactWitness()
+    {
+        using var file = new TemporaryLedger();
+        file.Write(Install(
+            1,
+            Package("qualification-a", "deck_transform_selection", "confirm_deck_transform")));
+        EnvironmentQualificationStore store =
+            EnvironmentQualificationStore.Load(file.Path, () => Now);
+        ActionPermissionScope scope = Assert.Single(store.Apply(
+            Game(),
+            Bridge(),
+            Patch()).Compatibility.ActionPermissionScopes);
+        Assert.Equal("deck_transform_selection", scope.SurfaceKind);
+        Assert.Equal("confirm_deck_transform", scope.Operation);
+        Assert.Equal("active", store.Snapshot().Status);
+        Assert.True(store.Snapshot().PersistentAuthorityEnabled);
+    }
+
+    [Fact]
+    public void StoreReloadCannotClearSessionQuarantine()
+    {
+        using var file = new TemporaryLedger();
+        file.Write(Install(
+            1,
+            Package("qualification-a", "main_menu", "continue_run")));
+        var quarantine = new ConcurrentDictionary<string, string>(
+            StringComparer.Ordinal);
+        EnvironmentQualificationStore first =
+            EnvironmentQualificationStore.Load(
+                file.Path,
+                () => Now,
+                quarantine);
+        ActionPermissionScope scope = Assert.Single(first.Apply(
+            Game(),
+            Bridge(),
+            Patch()).Compatibility.ActionPermissionScopes);
+        var binding = new OperationPermissionBinding(
+            scope.SurfaceKind,
+            scope.Operation,
+            scope.Tier,
+            scope.GrantId,
+            scope.GrantVersion,
+            scope.RuntimeEpoch,
+            scope.EnvironmentDigest,
+            scope.PatchDigest,
+            scope.OperationFingerprint);
+        first.ObserveCommand(
+            "request-timeout",
+            binding,
+            new GatewayCommandOutcomeEvidence(
+                "request-timeout",
+                "state-a",
+                "action-a",
+                "timed_out",
+                "unknown",
+                "state-b",
+                new[]
+                {
+                    new GatewayCommandEvent(
+                        "validated",
+                        Now,
+                        "state_and_action_revalidated",
+                        null,
+                        null),
+                    new GatewayCommandEvent(
+                        "timed_out",
+                        Now,
+                        null,
+                        "completion_timeout",
+                        null)
+                }));
+
+        EnvironmentQualificationStore reloaded =
+            EnvironmentQualificationStore.Load(
+                file.Path,
+                () => Now,
+                quarantine);
+        Assert.Empty(reloaded.Apply(
+            Game(),
+            Bridge(),
+            Patch()).Compatibility.ActionPermissionScopes);
+        Assert.Equal(
+            "session_quarantined",
+            Assert.Single(reloaded.Snapshot().Qualifications).Status);
+    }
+
+    [Fact]
+    public void ExpiredHistoricalPackageDoesNotCorruptNewerActivePackage()
+    {
+        using var file = new TemporaryLedger();
+        EnvironmentQualificationPackage expired = Package(
+            "qualification-old",
+            "main_menu",
+            "continue_run") with
+        {
+            IssuedAt = Now.AddDays(-30),
+            ExpiresAt = Now.AddDays(-1)
+        };
+        EnvironmentQualificationPackage current = Package(
+            "qualification-current",
+            "main_menu",
+            "continue_run") with
+        {
+            Version = 2,
+            SupersedesQualificationId = expired.QualificationId
+        };
+        file.Write(
+            Install(1, expired, Now.AddDays(-29)),
+            Install(2, current));
+
+        EnvironmentQualificationStore store =
+            EnvironmentQualificationStore.Load(file.Path, () => Now);
+        GameBuildIdentity applied = store.Apply(Game(), Bridge(), Patch());
+
+        Assert.Equal("active", store.Snapshot().Status);
+        Assert.Equal(
+            "qualification_qualification-current",
+            Assert.Single(applied.Compatibility.ActionPermissionScopes).GrantId);
+    }
+
+    private static QualificationLedgerEvent Install(
+        int sequence,
+        EnvironmentQualificationPackage package,
+        DateTimeOffset? at = null) => new(
+            sequence,
+            $"event-{sequence}",
+            "install",
+            at ?? Now,
+            package,
+            null,
+            null);
+
+    private static EnvironmentQualificationPackage Package(
+        string id,
+        string surfaceKind,
+        string operation)
+    {
+        OperationQualificationIdentity identity = Assert.IsType<
+            OperationQualificationIdentity>(
+                OperationQualificationCatalog.Describe(
+                    surfaceKind,
+                    operation));
+        GameBuildIdentity game = Game();
+        GatewayHostIdentity bridge = Bridge();
+        GatewayPatchInventoryInfo patch = Patch();
+        return new EnvironmentQualificationPackage(
+            id,
+            1,
+            "qualified",
+            surfaceKind,
+            operation,
+            identity.ContractKind,
+            identity.RiskClass,
+            game.Version!,
+            game.Commit!,
+            game.MainAssemblyHash!.Value,
+            GatewayAuthorityContract.QualificationProtocol,
+            bridge.AssemblyFileSha256,
+            bridge.ModuleVersionId,
+            game.Modset!.Fingerprint,
+            patch.Digest,
+            EnvironmentPermissionManager.EnvironmentDigest(game, bridge, patch),
+            identity.ContractDigest,
+            identity.CompletionBoundary,
+            identity.WitnessId,
+            new string('e', 64),
+            new[] { "organic-run-a", "organic-run-b" },
+            new[] { "stale-action-negative" },
+            new[]
+            {
+                Evidence("runtime-a", "request-a", identity.WitnessId),
+                Evidence("runtime-b", "request-b", identity.WitnessId)
+            },
+            Now.AddHours(-1),
+            Now.AddDays(30),
+            null);
+    }
+
+    private static QualificationRuntimeEvidence Evidence(
+        string runtime,
+        string request,
+        string witness) => new(
+            runtime,
+            request,
+            "confirmed",
+            witness,
+            "organic");
+
+    private static GameBuildIdentity Game(
+        string modsetFingerprint = "fixture-modset") => new(
+        "v0.109.0",
+        "c12f634d",
+        "v0.109.0",
+        -1639417500,
+        new CompatibilityAssessment(
+            "unsupported_environment",
+            Array.Empty<string>(),
+            Array.Empty<string>(),
+            ActionExecutionAllowed: false,
+            StateObservationAllowed: false,
+            InspectionAllowed: false,
+            Array.Empty<string>(),
+            Array.Empty<string>(),
+            Array.Empty<string>(),
+            Array.Empty<string>(),
+            Array.Empty<string>(),
+            Array.Empty<string>(),
+            "fixture fail-closed environment")
+        {
+            CompatibilityPolicyId = "fixture-policy",
+            CompatibilityPolicyDigest = new string('b', 64),
+            AdaptationLevel = "diagnostic_only"
+        },
+        new ModsetIdentity(
+            "additional_mods_loaded",
+            modsetFingerprint,
+            "fixture-scope",
+            ExactPermissionEligible: false,
+            Array.Empty<LoadedModIdentity>(),
+            "fixture"));
+
+    private static GatewayHostIdentity Bridge(
+        string runtimeEpoch = "runtime-a") => new(
+        "sts2_mcp_bridge_v2",
+        "fixture",
+        "0.5.0-dev",
+        "upstream",
+        "11111111-1111-1111-1111-111111111111",
+        runtimeEpoch)
+    {
+        AssemblyFileSha256 = new string('a', 64)
+    };
+
+    private static GatewayPatchInventoryInfo Patch() =>
+        GatewayPatchInventory.Classify(
+            new[]
+            {
+                new GatewayPatchDescriptor(
+                    "Game.Method()",
+                    "prefix",
+                    GatewayPatchInventory.GatewayHarmonyOwner,
+                    "Gateway.Patch()")
+            });
+
+    private sealed class TemporaryLedger : IDisposable
+    {
+        public TemporaryLedger()
+        {
+            Path = System.IO.Path.Combine(
+                System.IO.Path.GetTempPath(),
+                $"qualification-{Guid.NewGuid():N}.json");
+        }
+
+        public string Path { get; }
+
+        public void Write(params QualificationLedgerEvent[] events)
+        {
+            string json = JsonSerializer.Serialize(
+                new
+                {
+                    schema_version = 1,
+                    store_id = "fixture-store",
+                    events
+                },
+                new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+                });
+            File.WriteAllText(Path, json);
+        }
+
+        public void Dispose()
+        {
+            if (File.Exists(Path))
+                File.Delete(Path);
+        }
+    }
+}

@@ -1,4 +1,4 @@
-import { buildAllowedActions } from "../domain/actions/buildAllowedActions.js";
+import { buildHumanEnvironmentAllowedActions } from "../domain/actions/buildHumanEnvironmentAllowedActions.js";
 import type { StateEnvelope } from "../domain/state/index.js";
 import { executeAdvertisedAction } from "../runtime/advertisedActionExecutor.js";
 import type { RuntimeConfig } from "../config/env.js";
@@ -15,7 +15,7 @@ export async function runConnectorCanary(config: RuntimeConfig, requestedActionI
       throw new Error(`Connector canary requires current_human_ui authority; observed ${pre.currentState.actionAuthority}`);
     }
 
-    const allowedActions = buildAllowedActions(pre.currentState, pre.stateHash);
+    const allowedActions = buildHumanEnvironmentAllowedActions(pre.currentState, pre.stateHash);
     const selectedAction = allowedActions.find((action) => action.id === requestedActionId);
     if (!selectedAction) {
       throw new Error(`Requested action is not advertised by the current state: ${requestedActionId}`);

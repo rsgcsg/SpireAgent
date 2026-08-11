@@ -1,39 +1,36 @@
-# Current Documentation Map - `human_equivalent_connector`
+# Current Documentation Map
 
-## Current Truth
+## New Engineer Path
 
-1. [Status](STATUS.md)
-2. [Architecture](ARCHITECTURE.md)
-3. [ADR-0008](decisions/ADR-0008-human-equivalent-ui-first-connector.md)
-4. [Implementation plan](HUMAN_EQUIVALENT_CONNECTOR_IMPLEMENTATION_PLAN.md)
-5. [Program plan](PROGRAM_PLAN.md)
-6. [Roadmap](ROADMAP.md)
-7. [Implementation and cutover audit](audits/HUMAN_EQUIVALENT_IMPLEMENTATION_AND_CUTOVER_AUDIT_2026-08-04.md)
-8. [HE completion and responsibility reaudit](audits/HUMAN_EQUIVALENT_COMPLETION_AND_RESPONSIBILITY_REAUDIT_2026-08-09.md)
-9. [HE post-cutover decoupling and Live failure closeout](audits/HUMAN_EQUIVALENT_POST_CUTOVER_DECOUPLING_AND_LIVE_FAILURE_CLOSEOUT_2026-08-09.md)
-10. [HE C/A wire and domain freeze reaudit](audits/HUMAN_EQUIVALENT_C_A_WIRE_AND_DOMAIN_FREEZE_REAUDIT_2026-08-09.md)
-11. [Historical Preview.3 Human Environment Contract reaudit](audits/HUMAN_ENVIRONMENT_CONTRACT_REAUDIT_2026-08-10.md)
-12. [Human Environment Interface synthesis and Preview.4](audits/HUMAN_ENVIRONMENT_INTERFACE_SYNTHESIS_AND_PREVIEW4_2026-08-10.md)
-13. [Human Environment core and consumer projection reaudit](audits/HUMAN_ENVIRONMENT_CORE_AND_PROJECTION_REAUDIT_2026-08-11.md)
-14. [Human Environment temporary freeze closeout](audits/HUMAN_ENVIRONMENT_TEMPORARY_FREEZE_CLOSEOUT_2026-08-11.md)
+1. [Human Environment guide](HUMAN_ENVIRONMENT_NEW_ENGINEER_GUIDE.md)
+2. [Status](STATUS.md)
+3. [Architecture](ARCHITECTURE.md)
+4. [Human Information Closure](HUMAN_INFORMATION_CLOSURE.md)
+5. [ADR-0009](decisions/ADR-0009-human-environment-core-boundaries.md)
+6. [Implementation plan](HUMAN_ENVIRONMENT_IMPLEMENTATION_PLAN.md)
+7. [Roadmap](ROADMAP.md)
 
 ## Component Contracts
 
-- [Gateway HE protocol](../../STS2MCP/docs/human-equivalent/PROTOCOL.md)
-- [Gateway HE coverage](../../STS2MCP/docs/human-equivalent/COVERAGE.md)
-- [Re HE integration](../../Re-SpireAgent/docs/HUMAN_EQUIVALENT_INTEGRATION.md)
+- [Gateway HE protocol](../../STS2MCP/docs/human-environment/PROTOCOL.md)
+- [Gateway HE coverage](../../STS2MCP/docs/human-environment/COVERAGE.md)
+- [Re HE integration](../../Re-SpireAgent/docs/HUMAN_ENVIRONMENT_INTEGRATION.md)
+- [Machine-readable inventory](../../contracts/human-environment-contract.json)
 
-## Operations And Collaboration
+## Operations
 
 - [Local setup](LOCAL_SETUP.md)
 - [Development model](DEVELOPMENT_MODEL.md)
 - [Operations](OPERATIONS.md)
 - [Development and evaluation](DEVELOPMENT_AND_EVALUATION.md)
-- [Contributing](../../CONTRIBUTING.md)
-- [Security](../../SECURITY.md)
+- [Repository inventory](REPOSITORY_INVENTORY.md)
 
-## Superseded Baseline
+## Evidence And History
 
-ADR-0007 and `STS2MCP/docs/connector-v3/` describe the inherited rollback and
-historical evidence. They are not current action authority. Dated Preview
-closeouts remain immutable evidence and cannot prove HE load or Live behavior.
+- [2026-08-12 clean-baseline closeout](audits/HUMAN_ENVIRONMENT_CLEAN_BASELINE_CLOSEOUT_2026-08-12.md)
+- [2026-08-11 core/projection reaudit](audits/HUMAN_ENVIRONMENT_CORE_AND_PROJECTION_REAUDIT_2026-08-11.md)
+- [2026-08-11 temporary-freeze evidence](audits/HUMAN_ENVIRONMENT_TEMPORARY_FREEZE_CLOSEOUT_2026-08-11.md)
+
+Dated audits preserve what their exact source/artifact/runtime established.
+They are not current implementation instructions. ADR-0008, Connector V3 and
+Bridge v2 documents explain migration history only.

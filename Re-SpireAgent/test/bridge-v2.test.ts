@@ -14,7 +14,7 @@ import {
   decodeBridgeV2State,
   SUPPORTED_BRIDGE_V2_PROTOCOL
 } from "../src/integrations/sts2mcp/bridgeV2Protocol.js";
-import { isBridgeV2WrappedState, wrapBridgeV2State, wrapConnectorV3State } from "../src/integrations/sts2mcp/rawState.js";
+import { isBridgeV2WrappedState, wrapBridgeV2State, wrapConnectorV3State } from "../src/integrations/sts2mcp/legacyRawState.js";
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
 import type { JsonObject } from "../src/shared/json.js";
 import { fixture } from "./helpers.js";

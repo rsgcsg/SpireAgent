@@ -3,7 +3,7 @@ import type {
   ConnectorV3CommandCandidate,
   ConnectorV3Observation
 } from "./connectorV3Protocol.js";
-import { wrapConnectorV3State, type Sts2McpRawState } from "./rawState.js";
+import { wrapConnectorV3State, type Sts2McpRawState } from "./legacyRawState.js";
 import type { JsonObject } from "../../shared/json.js";
 import { stableStringify } from "../../runtime/stateHash.js";
 

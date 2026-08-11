@@ -1,8 +1,20 @@
-# STS2 Human-Equivalent Connector
+# STS2 Human Environment Connector
 
-`STS2MCP` is the in-game Connector, REST server and optional Python MCP
-transport. Human-Equivalent protocol `1.0-preview.5` is current; Connector V3
-is explicit rollback/comparison only.
+`STS2MCP` is the in-game Live Host, Human Environment runtime, REST server and
+optional thin Python MCP transport. Protocol `1.0-preview.6` is current.
+
+## Source Ownership
+
+```text
+LiveHost       visible facts and one input owner
+NativeUi       exact native candidates, bindings and delivery
+Authority      environment, controller, idempotency and qualification
+HumanEnvironment  Observe / Read / Interact wire and runtime
+Transport      HTTP support
+mcp            optional MCP-to-HTTP adapter
+```
+
+Bridge v2 and Connector V3 are retired history, not execution fallbacks.
 
 ## Build, Test And Deploy
 
@@ -10,33 +22,25 @@ From the repository root:
 
 ```bash
 npm run doctor
+npm run connector -- test
+npm run connector -- build
 npm run deploy
 ```
 
-`deploy` runs tests/build, records provenance, creates a timestamped rollback
-and installs only while STS2 is closed. Individual commands:
+Direct Windows test:
 
-```bash
-npm run connector -- test
-npm run connector -- build
-npm run connector -- install
-npm run connector -- show-status
+```powershell
+dotnet test STS2MCP/STS2_MCP.sln -c Release -p:STS2GameDir="E:\SteamLibrary\steamapps\common\Slay the Spire 2"
 ```
 
-Direct macOS test:
+`deploy` builds, records provenance, backs up the installed mod and refuses to
+install while STS2 is running. After cold-start, `npm run verify:loaded` proves
+the exact installed SHA and MVID are in the process.
 
-```bash
-GAME_DIR="$HOME/Library/Application Support/Steam/steamapps/common/Slay the Spire 2"
-dotnet test STS2MCP/STS2_MCP.sln -p:STS2GameDir="$GAME_DIR" \
-  -p:UseSharedCompilation=false
-```
+## API
 
-After cold-starting the game, `npm run verify:loaded` proves the installed SHA
-and MVID are loaded. Build/install alone are not loaded or Live evidence.
-
-## Current API
-
-See [Human-Equivalent Protocol](docs/human-equivalent/PROTOCOL.md).
+See [Protocol](docs/human-environment/PROTOCOL.md) and
+[Coverage](docs/human-environment/COVERAGE.md).
 
 ```text
 GET  /api/he/capabilities
@@ -46,12 +50,9 @@ POST /api/he/actions
 GET  /api/he/actions/{request_id}
 ```
 
-The Connector accepts only a current advertised state-bound action from a
-complete finite projection. Canonical interaction capabilities and current
-referents remain meaningful without that projection; exact native operands
-remain C-local. It never accepts arbitrary
-methods, paths, coordinates or hidden game information. Unknown delivery is
-never retried.
+Only a complete current bound-action projection can authorize input. The Host
+rebuilds and revalidates exact native targets before delivery. No arbitrary
+method, path, coordinate, reflection target or hidden information is accepted.
 
 ## Rollback
 
@@ -61,5 +62,5 @@ Use the backup printed by install:
 npm run connector -- restore-known-environment --backup /absolute/backup/path
 ```
 
-Never commit game assemblies, installed DLLs, local configuration, logs,
-runtime payloads or secrets.
+Never commit game assemblies, installed DLLs, local config, logs, runtime
+payloads or secrets.

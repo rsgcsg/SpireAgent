@@ -1,129 +1,84 @@
-# Current Architecture - Human Environment Interface
+# Current Architecture: Human Environment C
 
-Authority: [ADR-0008](decisions/ADR-0008-human-equivalent-ui-first-connector.md)
+Authority: [ADR-0009](decisions/ADR-0009-human-environment-core-boundaries.md)
 
-## Canonical Model
-
-```text
-Live STS2 Host                 future fair-player Headless Host
- native UI observation             engine decision observation
- native UI input delivery          engine-native decision delivery
-           \                              /
-            C Human Environment semantic core
-            capabilities / observe / read / interact / receipt
-                              |
-        +---------------------+----------------------+
-        |                     |                      |
-  Re LLM projection    future Training adapter   future Search adapter
-        A                 tensors/reward/mask       tree/policy state
-```
-
-The semantic core is unified; Host mechanics and privileged Host controls are
-not. A second Host should implement the same meaning, not fake Live UI nodes or
-copy .NET-specific provenance. Preview.4 is therefore a conformance candidate,
-not a frozen universal 1.0 wire.
-
-## Public Contract
+## Production Path
 
 ```text
-Capabilities
-  host + game + modset + environment identity + supported verbs
-
-Observation
-  snapshot_id + session
-  persistent visible summary
-  interaction { id, kind, stage, prompt, schema, content, capabilities[] }
-  referents[] { id, role, kind, visible/enabled/selected/focused, properties }
-  reads[] + completeness + observation policy
-  bound_actions { complete|truncated|unavailable, counts, actions[] }
-
-Action
-  request_id + expected_snapshot_id + bound_action_id + controller lease
-
-Receipt
-  applied | not_applied | unknown
-  exact public action summary + optional immediate successor
+real STS2 runtime
+  -> LiveHost observation readers
+  -> NativeUi candidate discovery and exact native binding
+  -> Authority environment/controller/request admission
+  -> HumanEnvironment Observe / Read / Interact contract
+  -> REST or optional thin MCP transport
+  -> consumer-owned projection such as Re
 ```
 
-Facts produce referents before any consumer projection. Interaction
-capabilities describe current strategy-free verbs and participant roles. A
-finite bound action references one optional subject and zero or more
-role-labelled current referents. Exact native objects and operands never cross
-the public boundary. A truncated finite projection is observable but cannot
-authorize Re. `applied` means input delivery, not business completion;
-`unknown` is terminal for automatic retry.
+There is one production path. Bridge v2 and Connector V3 do not publish state,
+actions or HTTP authority. Retired endpoints return `410` and cannot silently
+resume execution.
+
+## C-Core
+
+C-Core is a behavior boundary, not one giant assembly namespace. It contains:
+
+- a canonical fair-player snapshot: persistent facts, current interaction,
+  visible referents, completeness, session identity and policy;
+- state-bound, read-only information opportunities;
+- a complete finite projection of current bound actions;
+- one Host-local binding/execution authority;
+- controller, stale-state and idempotency enforcement;
+- `applied | not_applied | unknown` delivery receipts and successor snapshots.
+
+The wire is independently meaningful without knowing Provider, Surface preview,
+Bridge or Connector history. `interaction.content` is tagged by both
+`surface.kind` and `context.kind`. Native objects and operands remain Host-local.
 
 ## Ownership
 
-- **Game/Host** owns rules, RNG, native state, legality and effects.
-- **C** owns fair-player facts, information reachability, current interaction,
-  strategy-free capabilities, the unique native binding/execution authority,
-  state binding, delivery integrity and receipts.
-- **A/Re** owns normalization, model projection, finite choice resolution,
-  strategy, flow interpretation, readiness and recovery.
-- **D** owns optional annotations, graders, replay evaluation and conformance
-  evidence; it never authorizes or executes.
-- **P** owns build/install/configuration/runtime identity, controller policy,
-  rollback and experiment orchestration.
-- **Headless lifecycle/branching/scenario/acceleration ports** own reset, seed,
-  save/load, clone/fork, scenario mutation and fast stepping.
-- **Training** owns tensors, masks, reward, termination/truncation and batching.
-- **Search** owns tree state, branching policy and value evaluation.
+- **Game/Host:** rules, RNG, effects, object lifetime, native legality and Commit.
+- **LiveHost:** visible facts, one current owner and readiness.
+- **NativeUi:** exact candidates, controls, entities, operands and revalidation.
+- **Authority:** exact environment, one controller, qualification and request
+  lifecycle.
+- **HumanEnvironment:** canonical public observation, reads, bound actions,
+  receipts and successor projection.
+- **Transport:** serialization and transport only.
+- **Consumer:** strategy, model formatting, lazy/eager read policy and progress
+  interpretation. It cannot create facts or legality.
 
-## Normal Live Path
+## Consumer Boundary
 
-```text
-C observe canonical frame plus complete bound-action projection
--> Re strict decode and finite consumer projection
--> model sees facts plus finite opaque choices
--> LLM selects one local ID
--> Re submits the exact advertised bound action
--> C rebuilds interaction/referents/native binding authority
--> Host delivers native input
--> receipt + successor
--> A interprets progress
-```
+An LLM consumer may use compact observation plus lazy reads and finite choices.
+A memoryless RL consumer may eagerly aggregate advertised reads into one
+snapshot-coherent bundle. Search or Replay may own different projections. All
+must consume the same C truth and submit the same opaque bound-action identity.
 
-## Exclusions And Internal Debt
+No consumer format defines the C ontology, native operands, legality or result.
+The existing Re decision bundle is a downstream convenience, not a second C.
+Re's production executable action type contains only the opaque HE action.
+Historical index, V2 and V3 action unions live in a fixture-only module that is
+excluded from the production build. Shared orchestration utilities are generic
+and do not interpret retired transport families.
 
-C is not an LLM API, reward API, business transaction API, privileged simulator
-API or second game engine. It exposes no hidden state, arbitrary reflection,
-coordinates, SourceContract, source authority or business Outcome authority.
+## Information Boundary
 
-The Live Host currently reuses Bridge observation providers and five bounded
-V3 adapter-library seams. This is one-way implementation reuse. It must not
-leak into public DTOs, Headless requirements or a second authority/executor.
-Move code to neutral `NativeUi` ownership only when the implementation itself
-can move; do not add wrappers that merely hide the dependency.
+Player-visible facts are either in the hot observation, reachable through an
+advertised state-bound read, or explicitly classified partial/unsupported.
+Inspection and native-page evidence never grant mutation authority. Hidden RNG,
+draw order, future events/rewards and inaccessible native state are excluded.
 
-## Projection Boundary
+See [Human Information Closure](HUMAN_INFORMATION_CLOSURE.md).
 
-The canonical frame is independently meaningful when no finite action menu is
-requested. `interaction.capabilities` is HE truth about the current interaction
-grammar. `bound_actions` is the current Re projection and a C-issued execution
-handle catalog; it is not the referent ontology. A future typed-intent, RL mask
-or Search-edge projection may coexist only if it resolves to the same C-local
-binding table and executor. No projection may create legality.
+## Delivery Semantics
 
-Live and Headless unify these fair-player meanings, not exact wire provenance
-or privileged lifecycle. Headless reset/seed/clone/fork/fast-step remain
-separate Host ports. Training reward/termination and Search branching/value
-remain consumer-owned.
+`applied` proves that C delivered the exact current native input through the
+game-owned path. It does not claim arbitrary downstream business completion.
+Re observes successor stability without reconstructing game rules. `unknown`
+is terminal for automatic retry.
 
-A consumer that cannot issue lazy reads may eagerly aggregate selected
-advertised reads for one snapshot before encoding tensors or search state. The
-aggregation validates snapshot/runtime/environment coherence and stays outside
-C; it cannot change referents, capabilities, bound actions or legality.
+## Non-Goals
 
-## Temporary Freeze Scope
-
-Protocol `1.0-preview.5` freezes the semantic core and ordinary Live production
-path temporarily: canonical visible truth, current interaction capabilities,
-state-bound reads, complete finite bindings, one Host-local executor, delivery
-receipt and successor. Exact-artifact automated plus `he_pure` Live evidence is
-recorded in the
-[temporary freeze closeout](audits/HUMAN_ENVIRONMENT_TEMPORARY_FREEZE_CLOSEOUT_2026-08-11.md).
-
-The wire is not 1.0-frozen. Full hover/focus/tooltip/scroll/native-page parity,
-a second Host, cross-Host conformance, arbitrary version/Mod support, Training
-and Search products, and durable qualification remain outside this freeze.
+C is not a second game engine, business effect simulator, reward API, model API,
+coordinate click service, arbitrary reflection surface or privileged Headless
+lifecycle. Headless, Training, Search and A strategy changes are separate work.

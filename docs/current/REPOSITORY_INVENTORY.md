@@ -1,72 +1,38 @@
-# Repository Classification Inventory
+# Repository Ownership Inventory
 
-This inventory classifies the repository after the 2026-07-22 consolidation.
-It is a current navigation and ownership aid; Git rename history and
-[`../../archive/RELOCATION_MANIFEST.md`](../../archive/RELOCATION_MANIFEST.md)
-preserve the detailed migration provenance.
+## Current Production
 
-## ACTIVE_KEEP
-
-| Path | Reason |
+| Path | Ownership |
 |---|---|
-| `Re-SpireAgent/` | Rebuilt Agent runtime, tests, config example, decision records, and current Agent documentation. |
-| `STS2MCP/HumanEquivalent/` | Current external observation, affordance, delivery, Inspection, and linked-detail implementation. |
-| `STS2MCP/ConnectorV3/` | Internal native UI adapters, controller infrastructure, and explicit rollback API. |
-| `STS2MCP/BridgeV2/` | Internal mature Provider, identity, controller, ledger, permission, and Outcome assets reused during V3 migration. Not the current Agent protocol. |
-| `STS2MCP/McpMod.cs`, `McpMod.Helpers.cs`, `McpMod.SettingsUI.cs` | Active Gateway host, shared read helpers, and local port configuration. No v1 state/action route remains. |
-| `STS2MCP/mcp/` | Optional current Human-Equivalent MCP transport adapter. |
-| `STS2MCP/tests/` | Current Bridge contract/runtime test suite. |
-| `STS2MCP/docs/human-equivalent/` | Current Connector protocol, coverage, and migration boundary. |
-| `STS2MCP/docs/connector-v3/` | Explicit rollback and migration history. |
-| `STS2MCP/docs/bridge-v2/` | Historical protocol, runtime evidence, and internal migration reference. |
-| `docs/current/` | Repository-level current status, architecture, roadmap, operations, and product truth. |
-| `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, `SECURITY.md`, `.gitignore`, `package.json`, `tools/` | Current workspace entrypoints, security boundary, and checks. |
-| `.github/workflows/ci.yml` | Public Re/document/inventory/Python checks; exact-game C# validation remains local. |
-| `LICENSE` | Repository license. |
+| `STS2MCP/LiveHost/` | real-game visible observation and current input owner |
+| `STS2MCP/NativeUi/` | exact native candidates, entity/control/operand binding and delivery |
+| `STS2MCP/Authority/` | environment admission, controller, idempotency and qualification |
+| `STS2MCP/HumanEnvironment/` | canonical Observe/Read/Interact protocol and runtime |
+| `STS2MCP/Transport/` | shared HTTP-only support |
+| `STS2MCP/mcp/` | optional thin MCP transport |
+| `Re-SpireAgent/` | current HE LLM consumer and runtime |
+| `contracts/` | checked cross-component contract inventory |
+| `tools/` | deployment, identity, boundary and documentation checks |
+| `docs/current/` | repository-level current truth |
 
-## ACTIVE_MOVE_OR_RENAME
+`McpMod.cs`, `McpMod.Helpers.cs` and `McpMod.SettingsUI.cs` host the in-game
+entrypoint and configuration. They do not define a second protocol authority.
 
-| Previous location | Current location | Reason |
-|---|---|---|
-| `docs/product/REAL_PRODUCTIZATION_*` | `docs/current/audits/` | Product audit remains current but no longer sits under the retired root documentation system. |
-| `docs/headless/` | `docs/current/headless/` | Headless is a current future boundary, not a root P9 phase. |
-| root `README.md`, `AGENTS.md`, package entry | rewritten at root | Root now introduces the active monorepo rather than the retired runtime. |
-| Connector current-status/index documents | `docs/current/` plus `STS2MCP/docs/human-equivalent/` | Connector V3 and Bridge v2 material is rollback or historical evidence. |
+## Retired History
 
-## EXTRACT_FOR_CURRENT_USE
+Bridge v2 and Connector V3 source paths are removed from the compiled Gateway.
+Their dated documents remain historical evidence under the existing archives
+and component history folders. Retired `/api/v2*` and `/api/v3*` requests return
+`410`; there is no compatibility execution path.
 
-No legacy root asset has an active runtime consumer. Extracting a historical
-asset requires a focused current-mainline PR that names its owner, current
-contract, tests, and rollback boundary. The archive is not a shared library.
+## Generated And Local Only
 
-## ARCHIVE_LEGACY
+`node_modules`, `dist`, `bin`, `obj`, `out`, `.local`, installed DLLs,
+`Re-SpireAgent/data/runs`, runtime logs and `.env.local` are not source truth and
+must not be committed.
 
-| Path | Reason | Reference value |
-|---|---|---|
-| `archive/original-spireagent/` | Retired root TypeScript runtime, P8--P15 plans, old data/schema, handoffs, and learning artifacts. | Historical implementation, prior evidence, and migration source only. |
-| `archive/bridge-v2-previews/2026-07/` | Dated preview closeouts, canaries, source audits, and early architecture records. | Exact environment-scoped lifecycle evidence only. |
-| `archive/legacy-connector-v1/` | Retired v1 state reconstruction, index actions, profile/wiki/compendium API, and raw API references. | Historical operation inventory and failure evidence only; excluded from the active build. |
-| `archive/connector-v2-final/` | Final pre-V3 current-truth and Re integration/handoff documents. | Rollback and migration evidence only; superseded by ADR-0007. |
+## Evidence Rule
 
-## DELETE_GENERATED_OR_DUPLICATE
-
-No tracked source, evidence, or license was deleted in this consolidation.
-Ignored local generated directories (`node_modules`, `dist`, `bin`, `obj`,
-`out`, local run data, and `.DS_Store`) remain untracked. They can be removed
-locally without changing the repository, but this task did not delete them.
-
-## BLOCKED_UNTIL_DEPENDENCY_REMOVED
-
-| Path family | Why it remains | Release condition |
-|---|---|---|
-| Historical Bridge manifest references | Current operation manifests still cite exact historical evidence files. | Replace only after a current exact-environment evidence record supersedes the cited scope; never erase provenance to make coverage look newer. |
-
-## Classification Rules
-
-- `ACTIVE_KEEP` means current ownership, not automatic permission or product
-  qualification.
-- `ARCHIVE_LEGACY` means preserved and non-authoritative, not deleted.
-- `BLOCKED_UNTIL_DEPENDENCY_REMOVED` means retain in the active component while
-  measuring a safe retirement path.
-- `EXTRACT_FOR_CURRENT_USE` is intentionally empty until a real dependency is
-  demonstrated.
+Historical policy IDs or evidence references may retain old names when changing
+them would falsify provenance. A historical label never creates current runtime
+ownership or permission.

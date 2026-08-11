@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.js";
-import type { ExecutableGameAction } from "../src/domain/actions/action.js";
+import type { LegacyExecutableGameAction } from "../src/domain/actions/legacyAction.js";
 import type { StateEnvelope } from "../src/domain/state/index.js";
 import { NORMALIZED_STATE_SCHEMA_VERSION } from "../src/domain/state/common.js";
 import type { GameAdapter, GameExecutionResult } from "../src/game-io/adapter.js";
 import { TransientObservationError } from "../src/game-io/observationError.js";
-import type { Sts2McpRawState } from "../src/integrations/sts2mcp/rawState.js";
+import type { Sts2McpRawState } from "../src/integrations/sts2mcp/legacyRawState.js";
 import type { LlmDecisionProvider, LlmDecisionSession } from "../src/llm/types.js";
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
 import type { DecisionRecord, DecisionRecorder, PreparedEvidence } from "../src/recording/types.js";
@@ -130,7 +130,10 @@ describe("TickOrchestrator", () => {
         actionId: "action-end-turn",
         expectedStateId: "state-before",
         bridgeActionKind: "end_turn"
-      }
+      },
+      undefined,
+      undefined,
+      "end_turn"
     );
 
     expect(result).toMatchObject({ status: "settled", polls: 2 });
@@ -349,7 +352,10 @@ describe("TickOrchestrator", () => {
         actionId: "action-map-node",
         expectedStateId: "state-before",
         bridgeActionKind: "choose_map_node"
-      }
+      },
+      undefined,
+      undefined,
+      "choose_map_node"
     );
 
     expect(result).toMatchObject({ status: "settled", polls: 2 });
@@ -378,7 +384,8 @@ describe("TickOrchestrator", () => {
           bridgeActionKind
         },
         "adapter_confirmed",
-        "state-after"
+        "state-after",
+        bridgeActionKind
       );
 
       expect(result).toMatchObject({ status: "settled", polls: 2 });
@@ -764,8 +771,8 @@ describe("TickOrchestrator", () => {
   });
 });
 
-class FakeAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, GameExecutionResult> {
-  readonly executed: ExecutableGameAction[] = [];
+class FakeAdapter implements GameAdapter<Sts2McpRawState, LegacyExecutableGameAction, GameExecutionResult> {
+  readonly executed: LegacyExecutableGameAction[] = [];
   private readIndex = 0;
 
   constructor(
@@ -785,20 +792,20 @@ class FakeAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, 
     return structuredClone(state);
   }
 
-  async execute(action: ExecutableGameAction): Promise<GameExecutionResult> {
+  async execute(action: LegacyExecutableGameAction): Promise<GameExecutionResult> {
     this.executed.push(action);
     return this.executionResult;
   }
 }
 
-class MemoryRecorder implements DecisionRecorder {
+class MemoryRecorder implements DecisionRecorder<LegacyExecutableGameAction> {
   readonly runId = "run-test";
-  readonly records: DecisionRecord[] = [];
+  readonly records: DecisionRecord<LegacyExecutableGameAction>[] = [];
   prepared = false;
 
   async initialize(): Promise<void> {}
 
-  async prepare(input: Parameters<DecisionRecorder["prepare"]>[0]): Promise<PreparedEvidence> {
+  async prepare(input: Parameters<DecisionRecorder<LegacyExecutableGameAction>["prepare"]>[0]): Promise<PreparedEvidence> {
     this.prepared = true;
     return {
       preState: {
@@ -826,7 +833,7 @@ class MemoryRecorder implements DecisionRecorder {
     };
   }
 
-  async append(record: DecisionRecord): Promise<void> {
+  async append(record: DecisionRecord<LegacyExecutableGameAction>): Promise<void> {
     this.records.push(record);
   }
 }
@@ -853,7 +860,11 @@ function fixedProvider(selectedActionId: string, beforeDecision?: () => void): L
   };
 }
 
-function makeOrchestrator(adapter: FakeAdapter, provider: LlmDecisionProvider, recorder: MemoryRecorder): TickOrchestrator {
+function makeOrchestrator(
+  adapter: FakeAdapter,
+  provider: LlmDecisionProvider,
+  recorder: MemoryRecorder
+): TickOrchestrator<LegacyExecutableGameAction> {
   const normalize = (raw: unknown) => normalizeCurrentState(raw, adapter.describe());
   const settlement = new SuccessorWatcher(adapter, normalize, {
     pollMs: 1,

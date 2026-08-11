@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildBaselineReport } from "../src/evaluation/baselineReport.js";
+import type { LegacyExecutableGameAction } from "../src/domain/actions/legacyAction.js";
 import type { DecisionRecord, RunMetadata, RunSummary } from "../src/recording/types.js";
 
 describe("M1 baseline report", () => {
@@ -82,7 +83,7 @@ function metadata(withRevision: boolean): RunMetadata {
   };
 }
 
-function record(): DecisionRecord {
+function record(): DecisionRecord<LegacyExecutableGameAction> {
   const attempt = {
     requestKind: "primary" as const,
     startedAt: "2026-01-01T00:00:00.000Z",

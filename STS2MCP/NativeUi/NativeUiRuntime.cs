@@ -1,4 +1,3 @@
-using STS2_MCP.BridgeV2.Runtime;
 
 namespace STS2_MCP.NativeUi;
 
@@ -8,5 +7,5 @@ namespace STS2_MCP.NativeUi;
 /// </summary>
 internal static class NativeUiRuntime
 {
-    internal static BridgeEntityRegistry Entities { get; } = new();
+    internal static NativeEntityRegistry Entities { get; } = new();
 }

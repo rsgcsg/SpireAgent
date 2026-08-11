@@ -14,11 +14,11 @@ describe("runtime evidence provenance", () => {
       .toThrow("AGENT_EVIDENCE_PROVENANCE");
   });
 
-  it("accepts only Human-Equivalent C and separates assisted from pure mode", () => {
+  it("accepts only Human Environment C and separates assisted from pure mode", () => {
     expect(readRuntimeConfig({ STS2_MCP_PROTOCOL: "he" }).mcp.mode).toBe("he_pure");
     expect(readRuntimeConfig({ SPIREAGENT_HE_MODE: "he_assisted" }).mcp.mode).toBe("he_assisted");
     expect(readRuntimeConfig({ SPIREAGENT_HE_MODE: "he_pure" }).mcp.mode).toBe("he_pure");
-    expect(() => readRuntimeConfig({ STS2_MCP_PROTOCOL: "v3" })).toThrow("Human-Equivalent C");
+    expect(() => readRuntimeConfig({ STS2_MCP_PROTOCOL: "v3" })).toThrow("Human Environment C");
     expect(() => readRuntimeConfig({ SPIREAGENT_HE_MODE: "semantic_auto" })).toThrow("SPIREAGENT_HE_MODE");
   });
 

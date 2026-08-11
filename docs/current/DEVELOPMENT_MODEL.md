@@ -104,7 +104,7 @@ responsible for exact local C# tests/build evidence when Gateway code changes.
 
 Short term:
 
-- cold-load and exercise the current Human-Equivalent artifact in both
+- cold-load and exercise the current Human Environment artifact in both
   `he_assisted` and `he_pure` without transferring V3 evidence;
 - close exact-runtime UI coverage defects as bounded native mechanics, not new
   business source gates;
@@ -114,10 +114,10 @@ Short term:
 Medium term:
 
 - establish a reviewed ordinary-vanilla support envelope with typed stops;
-- simplify internal inherited V3 adapters without weakening exact target
-  binding, single-writer delivery or unknown-no-retry;
-- promote the coherent Human-Equivalent branch through normal review and retire the temporary
-  migration branch.
+- keep exact target binding, single-writer delivery and unknown-no-retry while
+  validating the current neutral `LiveHost`/`NativeUi` ownership;
+- promote the coherent Human Environment branch through normal review after
+  new-artifact Live evidence.
 
 Later, separately gated work includes Workshop packaging, Companion, public
 Agent SDK, Headless and learning. None may move game legality, Commit or

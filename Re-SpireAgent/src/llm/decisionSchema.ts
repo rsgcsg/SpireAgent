@@ -51,11 +51,14 @@ export function parseDecisionText(text: string): DecisionParseResult {
   };
 }
 
-export type DecisionValidation =
-  | { valid: true; decision: LlmDecision; selectedAction: AllowedAction }
+export type DecisionValidation<TAction extends { kind: string }> =
+  | { valid: true; decision: LlmDecision; selectedAction: AllowedAction<TAction> }
   | { valid: false; outcome: "provider_failure" | "unknown_action_id"; error: string };
 
-export function validateDecisionForActions(attempt: LlmDecisionAttempt, allowedActions: AllowedAction[]): DecisionValidation {
+export function validateDecisionForActions<TAction extends { kind: string }>(
+  attempt: LlmDecisionAttempt,
+  allowedActions: AllowedAction<TAction>[]
+): DecisionValidation<TAction> {
   if (attempt.outcome !== "valid_json" || !attempt.parsedDecision) {
     return { valid: false, outcome: "provider_failure", error: attempt.error ?? `Provider outcome: ${attempt.outcome}` };
   }

@@ -1,9 +1,9 @@
 import type { RuntimeConfig } from "../config/env.js";
-import { buildAllowedActions } from "../domain/actions/buildAllowedActions.js";
+import { buildHumanEnvironmentAllowedActions } from "../domain/actions/buildHumanEnvironmentAllowedActions.js";
 import { NORMALIZED_STATE_SCHEMA_VERSION } from "../domain/state/index.js";
-import { Sts2HumanEquivalentAdapter } from "../integrations/sts2mcp/humanEquivalentAdapter.js";
+import { Sts2HumanEnvironmentAdapter } from "../integrations/sts2mcp/humanEnvironmentAdapter.js";
 import { DeepSeekDecisionProvider } from "../llm/deepseekProvider.js";
-import { normalizeCurrentState } from "../normalization/normalizeCurrentState.js";
+import { normalizeHumanEnvironmentCurrentState } from "../normalization/normalizeHumanEnvironmentCurrentState.js";
 import { createRunId, FileDecisionRecorder } from "../recording/fileDecisionRecorder.js";
 import type { RunMetadata } from "../recording/types.js";
 import { SuccessorWatcher } from "../runtime/successorWatcher.js";
@@ -12,7 +12,7 @@ import { TickOrchestrator } from "../runtime/tickOrchestrator.js";
 import { onceAsync } from "./gracefulShutdown.js";
 
 export async function createRuntime(config: RuntimeConfig): Promise<{
-  adapter: Sts2HumanEquivalentAdapter;
+  adapter: Sts2HumanEnvironmentAdapter;
   llm: DeepSeekDecisionProvider;
   recorder: FileDecisionRecorder;
   orchestrator: TickOrchestrator;
@@ -58,7 +58,7 @@ export async function createRuntime(config: RuntimeConfig): Promise<{
     const orchestrator = new TickOrchestrator({
       adapter: connector.adapter,
       normalize: connector.normalize,
-      buildAllowedActions,
+      buildAllowedActions: buildHumanEnvironmentAllowedActions,
       llm,
       settlement: connector.settlement,
       recorder
@@ -71,14 +71,14 @@ export async function createRuntime(config: RuntimeConfig): Promise<{
 }
 
 export async function createConnectorRuntime(config: RuntimeConfig): Promise<{
-  adapter: Sts2HumanEquivalentAdapter;
-  normalize: (raw: unknown) => ReturnType<typeof normalizeCurrentState>;
+  adapter: Sts2HumanEnvironmentAdapter;
+  normalize: (raw: unknown) => ReturnType<typeof normalizeHumanEnvironmentCurrentState>;
   settlement: SuccessorWatcher;
   release(): Promise<void>;
 }> {
   const lock = await acquireRuntimeLock(config.runtime.dataDir);
   try {
-    const adapter = new Sts2HumanEquivalentAdapter(config.mcp.baseUrl, config.mcp.timeoutMs, {
+    const adapter = new Sts2HumanEnvironmentAdapter(config.mcp.baseUrl, config.mcp.timeoutMs, {
       mode: config.mcp.mode,
       startupWaitMs: config.mcp.startupWaitMs,
       startupPollMs: config.mcp.startupPollMs,
@@ -87,7 +87,8 @@ export async function createConnectorRuntime(config: RuntimeConfig): Promise<{
     });
     await adapter.initialize();
     const adapterDescription = adapter.describe();
-    const normalize = (raw: unknown) => normalizeCurrentState(raw, adapterDescription);
+    const normalize = (raw: unknown) =>
+      normalizeHumanEnvironmentCurrentState(raw, adapterDescription);
     const settlement = new SuccessorWatcher(adapter, normalize, {
       pollMs: config.runtime.settlementPollMs,
       defaultTimeoutMs: config.runtime.settlementTimeoutMs,

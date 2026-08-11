@@ -1,40 +1,26 @@
-# Current Program Plan - Human Environment C, A First
+# Current Program Plan
 
-## Outcome
+## Current Outcome
 
-Agents use one fair-player environment boundary to play ordinary STS2. Live
-and future Headless Hosts implement the same Human Environment meaning while
-Host control, strategy, training and evaluation remain orthogonal.
+Create a newcomer-readable Human Environment baseline for the real STS2 Host.
+One canonical fair-player world and one execution authority serve any consumer.
 
-## Current State
+## Active Work
 
-Preview.5 is temporarily frozen after a final-artifact `he_pure` journey reached
-the completed-run boundary across ordinary combat and non-combat surfaces with
-zero unknown delivery. Source-free rest authority and current/stale read
-behavior are exact-runtime exercised. This freezes the C core, not protocol
-1.0, arbitrary environments or durable qualification.
-
-## Delivery Order
-
-1. Shift normal product work to A strategy, planning and recovery.
-2. Complete missing human information parity when real Agent use exposes a
-   material gap; keep optional reads non-authorizing.
-3. Move the five remaining V3-owned native adapter seams to neutral ownership
-   when their implementations are next changed, without wrappers or dual paths.
-4. Add a second Host and conformance fixtures before freezing C 1.0.
-5. Reopen the frozen C core only under the documented evidence-based triggers.
+1. Complete automated verification of the ownership and naming migration.
+2. Build and safely install the resulting artifact.
+3. Cold-load and verify exact runtime identity.
+4. Exercise `he_pure`, current/stale reads and native-page evidence/recovery.
+5. Record exact new-artifact evidence before considering a freeze.
 
 ## Invariants
 
-- Game/Host owns native truth and legality; C owns fair-player truth and input.
-- Exact operands remain Host-local.
-- Observation facts and interaction capabilities do not depend on finite
-  consumer projection.
-- An incomplete finite projection never grants authority.
-- Publication and execution both bind the current snapshot and interaction.
-- Requests are idempotent; unknown delivery is never retried.
-- D never authorizes or executes.
-- Evidence never transfers across source, artifact, runtime or Host.
+- Game/Host owns rules, RNG, effects and Commit.
+- C owns fair-player facts, reads and one Host-local execution authority.
+- consumers own projections and strategy but never legality.
+- exact native operands stay Host-local.
+- incomplete projection, stale identity and unknown results fail closed.
+- evidence never transfers across source, artifact, runtime or Host.
 
-Full Headless, RL, MCTS, learning, clone/fork, vectorization and arbitrary Mod
-compatibility are intentionally deferred.
+Headless, RL/MCTS, learning, clone/fork and major A work are intentionally not
+active in this plan.

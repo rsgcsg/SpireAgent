@@ -49,7 +49,7 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectR
     throw new Error("DEEPSEEK_THINKING_MODE must be enabled or disabled");
   }
   if (env.STS2_MCP_PROTOCOL !== undefined && env.STS2_MCP_PROTOCOL !== "he") {
-    throw new Error("Re-SpireAgent uses Human-Equivalent C; STS2_MCP_PROTOCOL may only be he");
+    throw new Error("Re-SpireAgent uses Human Environment C; STS2_MCP_PROTOCOL may only be he");
   }
   const humanMode = env.SPIREAGENT_HE_MODE ?? "he_pure";
   if (humanMode !== "he_assisted" && humanMode !== "he_pure") {

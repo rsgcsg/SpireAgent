@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AllowedAction } from "../src/domain/actions/allowedAction.js";
+import type { LegacyExecutableGameAction } from "../src/domain/actions/legacyAction.js";
 import type { NormalizedCurrentState } from "../src/domain/state/index.js";
 import { ProgressCycleGuard, semanticProgressHash } from "../src/runtime/progressCycleGuard.js";
 
@@ -88,7 +89,7 @@ function humanShopState(
   const verb = uiKind === "shop_room" ? "open" : "cancel";
   return {
     ...shopState(uiKind, stateToken, affordanceId, gold),
-    sourceStateType: `human_equivalent:${uiKind}`,
+    sourceStateType: `human_environment:${uiKind}`,
     actionAuthority: "current_human_ui",
     surface: {
       kind: "human_ui",
@@ -224,23 +225,23 @@ function bridgeCompleteness() {
   };
 }
 
-function openAction(actionId: string, stateId: string): AllowedAction {
+function openAction(actionId: string, stateId: string): AllowedAction<LegacyExecutableGameAction> {
   return bridgeAction(actionId, stateId, "open_shop_inventory");
 }
 
-function purchaseAction(actionId: string, stateId: string): AllowedAction {
+function purchaseAction(actionId: string, stateId: string): AllowedAction<LegacyExecutableGameAction> {
   return bridgeAction(actionId, stateId, "purchase_shop_card");
 }
 
-function closeAction(actionId: string, stateId: string): AllowedAction {
+function closeAction(actionId: string, stateId: string): AllowedAction<LegacyExecutableGameAction> {
   return bridgeAction(actionId, stateId, "close_shop_inventory");
 }
 
-function proceedAction(actionId: string, stateId: string): AllowedAction {
+function proceedAction(actionId: string, stateId: string): AllowedAction<LegacyExecutableGameAction> {
   return bridgeAction(actionId, stateId, "proceed_shop");
 }
 
-function bridgeAction(actionId: string, stateId: string, kind: string): AllowedAction {
+function bridgeAction(actionId: string, stateId: string, kind: string): AllowedAction<LegacyExecutableGameAction> {
   return {
     id: actionId,
     kind,

@@ -1,0 +1,532 @@
+using STS2_MCP.NativeUi;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using Godot;
+using MegaCrit.Sts2.Core.Context;
+using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Nodes;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
+using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
+using MegaCrit.Sts2.Core.Nodes.Rooms;
+using MegaCrit.Sts2.Core.Nodes.Screens.Map;
+using MegaCrit.Sts2.Core.Nodes.Screens.ScreenContext;
+using MegaCrit.Sts2.Core.Nodes.Screens.TreasureRoomRelic;
+using MegaCrit.Sts2.Core.Rooms;
+using MegaCrit.Sts2.Core.Runs;
+using STS2_MCP.LiveHost.Contracts;
+
+namespace STS2_MCP.LiveHost;
+
+/// <summary>
+/// Exact-build single-player treasure-room contract. The four stages retain
+/// different business commits and completion witnesses instead of flattening
+/// the room into a generic reward button.
+/// </summary>
+internal sealed class TreasureRoomSurfaceReader : ILiveSurfaceReader
+{
+    private const string SurfaceKind = "treasure_room";
+    internal const string OpenChestCompletionWitness =
+        "treasure_chest_opened_and_result_stage_reached";
+    internal const string ChooseRelicCompletionWitness =
+        "treasure_relic_owned_and_selection_closed";
+    internal const string SkipRelicCompletionWitness =
+        "treasure_relic_skipped_without_inventory_change_and_room_left";
+    internal const string ProceedCompletionWitness =
+        "treasure_room_left_or_map_opened";
+    private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
+    private static readonly FieldInfo? CollectionOpenField =
+        typeof(NTreasureRoom).GetField("_isRelicCollectionOpen", Flags);
+    private static readonly FieldInfo? ChestOpenedField =
+        typeof(NTreasureRoom).GetField("_hasChestBeenOpened", Flags);
+
+    public string Kind => SurfaceKind;
+
+    public InputOwnerLayer Layer => InputOwnerLayer.Room;
+
+    public LiveObservation? TryBuild(
+        ActiveSurfaceSnapshot snapshot,
+        NativeEntityRegistry entities,
+        GameBuildIdentity game)
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        if (runState?.CurrentRoom is not TreasureRoom room)
+            return null;
+
+        string step = "scene_root";
+        try
+        {
+        step = "screen_authority";
+        NTreasureRoom? uiRoom = NRun.Instance?.TreasureRoom;
+        if (uiRoom == null
+            || !McpMod.IsLiveNode(uiRoom)
+            || !ActiveScreenContext.Instance.IsCurrent(uiRoom))
+            return BindingUnavailable(game, "The visible treasure room does not own the current screen context.");
+
+        step = "lifecycle_flags";
+        if (!TryReadBool(ChestOpenedField, uiRoom, out bool chestOpened)
+            || !TryReadBool(CollectionOpenField, uiRoom, out bool collectionOpen))
+        {
+            return BindingUnavailable(game, "Exact treasure lifecycle flags are unavailable.");
+        }
+
+        step = "exact_controls";
+        NButton? chest = uiRoom.GetNodeOrNull<NButton>("%Chest");
+        NTreasureRoomRelicCollection? collection =
+            uiRoom.GetNodeOrNull<NTreasureRoomRelicCollection>("%RelicCollection");
+        NProceedButton proceed = uiRoom.ProceedButton;
+        Player? player = LocalContext.GetMe(runState);
+        if (chest == null || collection == null || proceed == null || player == null)
+            return BindingUnavailable(game, "Treasure controls, relic collection, or local player are unavailable.");
+
+        step = "relic_collection";
+        RelicModel[] currentRelics =
+            RunManager.Instance.TreasureRoomRelicSynchronizer.CurrentRelics?.ToArray()
+            ?? Array.Empty<RelicModel>();
+        NTreasureRoomRelicHolder? holder = collection.SingleplayerRelicHolder;
+        bool holderMatches = TreasureVisibilityFacts.CanReadSingleplayerRelic(
+                                 collectionOpen,
+                                 currentRelics.Length)
+                             && holder != null
+                             && TryReadHolderRelic(holder, out RelicModel? holderRelic)
+                             && ReferenceEquals(holderRelic, currentRelics[0]);
+        bool holderVisible = holderMatches
+                             && McpMod.IsLiveNode(holder!)
+                             && McpMod.IsNodeVisible(holder!)
+                             && collectionOpen;
+        bool holderActionable = holderVisible
+                                && holder!.IsEnabled
+                                && holder.MouseFilter != Control.MouseFilterEnum.Ignore;
+
+        step = "surface_projection";
+        string stage = TreasureLifecycleFacts.Stage(
+            chestOpened,
+            collectionOpen,
+            currentRelics.Length,
+            chest.IsEnabled && McpMod.IsNodeVisible(chest));
+        VisibleTreasureRelic[] visibleRelics = holderVisible
+            ? new[] { BuildRelic(currentRelics[0], entities) }
+            : Array.Empty<VisibleTreasureRelic>();
+        bool canSkip = stage == "relic_choice"
+                       && proceed.IsSkip
+                       && proceed.IsEnabled
+                       && McpMod.IsNodeVisible(proceed);
+        bool canProceed = stage == "completed"
+                          && !proceed.IsSkip
+                          && proceed.IsEnabled
+                          && McpMod.IsNodeVisible(proceed);
+
+        string roomId = entities.GetId(uiRoom, "treasure_room");
+        bool canOpenChest = stage == "closed"
+                            && chest.IsEnabled
+                            && McpMod.IsNodeVisible(chest)
+                            && chest.MouseFilter != Control.MouseFilterEnum.Ignore;
+
+        var surface = new TreasureRoomSurface(
+            SurfaceKind,
+            stage,
+            roomId,
+            chestOpened,
+            visibleRelics,
+            canSkip,
+            canProceed);
+        bool hasActionableControl = canOpenChest
+                                    || stage == "relic_choice" && holderActionable
+                                    || canSkip
+                                    || canProceed;
+        string readiness = hasActionableControl ? "ready" : "settling";
+        var completeness = new StateCompleteness(
+            "contract_complete_for_single_player_treasure_room_lifecycle",
+            hasActionableControl
+                ? "derived_from_same_exact_current_controls_as_execution"
+                : "temporarily_empty_while_chest_or_relic_award_animation_settles",
+            new[]
+            {
+                "TreasureRoom+NTreasureRoom exact room ownership",
+                "NTreasureRoom._hasChestBeenOpened+_isRelicCollectionOpen exact-version bindings",
+                "NTreasureRoomRelicCollection.CurrentRelics+SingleplayerRelicHolder",
+                "RelicModel visible title+description+rarity+hover keywords",
+                "NProceedButton.IsSkip+IsEnabled"
+            },
+            Array.Empty<string>());
+        step = "state_signature";
+        string signature = StableIdentityHash.Object(new
+        {
+            game.Version,
+            context = new TreasureLiveContext("treasure"),
+            surface
+        });
+        return new LiveObservation(
+            signature,
+            readiness,
+            new TreasureLiveContext("treasure"),
+            surface,
+            completeness,
+            game,
+            Array.Empty<string>());
+        }
+        catch (Exception ex)
+        {
+            return BindingUnavailable(
+                game,
+                $"Treasure projection failed at {step}: {ex.GetType().Name}.");
+        }
+    }
+
+    internal static NativeInputResult StartOpen(
+        NativeEntityRegistry entities,
+        string expectedRoomId)
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        if (runState?.CurrentRoom is not TreasureRoom room
+            || NRun.Instance?.TreasureRoom is not { } uiRoom
+            || !string.Equals(
+                entities.GetId(uiRoom, "treasure_room"),
+                expectedRoomId,
+                StringComparison.Ordinal)
+            || uiRoom.GetNodeOrNull<NButton>("%Chest") is not { } chest)
+        {
+            return NativeInputResult.Rejected(
+                "treasure_chest_changed",
+                "The exact treasure room or chest control is no longer current.");
+        }
+        return StartOpen(room, uiRoom, chest);
+    }
+
+    internal static NativeInputResult StartChoose(
+        NativeEntityRegistry entities,
+        string expectedRoomId,
+        string expectedRelicId)
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        RelicModel[] currentRelics =
+            RunManager.Instance.TreasureRoomRelicSynchronizer.CurrentRelics?.ToArray()
+            ?? Array.Empty<RelicModel>();
+        if (runState?.CurrentRoom is not TreasureRoom room
+            || LocalContext.GetMe(runState) is not { } player
+            || NRun.Instance?.TreasureRoom is not { } uiRoom
+            || !string.Equals(
+                entities.GetId(uiRoom, "treasure_room"),
+                expectedRoomId,
+                StringComparison.Ordinal)
+            || !entities.TryResolve(expectedRelicId, out RelicModel? relic)
+            || relic == null
+            || currentRelics.Length != 1
+            || !ReferenceEquals(currentRelics[0], relic)
+            || uiRoom.GetNodeOrNull<NTreasureRoomRelicCollection>("%RelicCollection")
+                is not { } collection
+            || collection.SingleplayerRelicHolder is not { } holder)
+        {
+            return NativeInputResult.Rejected(
+                "treasure_relic_changed",
+                "The exact treasure room or relic entity is no longer current.");
+        }
+        return StartChoose(room, uiRoom, collection, holder, relic, player);
+    }
+
+    internal static NativeInputResult StartSkip(
+        NativeEntityRegistry entities,
+        string expectedRoomId)
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        if (runState?.CurrentRoom is not TreasureRoom room
+            || LocalContext.GetMe(runState) is not { } player
+            || NRun.Instance?.TreasureRoom is not { } uiRoom
+            || !string.Equals(
+                entities.GetId(uiRoom, "treasure_room"),
+                expectedRoomId,
+                StringComparison.Ordinal)
+            || uiRoom.GetNodeOrNull<NTreasureRoomRelicCollection>("%RelicCollection")
+                is not { } collection)
+        {
+            return NativeInputResult.Rejected(
+                "treasure_skip_changed",
+                "The exact treasure room or skip owner is no longer current.");
+        }
+        return StartSkip(room, uiRoom, collection, uiRoom.ProceedButton, player);
+    }
+
+    internal static NativeInputResult StartProceed(
+        NativeEntityRegistry entities,
+        string expectedRoomId)
+    {
+        if (RunManager.Instance.DebugOnlyGetState()?.CurrentRoom is not TreasureRoom room
+            || NRun.Instance?.TreasureRoom is not { } uiRoom
+            || !string.Equals(
+                entities.GetId(uiRoom, "treasure_room"),
+                expectedRoomId,
+                StringComparison.Ordinal))
+        {
+            return NativeInputResult.Rejected(
+                "treasure_proceed_changed",
+                "The exact treasure room or proceed owner is no longer current.");
+        }
+        return StartProceed(room, uiRoom, uiRoom.ProceedButton);
+    }
+
+    private static VisibleTreasureRelic BuildRelic(
+        RelicModel relic,
+        NativeEntityRegistry entities) =>
+        BuildVisibleRelic(relic, entities);
+
+    private static VisibleTreasureRelic BuildVisibleRelic(
+        RelicModel relic,
+        NativeEntityRegistry entities)
+    {
+        string entityId = entities.GetId(relic, "treasure_relic");
+        VisibleEntityFacts.HoverFacts hover =
+            VisibleEntityFacts.BuildHoverFacts(relic.HoverTipsExcludingRelic, entityId);
+        return new VisibleTreasureRelic(
+            entityId,
+            relic.Id.Entry,
+            McpMod.SafeGetText(() => relic.Title),
+            McpMod.SafeGetText(() => relic.DynamicDescription),
+            relic.Rarity.ToString(),
+            hover.Keywords,
+            hover.CardPreviews);
+    }
+
+    private static NativeInputResult StartOpen(
+        TreasureRoom expectedRoom,
+        NTreasureRoom expectedUi,
+        NButton expectedChest)
+    {
+        if (!IsCurrent(expectedRoom, expectedUi)
+            || !TryReadBool(ChestOpenedField, expectedUi, out bool opened)
+            || opened
+            || !ReferenceEquals(expectedUi.GetNodeOrNull<NButton>("%Chest"), expectedChest)
+            || !expectedChest.IsEnabled
+            || !McpMod.IsNodeVisible(expectedChest)
+            || expectedChest.MouseFilter == Control.MouseFilterEnum.Ignore)
+        {
+            return NativeInputResult.Rejected(
+                "treasure_chest_changed",
+                "The advertised unopened treasure chest is no longer current and clickable.");
+        }
+
+        expectedChest.ForceClick();
+        return NativeInputResult.Started(
+            () => OpenChestResultReached(expectedRoom, expectedUi),
+            OpenChestCompletionWitness,
+            allowIntermediateStateChanges: true);
+    }
+
+    private static bool OpenChestResultReached(
+        TreasureRoom expectedRoom,
+        NTreasureRoom expectedUi)
+    {
+        if (!IsCurrent(expectedRoom, expectedUi)
+            || !TryReadBool(ChestOpenedField, expectedUi, out bool chestOpened)
+            || !TryReadBool(CollectionOpenField, expectedUi, out bool collectionOpen))
+        {
+            return false;
+        }
+
+        int relicCount = RunManager.Instance.TreasureRoomRelicSynchronizer.CurrentRelics?.Count ?? 0;
+        NProceedButton proceed = expectedUi.ProceedButton;
+        bool normalProceedReady = !proceed.IsSkip
+                                  && proceed.IsEnabled
+                                  && McpMod.IsNodeVisible(proceed);
+        return TreasureLifecycleFacts.OpenChestResultReached(
+            chestOpened,
+            collectionOpen,
+            relicCount,
+            normalProceedReady);
+    }
+
+    private static NativeInputResult StartChoose(
+        TreasureRoom expectedRoom,
+        NTreasureRoom expectedUi,
+        NTreasureRoomRelicCollection expectedCollection,
+        NTreasureRoomRelicHolder expectedHolder,
+        RelicModel expectedRelic,
+        Player expectedPlayer)
+    {
+        int beforeCount = CountRelic(expectedPlayer, expectedRelic.Id.Entry);
+        RelicModel[] current =
+            RunManager.Instance.TreasureRoomRelicSynchronizer.CurrentRelics?.ToArray()
+            ?? Array.Empty<RelicModel>();
+        if (!IsCurrent(expectedRoom, expectedUi)
+            || !TryReadBool(CollectionOpenField, expectedUi, out bool collectionOpen)
+            || !collectionOpen
+            || !ReferenceEquals(expectedUi.GetNodeOrNull<NTreasureRoomRelicCollection>("%RelicCollection"), expectedCollection)
+            || !ReferenceEquals(expectedCollection.SingleplayerRelicHolder, expectedHolder)
+            || current.Length != 1
+            || !ReferenceEquals(current[0], expectedRelic)
+            || !TryReadHolderRelic(expectedHolder, out RelicModel? holderRelic)
+            || !ReferenceEquals(holderRelic, expectedRelic)
+            || !expectedHolder.IsEnabled
+            || !McpMod.IsNodeVisible(expectedHolder)
+            || expectedHolder.MouseFilter == Control.MouseFilterEnum.Ignore
+            || CountRelic(expectedPlayer, expectedRelic.Id.Entry) != beforeCount)
+        {
+            return NativeInputResult.Rejected(
+                "treasure_relic_changed",
+                "The advertised treasure relic is no longer the current selectable offer.");
+        }
+
+        expectedHolder.ForceClick();
+        return NativeInputResult.Started(
+            () => CountRelic(expectedPlayer, expectedRelic.Id.Entry) > beforeCount
+                  && (!IsCurrent(expectedRoom, expectedUi)
+                      || TryReadBool(CollectionOpenField, expectedUi, out bool stillOpen) && !stillOpen),
+            ChooseRelicCompletionWitness,
+            allowIntermediateStateChanges: true);
+    }
+
+    private static NativeInputResult StartSkip(
+        TreasureRoom expectedRoom,
+        NTreasureRoom expectedUi,
+        NTreasureRoomRelicCollection expectedCollection,
+        NProceedButton expectedProceed,
+        Player expectedPlayer)
+    {
+        int beforeRelicCount = expectedPlayer.Relics.Count;
+        if (!IsCurrent(expectedRoom, expectedUi)
+            || !TryReadBool(CollectionOpenField, expectedUi, out bool collectionOpen)
+            || !collectionOpen
+            || !ReferenceEquals(expectedUi.GetNodeOrNull<NTreasureRoomRelicCollection>("%RelicCollection"), expectedCollection)
+            || !ReferenceEquals(expectedUi.ProceedButton, expectedProceed)
+            || !expectedProceed.IsSkip
+            || !expectedProceed.IsEnabled
+            || !McpMod.IsNodeVisible(expectedProceed))
+        {
+            return NativeInputResult.Rejected(
+                "treasure_skip_changed",
+                "The advertised treasure skip control is no longer current and enabled.");
+        }
+
+        expectedProceed.ForceClick();
+        return NativeInputResult.Started(
+            () => expectedPlayer.Relics.Count == beforeRelicCount
+                  && (!ReferenceEquals(RunManager.Instance.DebugOnlyGetState()?.CurrentRoom, expectedRoom)
+                      || NMapScreen.Instance?.IsOpen == true),
+            SkipRelicCompletionWitness,
+            allowIntermediateStateChanges: true,
+            completionBoundary: "transaction_settled");
+    }
+
+    private static NativeInputResult StartProceed(
+        TreasureRoom expectedRoom,
+        NTreasureRoom expectedUi,
+        NProceedButton expectedProceed)
+    {
+        if (!IsCurrent(expectedRoom, expectedUi)
+            || !ReferenceEquals(expectedUi.ProceedButton, expectedProceed)
+            || expectedProceed.IsSkip
+            || !expectedProceed.IsEnabled
+            || !McpMod.IsNodeVisible(expectedProceed))
+        {
+            return NativeInputResult.Rejected(
+                "treasure_proceed_changed",
+                "The advertised treasure proceed control is no longer current and enabled.");
+        }
+
+        expectedProceed.ForceClick();
+        return NativeInputResult.Started(
+            () => !ReferenceEquals(RunManager.Instance.DebugOnlyGetState()?.CurrentRoom, expectedRoom)
+                  || NMapScreen.Instance?.IsOpen == true,
+            ProceedCompletionWitness,
+            allowIntermediateStateChanges: true,
+            completionBoundary: "continuation_handoff_observed");
+    }
+
+    private static bool IsCurrent(TreasureRoom expectedRoom, NTreasureRoom expectedUi) =>
+        ReferenceEquals(RunManager.Instance.DebugOnlyGetState()?.CurrentRoom, expectedRoom)
+        && McpMod.IsLiveNode(expectedUi)
+        && ActiveScreenContext.Instance.IsCurrent(expectedUi);
+
+    private static int CountRelic(Player player, string definitionId) =>
+        player.Relics.Count(relic => string.Equals(relic.Id.Entry, definitionId, StringComparison.Ordinal));
+
+    private static bool TryReadBool(FieldInfo? field, object instance, out bool value)
+    {
+        value = false;
+        if (field?.GetValue(instance) is not bool current)
+            return false;
+        value = current;
+        return true;
+    }
+
+    private static bool TryReadHolderRelic(
+        NTreasureRoomRelicHolder holder,
+        out RelicModel? relic)
+    {
+        relic = null;
+        try
+        {
+            relic = holder.Relic?.Model;
+            return relic != null;
+        }
+        catch (InvalidOperationException)
+        {
+            // The synchronizer generates relics when the room is entered, but
+            // the player-visible holder is not initialized until the chest is
+            // opened. Treat that interval as non-visible, never as evidence.
+            return false;
+        }
+    }
+
+    private static LiveObservation BindingUnavailable(GameBuildIdentity game, string reason)
+    {
+        var context = new TreasureLiveContext("treasure");
+        var surface = new UnsupportedSurface("unsupported", SurfaceKind, reason);
+        var completeness = new StateCompleteness(
+            "partial",
+            "empty_fail_closed",
+            new[] { "TreasureRoom+NTreasureRoom exact-version binding" },
+            new[] { "treasure_stage", "visible_relics", "legal_actions" });
+        string signature = StableIdentityHash.Object(new { game.Version, reason });
+        return new LiveObservation(
+            signature,
+            "degraded",
+            context,
+            surface,
+            completeness,
+            game,
+            new[] { "treasure_room_binding_unavailable" })
+        {
+            Diagnostics = new[]
+            {
+                GatewayDiagnostics.Create(
+                    "gateway.surface.treasure_room.binding_unavailable",
+                    "error",
+                    "surface",
+                    "actions_suppressed",
+                    "update_bridge",
+                    reason)
+            }
+        };
+    }
+}
+
+internal static class TreasureVisibilityFacts
+{
+    public static bool CanReadSingleplayerRelic(bool collectionOpen, int currentRelicCount) =>
+        collectionOpen && currentRelicCount == 1;
+}
+
+internal static class TreasureLifecycleFacts
+{
+    public static string Stage(
+        bool chestOpened,
+        bool collectionOpen,
+        int currentRelicCount,
+        bool chestActionable) =>
+        !chestOpened
+            ? chestActionable ? "closed" : "opening"
+            : collectionOpen
+                ? currentRelicCount > 0 ? "relic_choice" : "opening"
+                : "completed";
+
+    public static bool OpenChestResultReached(
+        bool chestOpened,
+        bool collectionOpen,
+        int currentRelicCount,
+        bool normalProceedReady) =>
+        chestOpened
+        && (collectionOpen && currentRelicCount > 0
+            || !collectionOpen && normalProceedReady);
+}

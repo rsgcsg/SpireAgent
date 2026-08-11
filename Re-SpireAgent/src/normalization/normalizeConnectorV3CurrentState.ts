@@ -126,7 +126,7 @@ import {
   sharedVisibleStateSchema,
   type GatewaySharedVisibleState
 } from "../integrations/sts2mcp/gatewayVisibleStateProtocol.js";
-import type { Sts2McpRawState } from "../integrations/sts2mcp/rawState.js";
+import type { Sts2McpRawState } from "../integrations/sts2mcp/legacyRawState.js";
 import { stateHash } from "../runtime/stateHash.js";
 import { DiagnosticsBuilder } from "./diagnostics.js";
 import {

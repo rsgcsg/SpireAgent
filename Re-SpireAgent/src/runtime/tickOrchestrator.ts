@@ -12,13 +12,13 @@ import { ProgressCycleGuard } from "./progressCycleGuard.js";
 import { executeAdvertisedAction } from "./advertisedActionExecutor.js";
 import type { SuccessorWatcher } from "./successorWatcher.js";
 
-export interface TickOrchestratorDependencies {
-  adapter: GameAdapter<RawGameState, ExecutableGameAction, GameExecutionResult>;
+export interface TickOrchestratorDependencies<TAction extends { kind: string } = ExecutableGameAction> {
+  adapter: GameAdapter<RawGameState, TAction, GameExecutionResult>;
   normalize: (raw: unknown) => StateEnvelope;
-  buildAllowedActions: (state: StateEnvelope["currentState"], sourceStateHash: string) => AllowedAction[];
+  buildAllowedActions: (state: StateEnvelope["currentState"], sourceStateHash: string) => AllowedAction<TAction>[];
   llm: LlmDecisionProvider;
-  settlement: SuccessorWatcher;
-  recorder: DecisionRecorder;
+  settlement: SuccessorWatcher<TAction>;
+  recorder: DecisionRecorder<TAction>;
 }
 
 export interface TickResult {
@@ -36,15 +36,15 @@ export interface TickResult {
 const MAX_REPEATED_NON_ACTIONABLE_STATE = 8;
 const MAX_REPEATED_STARTUP_UNKNOWN_STATE = 40;
 
-export class TickOrchestrator {
+export class TickOrchestrator<TAction extends { kind: string } = ExecutableGameAction> {
   private readonly executedTransitionOccurrences = new Map<string, number>();
-  private readonly progressCycleGuard = new ProgressCycleGuard();
+  private readonly progressCycleGuard = new ProgressCycleGuard<TAction>();
   private lastNonActionableStateKey?: string;
   private nonActionableStateOccurrences = 0;
   private observedKnownState = false;
   private runTerminalObserved = false;
 
-  constructor(private readonly dependencies: TickOrchestratorDependencies) {}
+  constructor(private readonly dependencies: TickOrchestratorDependencies<TAction>) {}
 
   async runTick(
     tick: number,
@@ -57,7 +57,7 @@ export class TickOrchestrator {
       pre = this.dependencies.normalize(await this.dependencies.adapter.readCurrentState());
     } catch (error) {
       this.resetNonActionableStateGuard();
-      const record = baseRecord(this.dependencies.recorder.runId, decisionId, tick, startedAt, "observation_failed");
+      const record = baseRecord<TAction>(this.dependencies.recorder.runId, decisionId, tick, startedAt, "observation_failed");
       record.error = safeError(error);
       await this.dependencies.recorder.append(record);
       // Composite state/inspection drift means this tick observed no coherent
@@ -132,8 +132,7 @@ export class TickOrchestrator {
         });
       }
       if (options.allowRunEntry
-          && pre.currentState.actionAuthority !== "current_human_ui"
-          && pre.currentState.actionAuthority !== "bridge_advertised") {
+          && pre.currentState.actionAuthority !== "current_human_ui") {
         return this.recordWithoutDecision({
           decisionId,
           tick,
@@ -170,7 +169,7 @@ export class TickOrchestrator {
       prompt
     });
     if (options.dryRun) {
-      const record = baseRecord(this.dependencies.recorder.runId, decisionId, tick, startedAt, "dry_run");
+      const record = baseRecord<TAction>(this.dependencies.recorder.runId, decisionId, tick, startedAt, "dry_run");
       record.preState = prepared.preState;
       record.allowedActions = allowedActions;
       if (prepared.prompt) record.prompt = prepared.prompt;
@@ -186,7 +185,7 @@ export class TickOrchestrator {
         allowedActionIds: allowedActions.map((action) => action.id)
       });
     } catch (error) {
-      const record = baseRecord(this.dependencies.recorder.runId, decisionId, tick, startedAt, "not_executed_llm_failure");
+      const record = baseRecord<TAction>(this.dependencies.recorder.runId, decisionId, tick, startedAt, "not_executed_llm_failure");
       record.preState = prepared.preState;
       record.allowedActions = allowedActions;
       if (prepared.prompt) record.prompt = prepared.prompt;
@@ -198,7 +197,7 @@ export class TickOrchestrator {
     const validation = validateDecisionForActions(session.finalAttempt, allowedActions);
     if (!validation.valid) {
       const outcome = validation.outcome === "unknown_action_id" ? "not_executed_invalid_decision" : "not_executed_llm_failure";
-      const record = baseRecord(this.dependencies.recorder.runId, decisionId, tick, startedAt, outcome);
+      const record = baseRecord<TAction>(this.dependencies.recorder.runId, decisionId, tick, startedAt, outcome);
       record.preState = prepared.preState;
       record.allowedActions = allowedActions;
       if (prepared.prompt) record.prompt = prepared.prompt;
@@ -388,12 +387,12 @@ export class TickOrchestrator {
     tick: number;
     startedAt: string;
     pre: StateEnvelope;
-    allowedActions: AllowedAction[];
+    allowedActions: AllowedAction<TAction>[];
     outcome: DecisionOutcome;
     error?: string;
     shouldStopRun: boolean;
     stopReason?: TickResult["stopReason"];
-    runtimeGuard?: DecisionRecord["runtimeGuard"];
+    runtimeGuard?: DecisionRecord<TAction>["runtimeGuard"];
   }): Promise<TickResult> {
     const prepared = await this.dependencies.recorder.prepare({
       decisionId: input.decisionId,
@@ -403,7 +402,7 @@ export class TickOrchestrator {
       normalizedStateHash: input.pre.normalizedStateHash,
       diagnostics: input.pre.diagnostics
     });
-    const record = baseRecord(this.dependencies.recorder.runId, input.decisionId, input.tick, input.startedAt, input.outcome);
+    const record = baseRecord<TAction>(this.dependencies.recorder.runId, input.decisionId, input.tick, input.startedAt, input.outcome);
     record.preState = prepared.preState;
     record.allowedActions = input.allowedActions;
     if (input.error) record.error = input.error;
@@ -468,7 +467,13 @@ function invalidStateReason(envelope: StateEnvelope): string {
   return `${surfaceReason}; ${firstInvalid.path}: ${firstInvalid.reason}`.slice(0, 500);
 }
 
-function baseRecord(runId: string, decisionId: string, tick: number, startedAt: string, outcome: DecisionOutcome): DecisionRecord {
+function baseRecord<TAction extends { kind: string }>(
+  runId: string,
+  decisionId: string,
+  tick: number,
+  startedAt: string,
+  outcome: DecisionOutcome
+): DecisionRecord<TAction> {
   return {
     recordSchemaVersion: 2,
     decisionId,
@@ -482,26 +487,26 @@ function baseRecord(runId: string, decisionId: string, tick: number, startedAt: 
   };
 }
 
-function decisionRecordWithLlm(input: {
+function decisionRecordWithLlm<TAction extends { kind: string }>(input: {
   runId: string;
   decisionId: string;
   tick: number;
   startedAt: string;
   outcome: DecisionOutcome;
   preState: RecordedState;
-  allowedActions: AllowedAction[];
-  prompt: DecisionRecord["prompt"];
-  session: NonNullable<DecisionRecord["llm"]>["session"];
+  allowedActions: AllowedAction<TAction>[];
+  prompt: DecisionRecord<TAction>["prompt"];
+  session: NonNullable<DecisionRecord<TAction>["llm"]>["session"];
   postState?: RecordedState;
   selectedActionId?: string;
-  selectedAction?: ExecutableGameAction;
+  selectedAction?: TAction;
   stateHashMatched?: boolean;
   adapterResult?: JsonValue;
-  settlement?: DecisionRecord["settlement"];
+  settlement?: DecisionRecord<TAction>["settlement"];
   error?: string;
-}): DecisionRecord {
+}): DecisionRecord<TAction> {
   return {
-    ...baseRecord(input.runId, input.decisionId, input.tick, input.startedAt, input.outcome),
+    ...baseRecord<TAction>(input.runId, input.decisionId, input.tick, input.startedAt, input.outcome),
     preState: input.preState,
     allowedActions: input.allowedActions,
     ...(input.prompt ? { prompt: input.prompt } : {}),

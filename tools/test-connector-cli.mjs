@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import {
   agentRunPreflightErrors,
-  configureHumanEquivalenceProfile,
+  configureHumanEnvironmentEvidenceProfile,
   defaultMigrationCycleArgs,
   evaluateBuildProvenance,
   evaluateEnvironmentReadiness,
@@ -19,7 +19,6 @@ import {
   resolveExecutable,
   resolveGameDir,
   resolveModsDir,
-  selectAgentAuthorityPath,
   windowsTaskListHasGame,
   workspaceSourceIdentity
 } from "./connector.mjs";
@@ -90,20 +89,20 @@ try {
     permission_mode: "migration_exploration",
     qualification_store: "fixture-ledger.json"
   }));
-  const configured = configureHumanEquivalenceProfile(configPath, true);
+  const configured = configureHumanEnvironmentEvidenceProfile(configPath, true);
   const config = JSON.parse(readFileSync(configPath, "utf8"));
-  assert.equal(config.human_equivalence_enabled, true);
+  assert.equal(config.human_environment_native_page_evidence_enabled, true);
   assert.equal(config.permission_mode, "migration_exploration");
   assert.equal(config.qualification_store, "fixture-ledger.json");
   assert.equal(configured.requires_cold_load, true);
   assert.equal(configured.creates_action_authority, false);
-  configureHumanEquivalenceProfile(configPath, false);
+  configureHumanEnvironmentEvidenceProfile(configPath, false);
   assert.equal(
-    JSON.parse(readFileSync(configPath, "utf8")).human_equivalence_enabled,
+    JSON.parse(readFileSync(configPath, "utf8")).human_environment_native_page_evidence_enabled,
     false
   );
   assert.throws(
-    () => configureHumanEquivalenceProfile(configPath, "true"),
+    () => configureHumanEnvironmentEvidenceProfile(configPath, "true"),
     /requires --enabled true or --enabled false/u
   );
 } finally {
@@ -151,67 +150,9 @@ assert.deepEqual(agentRunPreflightErrors({
 }, { requireMutation: true }), [
   "installed_loaded_mvid_mismatch",
   "duplicate_gateway_manifests_detected",
-  "bounded_modset_permission_required",
-  "normal_observation_disabled",
-  "mutation_and_provisional_trial_disabled"
+  "human_observation_disabled",
+  "human_input_delivery_disabled"
 ]);
-
-const clean = evaluateLoadedArtifact({
-  csharpProtocol: "2.0-preview.71",
-  reProtocol: "2.0-preview.71",
-  builtSha: "a".repeat(64),
-  installedSha: "a".repeat(64),
-  builtMvid: "mvid",
-  installedMvid: "mvid",
-  capabilities: {
-    protocol_version: "2.0-preview.71",
-    bridge: {
-      assembly_file_sha256: "a".repeat(64),
-      module_version_id: "mvid",
-      runtime_instance_id: "runtime"
-    },
-    game: { version: "fixture" }
-  }
-});
-assert.equal(clean.ok, true);
-assert.equal(clean.artifact_identity_ok, true);
-
-const provisional = evaluateEnvironmentReadiness({
-  permission_system: { mode: "migration_exploration" },
-  game: {
-    compatibility: {
-      status: "unreviewed_diagnostic_candidate",
-      adaptation_level: "diagnostic_candidate",
-      state_observation_allowed: true,
-      inspection_allowed: false,
-      action_execution_allowed: false
-    },
-    modset: {
-      status: "additional_mods_loaded",
-      exact_permission_eligible: false,
-      qualification_candidate_eligible: true,
-      persistent_qualification_eligible: false
-    }
-  }
-});
-assert.equal(provisional.provisional_trial_ready, true);
-assert.deepEqual(agentRunPreflightErrors({
-  ...provisional,
-  errors: [],
-  mod_installation: { exact_permission_blocker: false }
-}, { requireMutation: true }), []);
-assert.equal(
-  selectAgentAuthorityPath(provisional),
-  "encounter_provisional_ready_on_first_actionable_surface"
-);
-assert.equal(
-  selectAgentAuthorityPath({ observation_ready: true, mutation_ready: true }),
-  "encounter_provisional_or_existing_authority"
-);
-assert.equal(
-  selectAgentAuthorityPath({ observation_ready: false, mutation_ready: false }),
-  "legacy_migration_required"
-);
 assert.equal(isTransientAgentObservation({
   status: "settling",
   surface: { kind: "no_action" }
@@ -227,7 +168,7 @@ assert.equal(isTransientAgentObservation({
 }), false);
 
 const humanReady = evaluateEnvironmentReadiness({
-  protocol_version: "1.0-preview.5",
+  protocol_version: "1.0-preview.6",
   execution_available: true,
   game: {
     compatibility: { observation_allowed: true },
@@ -236,32 +177,33 @@ const humanReady = evaluateEnvironmentReadiness({
 });
 assert.equal(humanReady.environment_ready, true);
 assert.equal(humanReady.mutation_ready, true);
-const humanOffline = evaluateEnvironmentReadiness(null, "1.0-preview.5");
+const humanOffline = evaluateEnvironmentReadiness(null, "1.0-preview.6");
 assert.deepEqual(humanOffline.blockers, [
   "gateway_unreachable",
   "human_observation_disabled",
   "human_input_delivery_disabled"
 ]);
-assert.equal(humanOffline.exact_permission_eligible, null);
 assert.deepEqual(agentRunPreflightErrors({
   ...humanReady,
-  loaded_protocol: "1.0-preview.5",
+  loaded_protocol: "1.0-preview.6",
   errors: [],
   mod_installation: { exact_permission_blocker: false }
 }, { requireMutation: true }), []);
 
 const mismatch = evaluateLoadedArtifact({
-  csharpProtocol: "2.0-preview.68",
-  reProtocol: "2.0-preview.66",
+  csharpProtocol: "1.0-preview.6",
+  reProtocol: "1.0-preview.5",
   builtSha: "a".repeat(64),
   installedSha: "b".repeat(64),
   builtMvid: "mvid-a",
   installedMvid: "mvid-b",
   capabilities: {
-    protocol_version: "2.0-preview.66",
-    bridge: {
-      assembly_file_sha256: "c".repeat(64),
-      module_version_id: "mvid-c"
+    protocol_version: "1.0-preview.5",
+    host: {
+      implementation: {
+        artifact_sha256: "c".repeat(64),
+        module_version_id: "mvid-c"
+      }
     }
   }
 });
@@ -336,7 +278,6 @@ assert.deepEqual(recommendDoctorSteps({
     errors: [],
     environment_ready: true,
     mutation_ready: true,
-    provisional_trial_ready: false,
     mod_installation: { exact_permission_blocker: false }
   }
 }), ["Run cd Re-SpireAgent && npm run agent:run."]);
@@ -349,31 +290,10 @@ assert.deepEqual(recommendDoctorSteps({
     errors: [],
     environment_ready: false,
     mutation_ready: false,
-    provisional_trial_ready: false,
-    blockers: ["normal_observation_disabled"],
+    blockers: ["human_observation_disabled"],
     mod_installation: { exact_permission_blocker: false }
   }
-}), ["Resolve loaded environment blockers: normal_observation_disabled."]);
-
-const hazardous = evaluateEnvironmentReadiness({
-  game: {
-    compatibility: {
-      status: "untested",
-      adaptation_level: "diagnostic_only",
-      state_observation_allowed: false,
-      inspection_allowed: false,
-      action_execution_allowed: false
-    },
-    modset: { status: "hazardous_mod_state_detected" }
-  }
-});
-assert.equal(hazardous.environment_ready, false);
-assert.deepEqual(hazardous.blockers, [
-  "hazardous_mod_state_detected",
-  "normal_observation_disabled",
-  "inspection_disabled",
-  "mutation_disabled"
-]);
+}), ["Resolve loaded environment blockers: human_observation_disabled."]);
 
 const fixtureMods = mkdtempSync(path.join(os.tmpdir(), "spireagent-connector-cli-"));
 try {

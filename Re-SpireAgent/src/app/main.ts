@@ -1,8 +1,8 @@
 import { loadEnvironment, readRuntimeConfig } from "../config/env.js";
-import { buildAllowedActions } from "../domain/actions/buildAllowedActions.js";
-import { Sts2HumanEquivalentAdapter } from "../integrations/sts2mcp/humanEquivalentAdapter.js";
+import { buildHumanEnvironmentAllowedActions } from "../domain/actions/buildHumanEnvironmentAllowedActions.js";
+import { Sts2HumanEnvironmentAdapter } from "../integrations/sts2mcp/humanEnvironmentAdapter.js";
 import { DeepSeekDecisionProvider } from "../llm/deepseekProvider.js";
-import { normalizeCurrentState } from "../normalization/normalizeCurrentState.js";
+import { normalizeHumanEnvironmentCurrentState } from "../normalization/normalizeHumanEnvironmentCurrentState.js";
 import { createBaselineReport } from "../evaluation/baselineReport.js";
 import { auditPromptArtifacts } from "../prompting/promptAudit.js";
 import { compareRecordedPromptWithShadow, repeatRecordedPromptVariant } from "../prompting/promptShadowComparison.js";
@@ -68,7 +68,7 @@ async function main(): Promise<void> {
   }
 
   if (invocation.command === "inspect") {
-    const adapter = new Sts2HumanEquivalentAdapter(config.mcp.baseUrl, config.mcp.timeoutMs, {
+    const adapter = new Sts2HumanEnvironmentAdapter(config.mcp.baseUrl, config.mcp.timeoutMs, {
       mode: config.mcp.mode,
       startupWaitMs: config.mcp.startupWaitMs,
       startupPollMs: config.mcp.startupPollMs,
@@ -77,8 +77,11 @@ async function main(): Promise<void> {
     });
     await adapter.initialize();
     const raw = await adapter.readCurrentState();
-    const envelope = normalizeCurrentState(raw, adapter.describe());
-    const allowedActions = buildAllowedActions(envelope.currentState, envelope.stateHash);
+    const envelope = normalizeHumanEnvironmentCurrentState(raw, adapter.describe());
+    const allowedActions = buildHumanEnvironmentAllowedActions(
+      envelope.currentState,
+      envelope.stateHash
+    );
     process.stdout.write(`${JSON.stringify({
       adapter: adapter.describe(),
       stateHash: envelope.stateHash,

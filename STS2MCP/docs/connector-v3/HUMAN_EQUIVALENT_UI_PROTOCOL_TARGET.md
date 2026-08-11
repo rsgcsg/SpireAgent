@@ -2,7 +2,7 @@
 
 Status: design target; no implemented schema claim
 
-Authority: `docs/current/decisions/ADR-0008-human-equivalent-ui-first-connector.md`
+Authority: `docs/current/decisions/ADR-0008-human-environment-ui-first-connector.md`
 
 ## Target Schemas
 

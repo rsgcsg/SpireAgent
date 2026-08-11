@@ -1,10 +1,12 @@
 import { appendFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
+import type { ExecutableGameAction } from "../domain/actions/action.js";
 import type { PromptBundle } from "../prompting/promptBuilder.js";
 import type { JsonValue } from "../shared/json.js";
 import type { DecisionRecord, DecisionRecorder, PreparedEvidence, RunMetadata, RunSummary } from "./types.js";
 
-export class FileDecisionRecorder implements DecisionRecorder {
+export class FileDecisionRecorder<TAction extends { kind: string } = ExecutableGameAction>
+  implements DecisionRecorder<TAction> {
   readonly runId: string;
   private readonly runDir: string;
 
@@ -54,7 +56,7 @@ export class FileDecisionRecorder implements DecisionRecorder {
     return { preState, prompt: promptRecord(input.prompt, this.relativeRef(promptPath)) };
   }
 
-  async append(record: DecisionRecord, evidence?: { postRawState?: JsonValue }): Promise<void> {
+  async append(record: DecisionRecord<TAction>, evidence?: { postRawState?: JsonValue }): Promise<void> {
     const id = safeSegment(record.decisionId);
     if (record.llm) {
       const responsePath = join(this.runDir, "responses", `${id}.response.json`);

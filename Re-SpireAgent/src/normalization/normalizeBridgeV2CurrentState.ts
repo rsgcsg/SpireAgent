@@ -122,7 +122,7 @@ import {
   bridgeV2ObservationFromWrapper,
   bridgeV2StateFromWrapper,
   type Sts2McpRawState
-} from "../integrations/sts2mcp/rawState.js";
+} from "../integrations/sts2mcp/legacyRawState.js";
 import { stateHash } from "../runtime/stateHash.js";
 import { isJsonObject, type JsonObject } from "../shared/json.js";
 import { DiagnosticsBuilder } from "./diagnostics.js";

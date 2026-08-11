@@ -2,7 +2,7 @@
 
 Connector V3 is retained only as explicit rollback/comparison on the
 `human_equivalent_connector` branch. Current authority is documented in
-[`../human-equivalent/README.md`](../human-equivalent/README.md).
+[`../human-environment/README.md`](../human-environment/README.md).
 
 Connector V3 is the current STS2 Semantic Gateway contract. The canonical
 architecture is

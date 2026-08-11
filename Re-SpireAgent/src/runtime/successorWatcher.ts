@@ -16,9 +16,9 @@ export interface SuccessorObservationResult {
   };
 }
 
-export class SuccessorWatcher {
+export class SuccessorWatcher<TAction extends { kind: string } = ExecutableGameAction> {
   constructor(
-    private readonly adapter: GameAdapter<RawGameState, ExecutableGameAction, GameExecutionResult>,
+    private readonly adapter: GameAdapter<RawGameState, TAction, GameExecutionResult>,
     private readonly normalize: (raw: unknown) => StateEnvelope,
     private readonly config: {
       pollMs: number;
@@ -31,14 +31,16 @@ export class SuccessorWatcher {
 
   async waitForReadySuccessor(
     before: StateEnvelope,
-    action: ExecutableGameAction,
+    action: TAction,
     settlementAuthority: GameExecutionResult["settlementAuthority"] = "client_observation_required",
-    confirmedStateToken?: string
+    confirmedStateToken?: string,
+    advertisedActionKind?: string
   ): Promise<SuccessorObservationResult> {
     const started = Date.now();
-    const timeoutMs = isEndTurn(action)
+    const semanticKind = advertisedActionKind ?? action.kind;
+    const timeoutMs = isEndTurn(semanticKind)
       ? this.config.endTurnTimeoutMs
-      : isLongTransition(action)
+      : isLongTransition(semanticKind)
         ? this.config.roomTransitionTimeoutMs
         : this.config.defaultTimeoutMs;
     let polls = 0;
@@ -161,22 +163,14 @@ function isCoherentUnsupportedSuccessor(
     && afterToken !== beforeToken;
 }
 
-function isEndTurn(action: ExecutableGameAction): boolean {
-  return action.kind === "end_turn"
-    || (action.kind === "bridge_v2_action" && action.bridgeActionKind === "end_turn")
-    || (action.kind === "connector_v3_command" && action.operation === "end_turn");
+function isEndTurn(actionKind: string): boolean {
+  return actionKind === "end_turn";
 }
 
-function isLongTransition(action: ExecutableGameAction): boolean {
-  return action.kind === "choose_map_node"
-    || (action.kind === "bridge_v2_action"
-      && (action.bridgeActionKind === "choose_map_node"
-        || action.bridgeActionKind === "continue_run"
-        || action.bridgeActionKind === "embark_standard_run"))
-    || (action.kind === "connector_v3_command"
-      && (action.operation === "choose_map_node"
-        || action.operation === "continue_run"
-        || action.operation === "embark_standard_run"));
+function isLongTransition(actionKind: string): boolean {
+  return actionKind === "choose_map_node"
+    || actionKind === "continue_run"
+    || actionKind === "embark_standard_run";
 }
 
 function isSemanticCheckpoint(envelope: StateEnvelope): boolean {

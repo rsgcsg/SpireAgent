@@ -80,11 +80,8 @@ export function evaluateLoadedArtifact({
   capabilities
 }) {
   const errors = [];
-  const loadedHost = capabilities?.host ?? capabilities?.bridge ?? null;
-  const loadedSha = loadedHost?.implementation?.artifact_sha256
-    ?? loadedHost?.artifact_sha256
-    ?? loadedHost?.assembly_file_sha256
-    ?? null;
+  const loadedHost = capabilities?.host ?? null;
+  const loadedSha = loadedHost?.implementation?.artifact_sha256 ?? null;
   const loadedProtocol = capabilities?.protocol_version ?? null;
   if (csharpProtocol !== reProtocol) errors.push("source_protocol_mismatch");
   if (!builtSha) errors.push("release_artifact_missing");
@@ -93,9 +90,7 @@ export function evaluateLoadedArtifact({
   if (builtSha && installedSha && builtSha !== installedSha) errors.push("built_installed_sha_mismatch");
   if (builtMvid && installedMvid && builtMvid !== installedMvid) errors.push("built_installed_mvid_mismatch");
   if (installedSha && loadedSha && installedSha !== loadedSha) errors.push("installed_loaded_sha_mismatch");
-  const loadedMvid = loadedHost?.implementation?.module_version_id
-    ?? loadedHost?.module_version_id
-    ?? null;
+  const loadedMvid = loadedHost?.implementation?.module_version_id ?? null;
   if (installedMvid && loadedMvid && installedMvid !== loadedMvid) {
     errors.push("installed_loaded_mvid_mismatch");
   }
@@ -133,68 +128,23 @@ export function evaluateEnvironmentReadiness(
 ) {
   const compatibility = capabilities?.game?.compatibility;
   const modset = capabilities?.game?.modset;
-  if (expectedProtocol?.startsWith("1.0-preview.")) {
-    const observationReady = compatibility?.observation_allowed === true
-      || compatibility?.state_observation_allowed === true;
-    const mutationReady = capabilities?.execution_available === true;
-    const blockers = [];
-    if (!capabilities) blockers.push("gateway_unreachable");
-    if (!observationReady) blockers.push("human_observation_disabled");
-    if (!mutationReady) blockers.push("human_input_delivery_disabled");
-    return {
-      environment_ready: Boolean(capabilities) && observationReady,
-      observation_ready: observationReady,
-      inspection_ready: observationReady,
-      mutation_ready: mutationReady,
-      provisional_trial_ready: false,
-      modset_status: modset?.status ?? null,
-      exact_permission_eligible: null,
-      qualification_candidate_eligible: null,
-      persistent_qualification_eligible: null,
-      permission_mode: null,
-      compatibility_status: compatibility?.status ?? null,
-      adaptation_level: "human_ui_runtime_binding",
-      blockers
-    };
-  }
-  const modsetStatus = modset?.status ?? null;
-  const hazardousModset = modsetStatus === "hazardous_mod_state_detected";
-  const observationReady = compatibility?.state_observation_allowed === true;
-  const inspectionReady = compatibility?.inspection_allowed === true;
-  const mutationReady = compatibility?.action_execution_allowed === true;
-  const exactPermissionEligible = modset?.exact_permission_eligible === true
-    || modsetStatus === "exact_bridge_only";
-  const qualificationCandidateEligible =
-    modset?.qualification_candidate_eligible === true;
-  const persistentQualificationEligible =
-    modset?.persistent_qualification_eligible === true;
-  const permissionMode = capabilities?.permission_system?.mode ?? null;
-  const boundedModsetEligible = exactPermissionEligible
-    || qualificationCandidateEligible
-    || persistentQualificationEligible;
-  const provisionalTrialReady = observationReady
-    && boundedModsetEligible
-    && compatibility?.adaptation_level === "diagnostic_candidate"
-    && permissionMode === "migration_exploration";
+  const protocolSupported = expectedProtocol?.startsWith("1.0-preview.") === true;
+  const observationReady = protocolSupported
+    && compatibility?.observation_allowed === true;
+  const mutationReady = protocolSupported
+    && capabilities?.execution_available === true;
   const blockers = [];
   if (!capabilities) blockers.push("gateway_unreachable");
-  if (hazardousModset) blockers.push("hazardous_mod_state_detected");
-  if (!observationReady) blockers.push("normal_observation_disabled");
-  if (!inspectionReady) blockers.push("inspection_disabled");
-  if (!mutationReady) blockers.push("mutation_disabled");
+  if (capabilities && !protocolSupported) blockers.push("unsupported_human_environment_protocol");
+  if (!observationReady) blockers.push("human_observation_disabled");
+  if (!mutationReady) blockers.push("human_input_delivery_disabled");
   return {
-    environment_ready: Boolean(capabilities) && !hazardousModset && observationReady,
+    environment_ready: Boolean(capabilities) && observationReady,
     observation_ready: observationReady,
-    inspection_ready: inspectionReady,
+    read_ready: observationReady,
     mutation_ready: mutationReady,
-    provisional_trial_ready: provisionalTrialReady,
-    modset_status: modsetStatus,
-    exact_permission_eligible: exactPermissionEligible,
-    qualification_candidate_eligible: qualificationCandidateEligible,
-    persistent_qualification_eligible: persistentQualificationEligible,
-    permission_mode: permissionMode,
+    modset_status: modset?.status ?? null,
     compatibility_status: compatibility?.status ?? null,
-    adaptation_level: compatibility?.adaptation_level ?? null,
     blockers
   };
 }
@@ -240,7 +190,7 @@ export function defaultMigrationCycleArgs(options = {}) {
     "--workspace", path.join(resolved.localRoot, "migration"),
     "--store", path.join(resolved.modsDir, "STS2_MCP.qualifications.json"),
     "--binding-audit", path.join(WORKSPACE, "STS2MCP/out/operation-binding-audit/latest.json"),
-    "--policy", path.join(WORKSPACE, "STS2MCP/BridgeV2/Runtime/migration-permission-policy.json"),
+    "--policy", path.join(WORKSPACE, "STS2MCP/Authority/migration-permission-policy.json"),
     "--negative-evidence", path.join(WORKSPACE, "STS2MCP/compatibility/migration-negative-evidence.v1.json"),
     "--runs", path.join(WORKSPACE, "Re-SpireAgent/data/runs"),
     "--apply", "true"
@@ -259,47 +209,16 @@ export function agentRunPreflightErrors(
   { requireObservation = true, requireMutation = false } = {}
 ) {
   const errors = [...(status?.errors ?? [])];
-  if (status?.loaded_protocol?.startsWith("1.0-preview.")) {
-    if (status?.mod_installation?.exact_permission_blocker === true) {
-      errors.push("duplicate_gateway_manifests_detected");
-    }
-    if (requireObservation && status?.observation_ready !== true) {
-      errors.push("human_observation_disabled");
-    }
-    if (requireMutation && status?.mutation_ready !== true) {
-      errors.push("human_input_delivery_disabled");
-    }
-    return [...new Set(errors)];
-  }
   if (status?.mod_installation?.exact_permission_blocker === true) {
     errors.push("duplicate_gateway_manifests_detected");
   }
-  if (status?.exact_permission_eligible !== true
-      && status?.qualification_candidate_eligible !== true
-      && status?.persistent_qualification_eligible !== true
-      && status?.modset_status !== "exact_bridge_only") {
-    errors.push("bounded_modset_permission_required");
-  }
   if (requireObservation && status?.observation_ready !== true) {
-    errors.push("normal_observation_disabled");
+    errors.push("human_observation_disabled");
   }
-  if (requireMutation
-      && status?.mutation_ready !== true
-      && status?.provisional_trial_ready !== true) {
-    errors.push("mutation_and_provisional_trial_disabled");
+  if (requireMutation && status?.mutation_ready !== true) {
+    errors.push("human_input_delivery_disabled");
   }
   return [...new Set(errors)];
-}
-
-export function selectAgentAuthorityPath(status) {
-  if (status?.observation_ready !== true) return "legacy_migration_required";
-  if (status?.mutation_ready === true) {
-    return "encounter_provisional_or_existing_authority";
-  }
-  if (status?.provisional_trial_ready === true) {
-    return "encounter_provisional_ready_on_first_actionable_surface";
-  }
-  return "legacy_migration_required";
 }
 
 function sourceProtocol(file, pattern) {
@@ -330,12 +249,12 @@ function paths(options = {}) {
 function sourceProtocols() {
   return {
     csharp: sourceProtocol(
-      path.join(WORKSPACE, "STS2MCP/HumanEquivalent/Protocol/HumanEquivalentContracts.cs"),
+      path.join(WORKSPACE, "STS2MCP/HumanEnvironment/Protocol/HumanEnvironmentContracts.cs"),
       /ProtocolVersion\s*=\s*"([^"]+)"/u
     ),
     re: sourceProtocol(
-      path.join(WORKSPACE, "Re-SpireAgent/src/integrations/sts2mcp/humanEquivalentProtocol.ts"),
-      /SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL\s*=\s*"([^"]+)"/u
+      path.join(WORKSPACE, "Re-SpireAgent/src/integrations/sts2mcp/humanEnvironmentProtocol.ts"),
+      /SUPPORTED_HUMAN_ENVIRONMENT_PROTOCOL\s*=\s*"([^"]+)"/u
     )
   };
 }
@@ -622,7 +541,7 @@ function parseOptions(args) {
     else if (value === "--runs") options.runs = args[++index];
     else if (value === "--enabled") options.enabled = args[++index];
     else if (value === "--kind") options.kind = args[++index];
-    else if (value === "--state-token") options.stateToken = args[++index];
+    else if (value === "--snapshot-id") options.snapshotId = args[++index];
     else if (value === "--runtime-instance-id") options.runtimeInstanceId = args[++index];
     else if (value === "--session") options.session = args[++index];
     else if (value === "--wait") options.wait = true;
@@ -634,12 +553,12 @@ function parseOptions(args) {
   return options;
 }
 
-export function configureHumanEquivalenceProfile(
+export function configureHumanEnvironmentEvidenceProfile(
   configPath,
   enabled
 ) {
   if (typeof enabled !== "boolean") {
-    throw new Error("human-profile configure requires --enabled true or --enabled false");
+    throw new Error("evidence-profile configure requires --enabled true or --enabled false");
   }
   let config = {
     port: 15526,
@@ -653,7 +572,7 @@ export function configureHumanEquivalenceProfile(
     }
     config = { ...config, ...parsed };
   }
-  config.human_equivalence_enabled = enabled;
+  config.human_environment_native_page_evidence_enabled = enabled;
   mkdirSync(path.dirname(configPath), { recursive: true });
   const temporary = `${configPath}.tmp-${process.pid}`;
   writeFileSync(temporary, `${JSON.stringify(config, null, 2)}\n`, "utf8");
@@ -695,41 +614,41 @@ async function connectorProtocolRequest(endpoint, route, init = {}) {
   return { ok: response.ok, http_status: response.status, value };
 }
 
-async function humanProfile(options) {
+async function evidenceProfile(options) {
   const action = options.passthrough[0];
   const endpoint = options.endpoint ?? DEFAULT_ENDPOINT;
   if (action === "configure") {
     const resolved = paths(options);
-    return configureHumanEquivalenceProfile(
+    return configureHumanEnvironmentEvidenceProfile(
       resolved.runtimeConfig,
       parseBooleanOption(options.enabled, "--enabled")
     );
   }
   if (action === "status") {
-    const capabilities = await readJson(endpoint, "/api/v3/capabilities", true);
+    const capabilities = await readJson(endpoint, "/api/he/capabilities", true);
     return {
       protocol_version: capabilities.protocol_version,
-      loaded_runtime_instance_id: capabilities.bridge.runtime_instance_id,
-      human_equivalence: capabilities.human_equivalence
+      loaded_runtime_instance_id: capabilities.host.runtime_instance_id,
+      evidence_profiles: capabilities.evidence_profiles
     };
   }
   if (action === "open") {
-    if (!options.kind) throw new Error("human-profile open requires --kind");
+    if (!options.kind) throw new Error("evidence-profile open requires --kind");
     const [capabilities, observation] = await Promise.all([
-      readJson(endpoint, "/api/v3/capabilities", true),
-      readJson(endpoint, "/api/v3/observation", true)
+      readJson(endpoint, "/api/he/capabilities", true),
+      readJson(endpoint, "/api/he/observation", true)
     ]);
     const result = await connectorProtocolRequest(
       endpoint,
-      "/api/v3/human-equivalence/sessions",
+      "/api/he/evidence/native-pages/sessions",
       {
         method: "POST",
         body: JSON.stringify({
           profile: "native_pages.v1",
           kind: options.kind,
-          expected_state_token: options.stateToken ?? observation.state_token,
+          expected_snapshot_id: options.snapshotId ?? observation.snapshot_id,
           expected_runtime_instance_id:
-            options.runtimeInstanceId ?? capabilities.bridge.runtime_instance_id
+            options.runtimeInstanceId ?? capabilities.host.runtime_instance_id
         })
       }
     );
@@ -737,18 +656,18 @@ async function humanProfile(options) {
   }
   if (action === "read") {
     if (!options.session || !options.runtimeInstanceId) {
-      throw new Error("human-profile read requires --session and --runtime-instance-id");
+      throw new Error("evidence-profile read requires --session and --runtime-instance-id");
     }
-    const route = "/api/v3/human-equivalence/sessions/"
+    const route = "/api/he/evidence/native-pages/sessions/"
       + `${encodeURIComponent(options.session)}?expected_runtime_instance_id=`
       + encodeURIComponent(options.runtimeInstanceId);
     return { action, ...await connectorProtocolRequest(endpoint, route) };
   }
   if (action === "return" || action === "recover") {
     if (!options.session || !options.runtimeInstanceId) {
-      throw new Error(`human-profile ${action} requires --session and --runtime-instance-id`);
+      throw new Error(`evidence-profile ${action} requires --session and --runtime-instance-id`);
     }
-    const route = "/api/v3/human-equivalence/sessions/"
+    const route = "/api/he/evidence/native-pages/sessions/"
       + `${encodeURIComponent(options.session)}/return`;
     const result = await connectorProtocolRequest(endpoint, route, {
       method: "POST",
@@ -760,7 +679,7 @@ async function humanProfile(options) {
     return { action, ...result };
   }
   throw new Error(
-    "human-profile requires configure, status, open, read, return or recover"
+    "evidence-profile requires configure, status, open, read, return or recover"
   );
 }
 
@@ -818,11 +737,7 @@ async function inspect(options, requireLoaded = false) {
     gateway_wait: waited ? summarizeGatewayWait(waited) : null,
     mod_installation: inspectModInstallation(resolved.modsDir),
     compatibility_status: capabilities?.game?.compatibility?.status ?? null,
-    permission_mode: null,
-    qualification_status: null,
-    semantic_state_id: null,
-    authority_projection_id: null,
-    note: "Human-Equivalent C is the default path. It exposes canonical UI facts and capabilities, then binds a complete finite action projection to exact C-local operands and returns delivery plus successor; V3 is explicit rollback only."
+    note: "Human Environment C is the only production path. It exposes canonical UI facts and reads, binds a complete finite action projection to exact Host-local operands, and returns delivery plus successor."
   };
 }
 
@@ -1204,8 +1119,7 @@ export function recommendDoctorSteps({
   }
   if (status?.ok === true
       && status.environment_ready === true
-      && status.mutation_ready !== true
-      && status.provisional_trial_ready !== true) {
+      && status.mutation_ready !== true) {
     steps.push("The loaded environment has no bounded mutation authority; keep actions Fail Closed and inspect compatibility.");
   }
   if (steps.length === 0 && status?.ok) {
@@ -1339,14 +1253,12 @@ async function prepareAgentRun(options) {
     );
   }
   return {
-    status: "human_equivalent_environment_ready_for_bounded_agent_run",
+    status: "human_environment_ready_for_bounded_agent_run",
     protocol_version: after.loaded_protocol,
     loaded_sha256: after.loaded_sha256,
     loaded_mvid: after.loaded_mvid,
     runtime_instance_id: after.runtime_instance_id,
     compatibility_status: after.compatibility_status,
-    permission_mode: after.permission_mode,
-    qualification_status: after.qualification_status,
     authority_path: "current_complete_bound_action_projection",
     observation_wait: observationWait
       ? {
@@ -1380,7 +1292,7 @@ function usage() {
     + `  verify-loaded-artifact [--wait]   Require source/built/installed/loaded identity agreement\n`
     + `  run-agent -- <agent args>         Exact-identity preflight, trial resume, then bounded Re run\n`
     + `  collect-evidence [--out FILE]     Capture read-only capabilities/state/controller/clients\n`
-    + `  human-profile <operation>          Configure or exercise optional native-page evidence\n`
+    + `  evidence-profile <operation>       Configure or exercise optional native-page evidence\n`
     + `  audit-run-identity [--run ID|DIR] Audit stale refusals using formal IDs or historical shadows\n`
     + `  start-or-resume-trial -- <args>   Delegate to the migration cycle\n`
     + `  revoke -- <ledger args>           Revoke a persistent qualification\n`
@@ -1453,8 +1365,8 @@ export async function main(argv = process.argv.slice(2)) {
     console.log(JSON.stringify(await collectEvidence(options), null, 2));
     return;
   }
-  if (command === "human-profile") {
-    const result = await humanProfile(options);
+  if (command === "evidence-profile") {
+    const result = await evidenceProfile(options);
     console.log(JSON.stringify(result, null, 2));
     if (result?.ok === false) process.exitCode = 1;
     return;

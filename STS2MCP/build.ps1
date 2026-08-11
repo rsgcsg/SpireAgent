@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     Compiles STS2_MCP.dll against the game's assemblies. Does NOT install
-    the mod â€” copy the output files to the game's mods/ directory yourself.
+    the mod â€?copy the output files to the game's mods/ directory yourself.
 
 .PARAMETER GameDir
     Path to the Slay the Spire 2 installation directory.

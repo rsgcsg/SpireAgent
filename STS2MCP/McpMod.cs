@@ -12,7 +12,7 @@ using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Multiplayer.Game;
-using STS2_MCP.BridgeV2.Runtime;
+using STS2_MCP.Authority;
 
 namespace STS2_MCP;
 
@@ -39,9 +39,9 @@ public static partial class McpMod
 
     private sealed record RuntimeConfig(
         int Port,
-        BridgePermissionMode PermissionMode,
+        EnvironmentPermissionMode PermissionMode,
         string? QualificationStorePath,
-        bool HumanEquivalenceEnabled);
+        bool NativePageEvidenceEnabled);
 
     private static RuntimeConfig LoadRuntimeConfig()
     {
@@ -52,9 +52,9 @@ public static partial class McpMod
             if (modDir == null)
                 return new RuntimeConfig(
                     DefaultPort,
-                    BridgePermissionMode.BalancedGray,
+                    EnvironmentPermissionMode.BalancedGray,
                     null,
-                    HumanEquivalenceEnabled: false);
+                    NativePageEvidenceEnabled: false);
 
             string configPath = Path.Combine(modDir, ConfigFileName);
             if (!File.Exists(configPath))
@@ -66,7 +66,7 @@ public static partial class McpMod
                         ["port"] = DefaultPort,
                         ["permission_mode"] = "balanced_gray",
                         ["qualification_store"] = QualificationStoreFileName,
-                        ["human_equivalence_enabled"] = false
+                        ["human_environment_native_page_evidence_enabled"] = false
                     };
                     string json = JsonSerializer.Serialize(defaultConfig, _jsonOptions);
                     File.WriteAllText(configPath, json);
@@ -78,9 +78,9 @@ public static partial class McpMod
                 }
                 return new RuntimeConfig(
                     DefaultPort,
-                    BridgePermissionMode.BalancedGray,
+                    EnvironmentPermissionMode.BalancedGray,
                     Path.Combine(modDir, QualificationStoreFileName),
-                    HumanEquivalenceEnabled: false);
+                    NativePageEvidenceEnabled: false);
             }
 
             string content = File.ReadAllText(configPath);
@@ -139,26 +139,26 @@ public static partial class McpMod
                 : Path.IsPathRooted(qualificationStore)
                     ? qualificationStore
                     : Path.Combine(modDir, qualificationStore);
-            bool humanEquivalenceEnabled = false;
+            bool nativePageEvidenceEnabled = false;
             if (doc.RootElement.TryGetProperty(
-                    "human_equivalence_enabled",
-                    out JsonElement humanEquivalenceElement))
+                    "human_environment_native_page_evidence_enabled",
+                    out JsonElement nativePageEvidenceElement))
             {
-                if (humanEquivalenceElement.ValueKind is JsonValueKind.True or JsonValueKind.False)
+                if (nativePageEvidenceElement.ValueKind is JsonValueKind.True or JsonValueKind.False)
                 {
-                    humanEquivalenceEnabled = humanEquivalenceElement.GetBoolean();
+                    nativePageEvidenceEnabled = nativePageEvidenceElement.GetBoolean();
                 }
                 else
                 {
                     GD.PrintErr(
-                        $"[STS2 MCP] Invalid human_equivalence_enabled in {configPath}; keeping the optional evidence profile disabled");
+                        $"[STS2 MCP] Invalid human_environment_native_page_evidence_enabled in {configPath}; keeping the optional evidence profile disabled");
                 }
             }
             return new RuntimeConfig(
                 configuredPort,
-                BridgePermissionManager.ParseMode(permissionMode),
+                EnvironmentPermissionManager.ParseMode(permissionMode),
                 qualificationStorePath,
-                humanEquivalenceEnabled);
+                nativePageEvidenceEnabled);
         }
         catch (Exception ex)
         {
@@ -166,9 +166,9 @@ public static partial class McpMod
                 $"[STS2 MCP] Failed to load config: {ex.Message}; using default port and strict permission mode");
             return new RuntimeConfig(
                 DefaultPort,
-                BridgePermissionMode.Strict,
+                EnvironmentPermissionMode.Strict,
                 null,
-                HumanEquivalenceEnabled: false);
+                NativePageEvidenceEnabled: false);
         }
     }
 
@@ -184,11 +184,11 @@ public static partial class McpMod
             tree.Connect(SceneTree.SignalName.ProcessFrame, Callable.From(ProcessMainThreadQueue));
 
             RuntimeConfig config = LoadRuntimeConfig();
-            BridgeV2Runtime.ConfigurePermissionMode(config.PermissionMode);
-            BridgeV2Runtime.ConfigureQualificationStore(
+            GatewayAuthorityRuntime.Configure(
+                config.PermissionMode,
                 config.QualificationStorePath);
-            ConnectorV3.Runtime.ConnectorV3Runtime.ConfigureHumanEquivalence(
-                config.HumanEquivalenceEnabled);
+            HumanEnvironment.Runtime.HumanEnvironmentRuntime.ConfigureNativePageEvidence(
+                config.NativePageEvidenceEnabled);
             int port = config.Port;
 
             _listener = new HttpListener();
@@ -205,9 +205,9 @@ public static partial class McpMod
 
             GD.Print($"[STS2 MCP] v{Version} server started on http://localhost:{port}/");
             GD.Print(
-                $"[STS2 MCP] Permission mode: {BridgePermissionManager.ModeName(config.PermissionMode)}");
+                $"[STS2 MCP] Permission mode: {EnvironmentPermissionManager.ModeName(config.PermissionMode)}");
             GD.Print(
-                $"[STS2 MCP] Human-equivalence native-page evidence: {(config.HumanEquivalenceEnabled ? "enabled" : "disabled")}");
+                $"[STS2 MCP] Human Environment native-page evidence: {(config.NativePageEvidenceEnabled ? "enabled" : "disabled")}");
             GD.Print("[STS2 MCP] Legacy v1 HTTP namespace: retired");
         }
         catch (Exception ex)
@@ -312,7 +312,17 @@ public static partial class McpMod
                 SendError(
                     response,
                     410,
-                    "Legacy v1 is retired. Use the Connector v3 contract.");
+                    "Legacy v1 is retired. Use the Human Environment contract at /api/he.");
+                return;
+            }
+
+            if (path.StartsWith("/api/v2", StringComparison.Ordinal)
+                || path.StartsWith("/api/v3", StringComparison.Ordinal))
+            {
+                SendError(
+                    response,
+                    410,
+                    "Bridge v2 and Connector v3 transports are retired in this artifact. Use /api/he; rollback requires a prior artifact.");
                 return;
             }
 
@@ -323,21 +333,21 @@ public static partial class McpMod
             else if (path == "/api/he/capabilities")
             {
                 if (request.HttpMethod == "GET")
-                    HandleGetHumanEquivalentCapabilities(response);
+                    HandleGetHumanEnvironmentCapabilities(response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
             else if (path == "/api/he/observation")
             {
                 if (request.HttpMethod == "GET")
-                    HandleGetHumanEquivalentObservation(request, response);
+                    HandleGetHumanEnvironmentObservation(request, response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
             else if (path.StartsWith("/api/he/reads/", StringComparison.Ordinal))
             {
                 if (request.HttpMethod == "GET")
-                    HandleGetHumanEquivalentRead(
+                    HandleGetHumanEnvironmentRead(
                         path["/api/he/reads/".Length..],
                         request,
                         response);
@@ -347,14 +357,14 @@ public static partial class McpMod
             else if (path == "/api/he/clients/register")
             {
                 if (request.HttpMethod == "POST")
-                    HandlePostHumanEquivalentClientRegistration(request, response);
+                    HandlePostHumanEnvironmentClientRegistration(request, response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
             else if (path == "/api/he/controller")
             {
                 if (request.HttpMethod == "GET")
-                    HandleGetHumanEquivalentControl(response);
+                    HandleGetHumanEnvironmentControl(response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
@@ -362,7 +372,7 @@ public static partial class McpMod
             {
                 string operation = path["/api/he/controller/".Length..];
                 if (request.HttpMethod == "POST" && operation is "acquire" or "renew" or "release")
-                    HandlePostHumanEquivalentController(operation, request, response);
+                    HandlePostHumanEnvironmentController(operation, request, response);
                 else if (request.HttpMethod == "POST")
                     SendError(response, 404, "Unknown controller operation");
                 else
@@ -371,119 +381,34 @@ public static partial class McpMod
             else if (path == "/api/he/actions")
             {
                 if (request.HttpMethod == "POST")
-                    HandlePostHumanEquivalentAction(request, response);
+                    HandlePostHumanEnvironmentAction(request, response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
             else if (path.StartsWith("/api/he/actions/", StringComparison.Ordinal))
             {
                 if (request.HttpMethod == "GET")
-                    HandleGetHumanEquivalentAction(path["/api/he/actions/".Length..], response);
+                    HandleGetHumanEnvironmentAction(path["/api/he/actions/".Length..], response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
-            else if (path == "/api/v3/capabilities")
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetConnectorV3Capabilities(response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v3/observation")
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetConnectorV3Observation(response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v3/clients/register")
+            else if (path == "/api/he/evidence/native-pages/sessions")
             {
                 if (request.HttpMethod == "POST")
-                    HandlePostConnectorV3ClientRegistration(request, response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v3/controller")
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetConnectorV3Control(response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v3/clients")
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetConnectorV3Control(response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path.StartsWith("/api/v3/controller/", StringComparison.Ordinal))
-            {
-                string operation = path["/api/v3/controller/".Length..];
-                if (request.HttpMethod == "POST"
-                    && operation is "acquire" or "renew" or "release")
-                    HandlePostConnectorV3Controller(
-                        operation,
-                        request,
-                        response);
-                else if (request.HttpMethod == "POST")
-                    SendError(response, 404, "Unknown controller operation");
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v3/commands")
-            {
-                if (request.HttpMethod == "POST")
-                    HandlePostConnectorV3Command(request, response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path.StartsWith("/api/v3/commands/", StringComparison.Ordinal))
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetConnectorV3Command(
-                        path["/api/v3/commands/".Length..],
-                        response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path.StartsWith("/api/v3/inspections/", StringComparison.Ordinal))
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetConnectorV3Inspection(
-                        path["/api/v3/inspections/".Length..],
-                        request,
-                        response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path.StartsWith("/api/v3/linked-details/", StringComparison.Ordinal))
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetConnectorV3LinkedDetail(
-                        path["/api/v3/linked-details/".Length..],
-                        request,
-                        response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v3/human-equivalence/sessions")
-            {
-                if (request.HttpMethod == "POST")
-                    HandlePostConnectorV3HumanEquivalenceOpen(request, response);
+                    HandlePostHumanEnvironmentNativePageEvidenceOpen(request, response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
             else if (path.StartsWith(
-                         "/api/v3/human-equivalence/sessions/",
+                         "/api/he/evidence/native-pages/sessions/",
                          StringComparison.Ordinal))
             {
                 string operation = path[
-                    "/api/v3/human-equivalence/sessions/".Length..];
+                    "/api/he/evidence/native-pages/sessions/".Length..];
                 if (request.HttpMethod == "POST"
                     && operation.EndsWith("/return", StringComparison.Ordinal))
                 {
-                    HandlePostConnectorV3HumanEquivalenceReturn(
+                    HandlePostHumanEnvironmentNativePageEvidenceReturn(
                         operation[..^"/return".Length],
                         request,
                         response);
@@ -491,93 +416,13 @@ public static partial class McpMod
                 else if (request.HttpMethod == "GET"
                          && !operation.Contains('/'))
                 {
-                    HandleGetConnectorV3HumanEquivalence(
+                    HandleGetHumanEnvironmentNativePageEvidence(
                         operation,
                         request,
                         response);
                 }
                 else if (request.HttpMethod is "GET" or "POST")
-                    SendError(response, 404, "Unknown human-equivalence operation");
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v2/capabilities")
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetBridgeV2Capabilities(response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v2/state")
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetBridgeV2State(response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path.StartsWith("/api/v2/inspections/", StringComparison.Ordinal))
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetBridgeV2Inspection(
-                        path["/api/v2/inspections/".Length..],
-                        request,
-                        response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v2/observation-bundles")
-            {
-                if (request.HttpMethod == "POST")
-                    HandlePostBridgeV2ObservationBundle(request, response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v2/clients/register")
-            {
-                if (request.HttpMethod == "POST")
-                    HandlePostBridgeV2ClientRegistration(request, response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v2/clients")
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetBridgeV2Clients(response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v2/controller")
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetBridgeV2Controller(response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path.StartsWith("/api/v2/controller/", StringComparison.Ordinal))
-            {
-                string operation = path["/api/v2/controller/".Length..];
-                if (request.HttpMethod == "POST"
-                    && operation is "acquire" or "renew" or "release")
-                    HandlePostBridgeV2Controller(
-                        operation,
-                        request,
-                        response);
-                else if (request.HttpMethod == "POST")
-                    SendError(response, 404, "Unknown controller operation");
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v2/commands")
-            {
-                if (request.HttpMethod == "POST")
-                    HandlePostBridgeV2Command(request, response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path.StartsWith("/api/v2/commands/", StringComparison.Ordinal))
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetBridgeV2Command(path["/api/v2/commands/".Length..], response);
+                    SendError(response, 404, "Unknown native-page evidence operation");
                 else
                     SendError(response, 405, "Method not allowed");
             }

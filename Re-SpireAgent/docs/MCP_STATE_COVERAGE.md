@@ -1,22 +1,19 @@
-# Human Environment State Coverage
+# Re Human Environment Coverage
 
-Gateway implementation and exact-runtime evidence are canonical in
-[Human Environment Coverage](../../STS2MCP/docs/human-equivalent/COVERAGE.md).
+Gateway coverage is canonical in
+[Human Environment Coverage](../../STS2MCP/docs/human-environment/COVERAGE.md).
 
-Re strictly accepts Preview.4 observations, finite affordances, reads and
-delivery receipts. It verifies exact identity, preserves persistent visible
-state, current interaction and referents, and emits choices only from current
-affordances. It does not use V2/V3 state sidecars, add native operands, infer
-native legality, wait for business Outcome or retry unknown delivery.
+Re strictly accepts protocol `1.0-preview.6`, preserves persistent facts,
+current interaction, referents and read opportunities, and imports choices only
+from a complete current bound-action projection. It does not add native
+operands, infer legality/effects or retry unknown delivery.
 
-| Area | Current path | Evidence boundary |
+| Area | Re path | Current evidence |
 |---|---|---|
-| menu/map/event/game over | HE interaction and referents | source/automated; Preview.4 Live pending |
-| combat/targets/potions/end turn | subject plus role-labelled argument referents | source/automated multi-target fixture; Live pending |
-| reward/shop/rest/treasure | current HE affordances | source/automated; Live pending |
-| selectors | source-free mechanics and exact referents | Preview.3 Live history; Preview.4 Live pending |
-| information reads | `/api/he/reads/{read_id}`, snapshot-bound | source/automated; Live pending |
+| menu/combat/map/event/reward/shop/rest/selectors | tagged HE interaction and referents | source/automated; new-artifact Live pending |
+| finite actions | complete HE bound-action catalog | source/automated; new-artifact Live pending |
+| information | advertised HE reads | source/automated; new-artifact Live pending |
+| native-page evidence | not in normal Re flow | Gateway source/tests; Live pending |
 
 Malformed schema, identity drift, stale snapshot, replacement referent or
-missing current affordance produces no input. D is outside C and cannot create,
-remove or authorize an affordance.
+missing current action produces no input.

@@ -1,16 +1,19 @@
 import type { CardSnapshot, CombatContext, NormalizedCurrentState, PlayerSnapshot, PotionSnapshot } from "../state/index.js";
-import type { ExecutableGameAction } from "./action.js";
 import type { AllowedAction } from "./allowedAction.js";
+import { buildHumanEnvironmentAllowedActions } from "./buildHumanEnvironmentAllowedActions.js";
+import type { LegacyExecutableGameAction } from "./legacyAction.js";
+
+type LegacyAllowedAction = AllowedAction<LegacyExecutableGameAction>;
 
 /**
  * Action construction is keyed by the active interaction surface. Context only
  * supplements a protocol when an operation needs semantic facts, such as combat targets.
  */
-export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHash: string): AllowedAction[] {
+export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHash: string): LegacyAllowedAction[] {
   if (state.stability !== "actionable") return [];
   if (state.actionAuthority === "none") return [];
   if (state.actionAuthority === "current_human_ui") {
-    return humanUiActions(state, sourceStateHash);
+    return buildHumanEnvironmentAllowedActions(state, sourceStateHash);
   }
   if (state.actionAuthority === "bridge_advertised") {
     return bridgeActions(state, sourceStateHash);
@@ -88,7 +91,7 @@ export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHa
   }
 }
 
-function bridgeActions(state: NormalizedCurrentState, sourceStateHash: string): AllowedAction[] {
+function bridgeActions(state: NormalizedCurrentState, sourceStateHash: string): LegacyAllowedAction[] {
   const legalActions = "legalActions" in state.surface ? state.surface.legalActions : undefined;
   if (!legalActions) return [];
   const connectorV3 = state.sourceStateType.startsWith("connector_v3:");
@@ -115,31 +118,7 @@ function bridgeActions(state: NormalizedCurrentState, sourceStateHash: string): 
   }));
 }
 
-function humanUiActions(state: NormalizedCurrentState, sourceStateHash: string): AllowedAction[] {
-  if (state.surface.kind !== "human_ui") return [];
-  return state.surface.boundActions.map((boundAction) => ({
-    id: boundAction.boundActionId,
-    kind: boundAction.action,
-    label: boundAction.label,
-    description: `Current human UI: ${boundAction.action}`,
-    entityBindings: [
-      ...(boundAction.subjectRef ? [{ role: "subject", entityId: boundAction.subjectRef }] : []),
-      ...boundAction.arguments.map((argument) => ({
-        role: argument.role,
-        entityId: argument.referentId
-      }))
-    ],
-    action: {
-      kind: "human_ui_action",
-      choiceId: boundAction.boundActionId,
-      expectedSnapshotId: boundAction.snapshotId,
-      boundActionId: boundAction.boundActionId
-    },
-    sourceStateHash
-  }));
-}
-
-function combatActions(context: CombatContext, player: PlayerSnapshot, sourceStateHash: string): AllowedAction[] {
+function combatActions(context: CombatContext, player: PlayerSnapshot, sourceStateHash: string): LegacyAllowedAction[] {
   const livingEnemies = context.enemies.filter((enemy) => enemy.hp > 0);
   const cards = player.hand.flatMap((card) => {
     if (card.canPlay !== true || card.index === undefined) return [];
@@ -149,7 +128,7 @@ function combatActions(context: CombatContext, player: PlayerSnapshot, sourceSta
   return [...cards, ...player.potions.flatMap((potion, position) => potionActions(potion, position, context.enemies, sourceStateHash)), allowed("combat:end-turn", "End turn", { kind: "end_turn" }, sourceStateHash)];
 }
 
-function cardSelectionActions(surface: Extract<NormalizedCurrentState["surface"], { kind: "card_selection" }>, sourceStateHash: string): AllowedAction[] {
+function cardSelectionActions(surface: Extract<NormalizedCurrentState["surface"], { kind: "card_selection" }>, sourceStateHash: string): LegacyAllowedAction[] {
   return [
     // MCP currently does not expose selected ids or selection capacity after a standard selection.
     // Combat selection has a separately verified multi-select contract, so only standard selection is narrowed here.
@@ -159,14 +138,14 @@ function cardSelectionActions(surface: Extract<NormalizedCurrentState["surface"]
   ];
 }
 
-function potionActions(potion: PotionSnapshot, position: number, enemies: CombatContext["enemies"], sourceStateHash: string): AllowedAction[] {
+function potionActions(potion: PotionSnapshot, position: number, enemies: CombatContext["enemies"], sourceStateHash: string): LegacyAllowedAction[] {
   if (potion.canUseInCombat !== true || potion.automatic === true) return [];
   const slot = potion.slot ?? position;
   if ((potion.targetType ?? "").toLowerCase().includes("enemy")) return enemies.filter((enemy) => enemy.hp > 0).map((enemy) => allowed(`combat:potion:${slot}:target:${enemy.entityId}`, `Use ${potion.name ?? potion.id} on ${enemy.name}`, { kind: "use_potion", slot, targetId: enemy.entityId }, sourceStateHash, potion.description));
   return [allowed(`combat:potion:${slot}`, `Use ${potion.name ?? potion.id}`, { kind: "use_potion", slot }, sourceStateHash, potion.description)];
 }
 
-function rewardActions(player: PlayerSnapshot | undefined, rewards: Array<{ index: number; type: string; name?: string; description?: string; potionName?: string }>, canProceed: boolean, sourceStateHash: string): AllowedAction[] {
+function rewardActions(player: PlayerSnapshot | undefined, rewards: Array<{ index: number; type: string; name?: string; description?: string; potionName?: string }>, canProceed: boolean, sourceStateHash: string): LegacyAllowedAction[] {
   const potionSlotsFull = player?.maxPotionSlots !== undefined && player.potions.length >= player.maxPotionSlots;
   const blockedPotion = rewards.some((reward) => /potion/i.test(reward.type) && potionSlotsFull);
   const claims = rewards.filter((reward) => !(/potion/i.test(reward.type) && potionSlotsFull)).map((reward) => allowed(`reward:${reward.index}`, `Claim ${reward.name ?? reward.potionName ?? reward.description ?? reward.type}`, { kind: "claim_reward", index: reward.index }, sourceStateHash, reward.description));
@@ -174,7 +153,7 @@ function rewardActions(player: PlayerSnapshot | undefined, rewards: Array<{ inde
   return [...claims, ...discards, ...(canProceed ? [allowed("reward:proceed", "Continue without remaining rewards", { kind: "proceed" }, sourceStateHash)] : [])];
 }
 
-function gridActions(surface: Extract<NormalizedCurrentState["surface"], { kind: "grid_interaction" }>, sourceStateHash: string): AllowedAction[] {
+function gridActions(surface: Extract<NormalizedCurrentState["surface"], { kind: "grid_interaction" }>, sourceStateHash: string): LegacyAllowedAction[] {
   if (surface.canProceed) return [allowed("crystal-sphere:proceed", "Finish divination", { kind: "crystal_sphere_proceed" }, sourceStateHash)];
   return [
     ...(surface.canUseBigTool && surface.selectedTool !== "big" ? [allowed("crystal-sphere:tool:big", "Switch to big divination tool", { kind: "crystal_sphere_set_tool", tool: "big" }, sourceStateHash)] : []),
@@ -185,6 +164,6 @@ function gridActions(surface: Extract<NormalizedCurrentState["surface"], { kind:
 
 function needsEnemyTarget(card: CardSnapshot): boolean { return (card.targetType ?? "").toLowerCase().includes("enemy"); }
 
-function allowed(id: string, label: string, action: ExecutableGameAction, sourceStateHash: string, description?: string): AllowedAction {
+function allowed(id: string, label: string, action: LegacyExecutableGameAction, sourceStateHash: string, description?: string): LegacyAllowedAction {
   return { id, kind: action.kind, label, ...(description ? { description } : {}), action, sourceStateHash };
 }

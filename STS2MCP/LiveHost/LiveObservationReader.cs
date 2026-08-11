@@ -1,0 +1,640 @@
+using STS2_MCP.NativeUi;
+using STS2_MCP.Authority;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Nodes;
+using MegaCrit.Sts2.Core.Nodes.Rooms;
+using MegaCrit.Sts2.Core.Rooms;
+using MegaCrit.Sts2.Core.Runs;
+using STS2_MCP.LiveHost.Contracts;
+
+namespace STS2_MCP.LiveHost;
+
+internal enum CombatNoInputPhase
+{
+    None,
+    Setup,
+    Resolution
+}
+
+internal enum KnownRoomNoInputKind
+{
+    None,
+    Rest,
+    Shop,
+    Treasure
+}
+
+internal static class LiveObservationReader
+{
+    private sealed record ReaderRegistration(string Kind, Func<ILiveSurfaceReader> Create);
+
+    private static readonly ReaderRegistration[] ReaderRegistrations =
+    {
+        new("deck_enchant_selection", static () => new DeckEnchantSurfaceReader()),
+        new("deck_removal_selection", static () => new DeckRemovalSelectionSurfaceReader()),
+        new("relic_deck_removal_selection", static () => new PreciseScissorsRemovalSurfaceReader()),
+        new("reward_deck_removal_selection", static () => new RewardCardRemovalSurfaceReader()),
+        new("deck_upgrade_selection", static () => new DeckUpgradeSelectionSurfaceReader()),
+        new("deck_transform_selection", static () => new DeckTransformSelectionSurfaceReader()),
+        new("wood_carvings_replacement_selection", static () => new WoodCarvingsReplacementSurfaceReader()),
+        new("combat_pile_card_selection", static () => new CombatPileCardSelectionSurfaceReader()),
+        new("combat_hand_card_selection", static () => new CombatHandCardSelectionSurfaceReader()),
+        new("event_card_acquisition", static () => new EventCardAcquisitionSurfaceReader()),
+        new("generated_card_choice", static () => new GeneratedCardChoiceSurfaceReader()),
+        new("card_bundle_selection", static () => new CardBundleSelectionSurfaceReader()),
+        new("card_reward_selection", static () => new CardRewardSurfaceReader()),
+        new("reward_claim", static () => new RewardClaimSurfaceReader()),
+        new("map_navigation", static () => new MapNavigationSurfaceReader()),
+        new("combat_turn", static () => new CombatTurnSurfaceReader()),
+        new("shop_inventory", static () => new ShopInventorySurfaceReader()),
+        new("shop_room", static () => new ShopRoomSurfaceReader()),
+        new("treasure_room", static () => new TreasureRoomSurfaceReader()),
+        new("game_over", static () => new GameOverSurfaceReader()),
+        new("character_select", static () => new CharacterSelectSurfaceReader()),
+        new("main_menu", static () => new MainMenuSurfaceReader()),
+        new("singleplayer_menu", static () => new SingleplayerMenuSurfaceReader()),
+        new("rest_site", static () => new RestSiteSurfaceReader()),
+        new("event_dialogue", static () => new EventDialogueSurfaceReader()),
+        new("event_option", static () => new EventOptionSurfaceReader())
+    };
+
+    internal static IReadOnlyList<string> DeclaredReaderKinds =>
+        ReaderRegistrations.Select(provider => provider.Kind).ToArray();
+
+    private static IReadOnlyList<ILiveSurfaceReader> CreateReaders() =>
+        ReaderRegistrations.Select(registration => registration.Create()).ToArray();
+
+    public static LiveObservation Build(NativeEntityRegistry entities)
+    {
+        return Build(entities, GatewayAuthorityRuntime.ReadCurrentGameIdentity());
+    }
+
+    public static LiveObservation Build(
+        NativeEntityRegistry entities,
+        GameBuildIdentity game)
+    {
+        IReadOnlyList<ILiveSurfaceReader> providers = CreateReaders();
+        ActiveSurfaceSnapshot snapshot;
+        try
+        {
+            snapshot = ActiveInputResolver.Capture();
+        }
+        catch (Exception ex)
+        {
+            return Unsupported(
+                game,
+                "surface_capture_failed",
+                $"Active surface capture failed closed: {ex.GetType().Name}.",
+                new[] { $"active_surface_capture_failed:{ex.GetType().Name}" },
+                context: null,
+                GatewayDiagnostics.Create(
+                    "gateway.surface.capture_failed",
+                    "error",
+                    "surface",
+                    "actions_suppressed",
+                    "restart",
+                    ex.GetType().Name));
+        }
+        if (!game.Compatibility.StateObservationAllowed)
+        {
+            return Unsupported(
+                game,
+                snapshot.SourceType,
+                game.Compatibility.Detail,
+                new[] { "game_build_identity_not_exact" },
+                context: null,
+                GatewayDiagnostics.Create(
+                    "gateway.identity.observation_not_allowed",
+                    "error",
+                    "identity",
+                    "actions_suppressed",
+                    "update_bridge",
+                    game.Compatibility.Detail));
+        }
+
+        if (McpMod.IsMultiplayerRun())
+        {
+            return Unsupported(
+                game,
+                "multiplayer_run",
+                "Multiplayer semantics are not implemented by the current Gateway.",
+                new[] { "multiplayer_gateway_not_implemented" },
+                context: null,
+                GatewayDiagnostics.Create(
+                    "gateway.compatibility.multiplayer_not_implemented",
+                    "error",
+                    "compatibility",
+                    "surface_unsupported",
+                    "unknown"));
+        }
+
+        ActiveSurfaceResolution resolution = ActiveInputResolver.Resolve(
+            snapshot,
+            providers,
+            entities,
+            game);
+        if (resolution.Failure != null)
+        {
+            string provider = resolution.FailedProvider ?? "unknown";
+            return Unsupported(
+                game,
+                snapshot.SourceType,
+                $"The {provider} provider failed closed: {resolution.Failure.GetType().Name}.",
+                new[] { $"surface_provider_failed:{provider}:{resolution.Failure.GetType().Name}" },
+                LiveContextReader.Build(entities),
+                GatewayDiagnostics.Create(
+                    "gateway.surface.provider_failed",
+                    "error",
+                    "runtime",
+                    "surface_unsupported",
+                    "restart",
+                    $"{provider}:{resolution.Failure.GetType().Name}"));
+        }
+
+        if (resolution.Draft != null)
+            return resolution.Draft;
+        if (resolution.MatchedKinds.Count > 1)
+        {
+            return Unsupported(
+                game,
+                snapshot.SourceType,
+                $"Multiple semantic surface providers matched: {string.Join(", ", resolution.MatchedKinds)}.",
+                new[] { "ambiguous_surface_provider_match" },
+                LiveContextReader.Build(entities),
+                GatewayDiagnostics.Create(
+                    "gateway.surface.ambiguous_owner",
+                    "error",
+                    "surface",
+                    "actions_suppressed",
+                    "restart"));
+        }
+
+        if (TryBuildCombatNoInputTransition(snapshot, entities, game) is { } transition)
+            return transition;
+
+        if (TryBuildRunMountNoInputTransition(snapshot, entities, game) is { } runTransition)
+            return runTransition;
+
+        if (TryBuildKnownRoomNoInputTransition(snapshot, game) is { } roomTransition)
+            return roomTransition;
+
+        return Unsupported(
+            game,
+            snapshot.SourceType,
+            "This surface has not yet received a game-fact-audited v2 adapter.",
+            new[] { "surface_not_implemented" },
+            LiveContextReader.Build(entities),
+            GatewayDiagnostics.Create(
+                "gateway.surface.not_implemented",
+                "warning",
+                "surface",
+                "surface_unsupported",
+                "change_surface"),
+            new AuthorityHandoff(
+                "none_fail_closed",
+                null,
+                "No semantic Gateway surface owns the current input state."));
+    }
+
+    private static LiveObservation? TryBuildCombatNoInputTransition(
+        ActiveSurfaceSnapshot snapshot,
+        NativeEntityRegistry entities,
+        GameBuildIdentity game)
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        CombatState? combatState = CombatManager.Instance.DebugOnlyGetState();
+        NCombatRoom? room = NCombatRoom.Instance;
+        CombatNoInputPhase phase = ClassifyCombatNoInputTransition(
+            RunManager.Instance.IsInProgress,
+            runState?.CurrentRoom is CombatRoom,
+            CombatManager.Instance.IsStarting,
+            CombatManager.Instance.IsInProgress,
+            combatState != null,
+            snapshot.HasBlockingSurface,
+            room != null && McpMod.IsLiveNode(room));
+        if (phase == CombatNoInputPhase.None)
+            return null;
+
+        bool isSetup = phase == CombatNoInputPhase.Setup;
+        var context = new CombatTransitionLiveContext(
+            "combat_transition",
+            isSetup ? "setup" : "resolution",
+            isSetup ? "awaiting_combat_start" : "awaiting_room_resolution");
+        var surface = new NoActionSurface(
+            "no_action",
+            "settling",
+            isSetup
+                ? "The combat room is initializing; no player input owner exists yet."
+                : "Combat has ended; the game is resolving room rewards or the next player-visible surface.");
+        var completeness = new StateCompleteness(
+            "complete_for_bounded_no_input_transition",
+            "none_no_input_owner",
+            new[]
+            {
+                "RunState.CurrentRoom",
+                "CombatManager.IsStarting",
+                "CombatManager.IsInProgress",
+                "CombatManager.DebugOnlyGetState",
+                "NCombatRoom",
+                "ActiveInputResolver"
+            },
+            Array.Empty<string>());
+        string signature = StableIdentityHash.Object(new
+        {
+            game.Version,
+            game.Commit,
+            context,
+            surface,
+            runState!.CurrentActIndex,
+            runState.TotalFloor
+        });
+
+        return new LiveObservation(
+            signature,
+            "settling",
+            context,
+            surface,
+            completeness,
+            game,
+            Array.Empty<string>())
+        {
+            AuthorityHandoff = new AuthorityHandoff(
+                "none_fail_closed",
+                null,
+                "The exact combat transition has no player input owner; the Gateway will only observe and poll."),
+            Diagnostics = new[]
+            {
+                GatewayDiagnostics.Create(
+                    "gateway.lifecycle.no_input_transition",
+                    "info",
+                    "runtime",
+                    "none",
+                    "settle",
+                    isSetup
+                        ? "CombatRoom:combat_setup_before_input_surface"
+                        : "CombatRoom:combat_ended_before_reward_surface")
+            }
+        };
+    }
+
+    private static LiveObservation? TryBuildRunMountNoInputTransition(
+        ActiveSurfaceSnapshot snapshot,
+        NativeEntityRegistry entities,
+        GameBuildIdentity game)
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        if (!ClassifyRunMountNoInputTransition(
+                RunManager.Instance.IsInProgress,
+                runState != null,
+                runState?.CurrentRoom != null,
+                snapshot.HasBlockingSurface,
+                snapshot.SourceType))
+        {
+            return null;
+        }
+
+        var context = new RunTransitionLiveContext(
+            "run_transition",
+            "setup",
+            "awaiting_run_state");
+        var surface = new NoActionSurface(
+            "no_action",
+            "settling",
+            "The standard run is starting or resuming, but its player-visible run state is still mounting.");
+        var completeness = new StateCompleteness(
+            "complete_for_bounded_run_mount_transition",
+            "none_no_input_owner",
+            new[]
+            {
+                "RunManager.IsInProgress",
+                "RunManager.DebugOnlyGetState",
+                "RunState.CurrentRoom",
+                "RunState.TotalFloor",
+                "ActiveInputResolver"
+            },
+            Array.Empty<string>());
+        string signature = StableIdentityHash.Object(new
+        {
+            game.Version,
+            game.Commit,
+            context,
+            surface
+        });
+
+        return new LiveObservation(
+            signature,
+            "settling",
+            context,
+            surface,
+            completeness,
+            game,
+            Array.Empty<string>())
+        {
+            AuthorityHandoff = new AuthorityHandoff(
+                "none_fail_closed",
+                null,
+                "The native run-mount transition has no current input owner; the Gateway observes without publishing actions."),
+            Diagnostics = new[]
+            {
+                GatewayDiagnostics.Create(
+                    "gateway.lifecycle.run_mount_settling",
+                    "info",
+                    "runtime",
+                    "none",
+                    "settle")
+            }
+        };
+    }
+
+    internal static bool ClassifyRunMountNoInputTransition(
+        bool runInProgress,
+        bool runStatePresent,
+        bool currentRoomPresent,
+        bool hasBlockingSurface,
+        string sourceType) =>
+        runInProgress
+        && (!runStatePresent || !currentRoomPresent)
+        && !hasBlockingSurface
+        && string.Equals(sourceType, "run_without_visible_overlay", StringComparison.Ordinal);
+
+    private static LiveObservation? TryBuildKnownRoomNoInputTransition(
+        ActiveSurfaceSnapshot snapshot,
+        GameBuildIdentity game)
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        string roomType = runState?.CurrentRoom?.GetType().Name ?? string.Empty;
+        bool expectedRoomNodePresent = runState?.CurrentRoom switch
+        {
+            RestSiteRoom => NRestSiteRoom.Instance is { } rest && McpMod.IsLiveNode(rest),
+            MerchantRoom => NMerchantRoom.Instance is { } shop && McpMod.IsLiveNode(shop),
+            TreasureRoom => NRun.Instance?.TreasureRoom is { } treasure && McpMod.IsLiveNode(treasure),
+            _ => false
+        };
+        KnownRoomNoInputKind kind = ClassifyKnownRoomNoInputTransition(
+            RunManager.Instance.IsInProgress,
+            roomType,
+            snapshot.HasBlockingSurface,
+            snapshot.SourceType,
+            expectedRoomNodePresent);
+        if (kind == KnownRoomNoInputKind.None)
+            return null;
+
+        ILiveContext context = kind switch
+        {
+            KnownRoomNoInputKind.Rest => new RestLiveContext("rest"),
+            KnownRoomNoInputKind.Shop => new ShopLiveContext("shop"),
+            KnownRoomNoInputKind.Treasure => new TreasureLiveContext("treasure"),
+            _ => throw new InvalidOperationException("Unsupported known-room transition kind.")
+        };
+        var surface = new NoActionSurface(
+            "no_action",
+            "settling",
+            $"The native {kind.ToString().ToLowerInvariant()} room model is current, but its player-input owner is mounting or handing off.");
+        var completeness = new StateCompleteness(
+            "complete_for_bounded_known_room_no_input_transition",
+            "none_no_input_owner",
+            new[]
+            {
+                "RunState.CurrentRoom exact native type",
+                "expected native room singleton lifecycle",
+                "ActiveInputResolver"
+            },
+            Array.Empty<string>());
+        string signature = StableIdentityHash.Object(new
+        {
+            game.Version,
+            game.Commit,
+            roomType,
+            context,
+            surface,
+            runState!.CurrentActIndex,
+            runState.TotalFloor
+        });
+
+        return new LiveObservation(
+            signature,
+            "settling",
+            context,
+            surface,
+            completeness,
+            game,
+            Array.Empty<string>())
+        {
+            AuthorityHandoff = new AuthorityHandoff(
+                "none_fail_closed",
+                null,
+                "The exact room model has no mounted player-input owner; the Gateway observes and polls without publishing commands."),
+            Diagnostics = new[]
+            {
+                GatewayDiagnostics.Create(
+                    "gateway.lifecycle.known_room_no_input_transition",
+                    "info",
+                    "runtime",
+                    "none",
+                    "settle",
+                    $"{roomType}:model_current_before_or_after_input_owner")
+            }
+        };
+    }
+
+    internal static KnownRoomNoInputKind ClassifyKnownRoomNoInputTransition(
+        bool runInProgress,
+        string currentRoomType,
+        bool hasBlockingSurface,
+        string sourceType,
+        bool expectedRoomNodePresent)
+    {
+        if (!runInProgress
+            || hasBlockingSurface
+            || expectedRoomNodePresent
+            || !string.Equals(sourceType, "run_without_visible_overlay", StringComparison.Ordinal))
+        {
+            return KnownRoomNoInputKind.None;
+        }
+
+        return currentRoomType switch
+        {
+            nameof(RestSiteRoom) => KnownRoomNoInputKind.Rest,
+            nameof(MerchantRoom) => KnownRoomNoInputKind.Shop,
+            nameof(TreasureRoom) => KnownRoomNoInputKind.Treasure,
+            _ => KnownRoomNoInputKind.None
+        };
+    }
+
+    internal static CombatNoInputPhase ClassifyCombatNoInputTransition(
+        bool runInProgress,
+        bool currentRoomIsCombat,
+        bool combatIsStarting,
+        bool combatInProgress,
+        bool combatStatePresent,
+        bool hasBlockingSurface,
+        bool liveCombatRoomPresent)
+    {
+        if (!runInProgress || !currentRoomIsCombat || combatInProgress || hasBlockingSurface)
+            return CombatNoInputPhase.None;
+        if (combatIsStarting || !combatStatePresent)
+            return CombatNoInputPhase.Setup;
+        return liveCombatRoomPresent
+            ? CombatNoInputPhase.Resolution
+            : CombatNoInputPhase.None;
+    }
+
+    private static LiveObservation Unsupported(
+        GameBuildIdentity game,
+        string sourceType,
+        string reason,
+        IReadOnlyList<string> warnings,
+        ILiveContext? context,
+        GatewayDiagnostic diagnostic,
+        AuthorityHandoff? authorityHandoff = null)
+    {
+        var surface = new UnsupportedSurface("unsupported", sourceType, reason);
+        context ??= new UnknownLiveContext(
+            "unknown",
+            sourceType,
+            "No qualified Gateway context projection is safe for this unsupported surface.");
+        var completeness = new StateCompleteness(
+            "not_implemented",
+            "empty_fail_closed",
+            new[] { "scene_tree_surface_identity" },
+            new[] { "player_visible_semantics", "legal_actions" });
+        string signature = StableIdentityHash.Object(new { game.Version, context, surface, actionKeys = Array.Empty<string>() });
+
+        return new LiveObservation(
+            signature,
+            "unsupported",
+            context,
+            surface,
+            completeness,
+            game,
+            warnings)
+        {
+            AuthorityHandoff = authorityHandoff ?? new AuthorityHandoff(
+                "none_fail_closed",
+                null,
+                "The Gateway could not prove a safe action-authority handoff for this state."),
+            Diagnostics = new[] { diagnostic }
+        };
+    }
+
+    internal static LiveObservation ApplyCurrentAuthority(LiveObservation observation) =>
+        observation.Surface is UnsupportedSurface
+            ? observation with
+            {
+                AuthorityHandoff = new AuthorityHandoff(
+                    "none_fail_closed",
+                    null,
+                    "An unsupported surface cannot own Gateway mutation authority.")
+            }
+            : observation;
+
+    internal static LiveObservation ApplyMissingPersistentStatePolicy(
+        LiveObservation observation,
+        PersistentVisibleStateBuildResult shared)
+    {
+        if (!shared.RunActive || shared.State != null)
+            return observation;
+        return CanDeferMissingPersistentState(observation)
+            ? DeferMissingPersistentState(observation, shared.Failure)
+            : FailClosedForMissingPersistentState(observation, shared.Failure);
+    }
+
+    private static bool CanDeferMissingPersistentState(LiveObservation observation) =>
+        string.Equals(observation.Readiness, "settling", StringComparison.Ordinal)
+        && observation.Context is RunTransitionLiveContext
+        {
+            Kind: "run_transition",
+            Phase: "setup",
+            Transition: "awaiting_run_state"
+        }
+        && observation.Surface is NoActionSurface
+        {
+            Kind: "no_action",
+            Reason: "settling"
+        }
+        && string.Equals(
+            observation.AuthorityHandoff.Status,
+            "none_fail_closed",
+            StringComparison.Ordinal)
+        && observation.AuthorityHandoff.SurfaceKind == null
+        && string.Equals(
+            observation.Completeness.LegalActions,
+            "none_no_input_owner",
+            StringComparison.Ordinal);
+
+    private static LiveObservation DeferMissingPersistentState(
+        LiveObservation observation,
+        GatewayDiagnostic? failure)
+    {
+        var completeness = observation.Completeness with
+        {
+            PlayerVisibleSemantics = "bounded_run_mount_transition_with_persistent_state_pending",
+            Missing = observation.Completeness.Missing
+                .Append("persistent_visible_state")
+                .Distinct()
+                .ToArray()
+        };
+        var diagnostic = new GatewayDiagnostic(
+            "gateway.persistent_state.deferred_during_run_mount_transition",
+            "warning",
+            "visibility",
+            "field_omitted",
+            "settle",
+            Path: "persistent_state",
+            VisibilityClass: "on_screen",
+            RequiredForAction: false,
+            SafeDetail: failure?.SafeDetail);
+        return observation with
+        {
+            Signature = StableIdentityHash.Object(new
+            {
+                observation.Signature,
+                deferredRunMountPersistentState = true
+            }),
+            Completeness = completeness,
+            Diagnostics = observation.Diagnostics.Append(diagnostic).ToArray()
+        };
+    }
+
+    private static LiveObservation FailClosedForMissingPersistentState(
+        LiveObservation observation,
+        GatewayDiagnostic? failure)
+    {
+        var surface = new UnsupportedSurface(
+            "unsupported",
+            "persistent_visible_state",
+            "The active run HUD could not be projected completely; actions are suppressed.");
+        var completeness = new StateCompleteness(
+            "incomplete_active_run_persistent_state",
+            "empty_fail_closed",
+            observation.Completeness.Sources,
+            observation.Completeness.Missing
+                .Append("persistent_visible_state")
+                .Distinct()
+                .ToArray());
+        return new LiveObservation(
+            StableIdentityHash.Object(new
+            {
+                observation.Signature,
+                persistentStateFailure = true
+            }),
+            "unsupported",
+            observation.Context,
+            surface,
+            completeness,
+            observation.Game,
+            observation.Warnings.Append("active_run_persistent_visible_state_unavailable").ToArray())
+        {
+            AuthorityHandoff = new AuthorityHandoff(
+                "none_fail_closed",
+                null,
+                "The Gateway cannot grant action authority without the decision-relevant persistent run HUD."),
+            Diagnostics = failure == null
+                ? observation.Diagnostics
+                : observation.Diagnostics.Append(failure).ToArray()
+        };
+    }
+}

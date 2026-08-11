@@ -37,7 +37,10 @@ export interface PromptBundle {
   payload: DecisionPromptPayload;
 }
 
-export function buildDecisionPrompt(currentState: NormalizedCurrentState, allowedActions: AllowedAction[]): PromptBundle {
+export function buildDecisionPrompt<TAction extends { kind: string }>(
+  currentState: NormalizedCurrentState,
+  allowedActions: AllowedAction<TAction>[]
+): PromptBundle {
   const contextGuide = CONTEXT_GUIDES[currentState.context.kind];
   const surfaceGuide = SURFACE_GUIDES[currentState.surface.kind];
   const promptActions = allowedActions.map(toPromptAllowedAction);

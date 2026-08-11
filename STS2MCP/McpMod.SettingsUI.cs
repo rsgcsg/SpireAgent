@@ -129,7 +129,7 @@ public static partial class McpMod
 
         static void Postfix(NFastModeTickbox __instance)
         {
-            // Only for the ORIGINAL Fast Mode tickbox being unticked (â†’ Normal)
+            // Only for the ORIGINAL Fast Mode tickbox being unticked (â†?Normal)
             if (IsInInstantModeLine(__instance)) return;
             if (_instantModeTickbox != null && _instantModeTickbox.IsTicked)
                 _instantModeTickbox.IsTicked = false;

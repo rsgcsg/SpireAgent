@@ -1,22 +1,23 @@
 # SpireAgent
 
-SpireAgent connects an external LLM agent to the real Slay the Spire 2 UI.
+SpireAgent lets external consumers play the real Slay the Spire 2 UI through
+one fair-player Human Environment contract.
 
-- [`STS2MCP/`](STS2MCP/) is the in-game Human-Equivalent Connector.
-- [`Re-SpireAgent/`](Re-SpireAgent/) is the strict Agent runtime.
+- [`STS2MCP/`](STS2MCP/) is the in-game Live Host and Human Environment.
+- [`Re-SpireAgent/`](Re-SpireAgent/) is the current LLM consumer.
 
-Human-Equivalent C is the only current target. Source protocol is
-`1.0-preview.5`. Connector V3 remains an explicit rollback implementation and
-historical comparison, never a silent execution fallback.
+Human Environment is the only production connector. Source protocol is
+`1.0-preview.6`. Bridge v2 and Connector V3 are retired implementation history,
+not fallback paths.
 
-> **Maturity:** source, tests and local Release build are available. Public
-> packaged binaries and broad version/Mod compatibility are not yet claimed.
-> Each machine must separately verify install, loaded identity and Live use.
+> Source, tests, build, install, load, Live exercise and qualification are
+> separate evidence levels. This repository does not publish a generally
+> compatible game binary or claim arbitrary game-version/Mod support.
 
 ## Quick Start
 
 Requirements: Node.js 20+, npm, .NET 9 SDK and a Steam installation of Slay
-the Spire 2. Python 3.11+ is needed only for MCP.
+the Spire 2. Python 3.11+ is required only for the optional MCP transport.
 
 ```bash
 git clone https://github.com/rsgcsg/SpireAgent.git
@@ -26,8 +27,8 @@ cp Re-SpireAgent/.env.example Re-SpireAgent/.env.local
 npm run doctor
 ```
 
-Keep `DEEPSEEK_API_KEY` only in `Re-SpireAgent/.env.local` or the process
-environment. Set `STS2_GAME_DIR` there only for a non-default Steam location.
+Keep API keys only in `Re-SpireAgent/.env.local` or the process environment.
+Set `STS2_GAME_DIR` only when automatic Steam discovery cannot locate the game.
 
 With the game fully closed:
 
@@ -35,7 +36,7 @@ With the game fully closed:
 npm run deploy
 ```
 
-Then cold-start the game and run:
+Then cold-start the game:
 
 ```bash
 npm run verify:loaded
@@ -43,42 +44,31 @@ cd Re-SpireAgent
 npm run agent:run
 ```
 
-`deploy` backs up the previous mod and records source/build/install identity.
-It does not claim the DLL was loaded. `agent:run` verifies loaded SHA/MVID and
-uses `/api/he/*`; it never retries unknown input delivery.
-
-The default is `he_pure` (A+C only). `SPIREAGENT_HE_MODE=he_assisted` is an
-explicit opt-in composition point for a future non-authorizing D provider; it
-does not alter C observation or action authority.
-
-See [Local Setup](docs/current/LOCAL_SETUP.md) for other machines, custom Steam
-paths, rollback and troubleshooting.
+`deploy` backs up the installed mod and records source/build/install identity.
+It cannot prove that a game process loaded that artifact. `verify:loaded` checks
+the exact runtime identity. Unknown input delivery is never retried.
 
 ## Architecture
 
 ```text
-Native STS2 UI
--> Human Environment snapshot (visible facts, interaction, referents, reads)
--> current interaction capabilities plus complete finite bound actions
--> native UI-equivalent input delivery
--> delivery receipt + successor snapshot
--> Re-SpireAgent chooses one opaque bound-action ID
+real STS2 runtime
+-> LiveHost readers: visible facts and one current input owner
+-> NativeUi: exact current candidates, operands and native input delivery
+-> Authority: environment admission, controller and idempotency
+-> HumanEnvironment: Observe / Read / Interact, receipt and successor
+-> REST or optional thin MCP transport
+-> Re or another consumer-owned projection
 ```
 
-C does not require a business source, SourceContract or business Outcome to
-operate a currently exact human UI control. STS2 remains the only rules and
-effects authority. A/Re interprets the flow. Optional D input is external to C
-and never authorizes or executes.
+STS2 owns rules, RNG, effects and Commit paths. C owns the fair-player world,
+state-bound reads and one Host-local execution authority. A consumer can choose
+only a current opaque bound action and cannot create legality.
+
+Start with the [new engineer guide](docs/current/HUMAN_ENVIRONMENT_NEW_ENGINEER_GUIDE.md),
+then use the [documentation map](docs/current/DOCUMENT_MAP.md).
 
 ## Contributing
 
-Read [Development Model](docs/current/DEVELOPMENT_MODEL.md),
-[CONTRIBUTING.md](CONTRIBUTING.md) and the component `AGENT(S).md` before
-editing. Every PR must identify branch/HEAD, authority boundary, tests and the
-separate source/test/build/install/load/Live evidence levels. Never commit
-keys, `.env.local`, game assemblies, installed DLLs, local run data or logs.
-
-- [Documentation map](docs/current/DOCUMENT_MAP.md)
-- [Current status](docs/current/STATUS.md)
-- [Architecture](docs/current/ARCHITECTURE.md)
-- [Roadmap](docs/current/ROADMAP.md)
+Read [AGENTS.md](AGENTS.md), [Development Model](docs/current/DEVELOPMENT_MODEL.md),
+and [CONTRIBUTING.md](CONTRIBUTING.md). Never commit keys, `.env.local`, game
+assemblies, installed DLLs, local run data or logs.

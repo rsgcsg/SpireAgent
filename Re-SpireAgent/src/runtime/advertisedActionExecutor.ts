@@ -1,5 +1,4 @@
 import type { AllowedAction } from "../domain/actions/allowedAction.js";
-import type { ExecutableGameAction } from "../domain/actions/action.js";
 import type { StateEnvelope } from "../domain/state/index.js";
 import type { GameAdapter, GameExecutionResult, RawGameState } from "../game-io/adapter.js";
 import type { SuccessorObservationResult, SuccessorWatcher } from "./successorWatcher.js";
@@ -41,12 +40,12 @@ export type AdvertisedActionExecution =
  * current observation. It adds no game legality: the Gateway remains the
  * authority and revalidates again when the command is submitted.
  */
-export async function executeAdvertisedAction(input: {
+export async function executeAdvertisedAction<TAction extends { kind: string }>(input: {
   readonly pre: StateEnvelope;
-  readonly selectedAction: AllowedAction;
-  readonly adapter: GameAdapter<RawGameState, ExecutableGameAction, GameExecutionResult>;
+  readonly selectedAction: AllowedAction<TAction>;
+  readonly adapter: GameAdapter<RawGameState, TAction, GameExecutionResult>;
   readonly normalize: (raw: unknown) => StateEnvelope;
-  readonly settlement: SuccessorWatcher;
+  readonly settlement: SuccessorWatcher<TAction>;
 }): Promise<AdvertisedActionExecution> {
   let latest: StateEnvelope;
   try {
@@ -103,7 +102,8 @@ export async function executeAdvertisedAction(input: {
     input.pre,
     input.selectedAction.action,
     adapterResult.settlementAuthority,
-    adapterResult.confirmedStateToken
+    adapterResult.confirmedStateToken,
+    input.selectedAction.kind
   );
   const bridgeCheckpointPending = adapterResult.settlementAuthority === "adapter_confirmed"
     && settlement.status !== "settled";

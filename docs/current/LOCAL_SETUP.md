@@ -9,8 +9,8 @@ one developer's installed DLL as repository truth.
 | Name | Meaning |
 |---|---|
 | SpireAgent | This public monorepo and overall project |
-| `Re-SpireAgent/` | External Agent runtime and strict Human-Equivalent C consumer |
-| Human-Equivalent C | In-game player-visible UI observation, affordance and input-delivery owner |
+| `Re-SpireAgent/` | External Agent runtime and strict Human Environment consumer |
+| Human Environment C | In-game player-visible observation, read and input-delivery owner |
 | `STS2MCP/` | Compatibility-sensitive source directory and Mod ID for the Gateway, REST and optional MCP adapter |
 
 The `STS2MCP` name does not make MCP mandatory. Re uses REST directly. A Mod ID
@@ -26,7 +26,7 @@ cd SpireAgent
 git status --short --branch
 ```
 
-Contributors testing the Human-Equivalent migration before it reaches the default
+Contributors testing the Human Environment clean-baseline branch before it reaches the default
 branch may explicitly track the shared branch:
 
 ```bash
@@ -223,5 +223,5 @@ Cold-start and verify again after rollback.
 | Missing provider key | Check the local file name and permissions without printing the value. |
 
 Current support is defined by [Status](STATUS.md),
-[Connector coverage](../../STS2MCP/docs/human-equivalent/COVERAGE.md) and immutable
+[Connector coverage](../../STS2MCP/docs/human-environment/COVERAGE.md) and immutable
 exact-runtime evidence records, not by a successful build alone.

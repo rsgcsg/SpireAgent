@@ -38,7 +38,7 @@ export async function createBaselineReport(dataRoot: string, requestedRunId?: st
 
 export function buildBaselineReport(
   metadata: RunMetadata,
-  records: readonly DecisionRecord[],
+  records: readonly DecisionRecord<{ kind: string }>[],
   summary: RunSummary | undefined
 ) {
   const negotiated = isJsonObject(metadata.adapter.negotiated) ? metadata.adapter.negotiated : {};
@@ -148,7 +148,7 @@ export function buildBaselineReport(
   };
 }
 
-function selectedActionKind(record: DecisionRecord): string {
+function selectedActionKind(record: DecisionRecord<{ kind: string }>): string {
   if (!record.execution.selectedActionId) return "not_selected";
   return record.allowedActions.find((action) => action.id === record.execution.selectedActionId)?.kind ?? "unknown_selected_action";
 }

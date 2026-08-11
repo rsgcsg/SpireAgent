@@ -20,23 +20,23 @@
 
   <ItemGroup>
     <EmbeddedResource
-      Include="BridgeV2/Game/combat-pile-source-contracts.json"
-      LogicalName="STS2_MCP.BridgeV2.Game.combat-pile-source-contracts.json" />
+      Include="LiveHost/combat-pile-source-contracts.json"
+      LogicalName="STS2_MCP.LiveHost.combat-pile-source-contracts.json" />
     <EmbeddedResource
-      Include="BridgeV2/Game/combat-pile-contract-catalog.json"
-      LogicalName="STS2_MCP.BridgeV2.Game.combat-pile-contract-catalog.json" />
+      Include="LiveHost/combat-pile-contract-catalog.json"
+      LogicalName="STS2_MCP.LiveHost.combat-pile-contract-catalog.json" />
     <EmbeddedResource
-      Include="BridgeV2/Game/deck-enchant-source-contracts.json"
-      LogicalName="STS2_MCP.BridgeV2.Game.deck-enchant-source-contracts.json" />
+      Include="LiveHost/deck-enchant-source-contracts.json"
+      LogicalName="STS2_MCP.LiveHost.deck-enchant-source-contracts.json" />
     <EmbeddedResource
-      Include="BridgeV2/Game/exact-environment-policy.json"
-      LogicalName="STS2_MCP.BridgeV2.Game.exact-environment-policy.json" />
+      Include="LiveHost/exact-environment-policy.json"
+      LogicalName="STS2_MCP.LiveHost.exact-environment-policy.json" />
     <EmbeddedResource
-      Include="BridgeV2/Runtime/migration-permission-policy.json"
-      LogicalName="STS2_MCP.BridgeV2.Runtime.migration-permission-policy.json" />
+      Include="Authority/migration-permission-policy.json"
+      LogicalName="STS2_MCP.Authority.migration-permission-policy.json" />
     <EmbeddedResource
-      Include="BridgeV2/Runtime/operation-qualification-contracts.json"
-      LogicalName="STS2_MCP.BridgeV2.Runtime.operation-qualification-contracts.json" />
+      Include="Authority/operation-qualification-contracts.json"
+      LogicalName="STS2_MCP.Authority.operation-qualification-contracts.json" />
   </ItemGroup>
 
   <ItemGroup>

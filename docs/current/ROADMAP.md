@@ -1,57 +1,39 @@
-# Human Environment Contract Roadmap
+# Human Environment Roadmap
 
-## C-0: Execution Core
+## C-0: Clean Ownership
 
-Status: **temporarily frozen** on the exact Preview.5 Live artifact and default
-`he_pure` completed journey.
+Status: source complete, verification in progress.
 
-Retain snapshot binding, current interaction, one controller, execute-time
-validation, idempotency, delivery receipts, unknown-no-retry and successor.
+The production path is `LiveHost -> NativeUi/Authority -> HumanEnvironment`.
+Retired Provider action publication, V2/V3 runtime authority and HTTP routes are
+absent. Current docs and checks no longer require historical architecture.
 
-## C-1: Contract Convergence
+## C-1: Contract Maintainability
 
-Status: **temporarily frozen**; source/test and final-artifact `he_pure` Live
-evidence complete.
+Status: source complete, new-artifact Live proof pending.
 
-Preview.5 separates canonical HE truth, current interaction capabilities, the
-Host-local binding authority and a finite bound-action consumer projection.
-Projection truncation is explicit and fail closed; common `entity_id` facts no
-longer depend on candidate materialization. A source-free rest adapter now
-prevents purpose-specific completion witnesses from gating visible controls.
+Observe/Read/Interact have one machine-readable inventory, strict C#/Re schemas,
+tagged interaction content and a checked consumer boundary. Bound actions remain
+complete, opaque and state-bound. Reads remain independent and non-authorizing.
 
-## C-2: Human Information Parity
+## C-2: Human Information Closure
 
-Status: partial.
+Status: partial and explicit.
 
-Complete hover/focus/tooltip/scroll and native-page open/read/return. Keep hot
-observations compact, make all normal player-visible information reachable,
-and keep reads non-authorizing.
+Hot facts and four read families are implemented. `native_pages.v1` supplies a
+default-off evidence path for five native pages. Active hover, arbitrary scroll
+and full tooltip-subtype closure remain unsupported or partial.
 
-The deterministic eager-read consumer adapter proves that a memoryless policy
-can aggregate one coherent decision bundle without redefining C.
+## C-3: Exact Runtime Proof
 
-## C-3: Host Neutrality
+Status: blocked on cold-load of the new artifact.
 
-Status: design only.
+Verify exact artifact SHA/MVID/protocol/game/Modset/runtime, current/stale reads,
+current/stale actions, unsupported/settling behavior, native-page recovery and
+one same-artifact ordinary `he_pure` journey.
 
-Implement a second fair-player Host before freezing 1.0. Compare snapshots,
-referents, interaction capabilities, bound actions, reads, stale behavior and
-hidden-information policy.
-Keep reset/seed/clone/fork/fast-step outside C.
+## After Clean Baseline
 
-## C-4: Internal Ownership
-
-Status: five V3 adapter-library seams remain.
-
-Move real native UI implementation into neutral ownership when touched. Do not
-add shims, dual executors or a second authority merely to improve directory
-names.
-
-## A Mainline
-
-Shift primary effort to A strategy, planning and recovery. Reopen C only for a
-contract invariant regression, material Human information gap, or second-Host
-conformance evidence that cannot preserve the current semantics.
-
-Training, Search, Headless lifecycle, learning and arbitrary Mod support are
-separate programs that may consume C without changing its authority.
+Do not start Headless, a second consumer or a major A upgrade until C-3 closes.
+After that, choose the next program separately. Any new consumer must pass a
+conformance fixture without becoming a second authority.

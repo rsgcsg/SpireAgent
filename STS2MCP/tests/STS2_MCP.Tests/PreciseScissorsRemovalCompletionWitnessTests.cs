@@ -1,4 +1,4 @@
-using STS2_MCP.BridgeV2.Game;
+using STS2_MCP.LiveHost;
 
 namespace STS2_MCP.Tests;
 

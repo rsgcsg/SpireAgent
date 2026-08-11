@@ -18,9 +18,9 @@ import {
   connectorV3AsBridgeV2Wrapper,
   hasConnectorV3BridgeProjection,
   isConnectorV3WrappedState,
-  isBridgeV2WrappedState,
-  isHumanEquivalentWrappedState
-} from "../integrations/sts2mcp/rawState.js";
+  isBridgeV2WrappedState
+} from "../integrations/sts2mcp/legacyRawState.js";
+import { isHumanEnvironmentWrappedState } from "../integrations/sts2mcp/rawState.js";
 import { decodeBridgeV2Capabilities } from "../integrations/sts2mcp/bridgeV2Protocol.js";
 import { stateHash } from "../runtime/stateHash.js";
 import { normalizeBridgeV2CurrentState } from "./normalizeBridgeV2CurrentState.js";
@@ -29,7 +29,7 @@ import {
   normalizeConnectorV3CurrentState
 } from "./normalizeConnectorV3CurrentState.js";
 import { DiagnosticsBuilder } from "./diagnostics.js";
-import { normalizeHumanEquivalentCurrentState } from "./normalizeHumanEquivalentCurrentState.js";
+import { normalizeHumanEnvironmentCurrentState } from "./normalizeHumanEnvironmentCurrentState.js";
 import { projectBridgeV2Inspections } from "./bridgeV2InspectionProjection.js";
 import {
   objectArray,
@@ -56,8 +56,8 @@ const KNOWN_TOP_LEVEL_KEYS = new Set([
 const COMBAT_STATE_TOKENS = ["monster", "boss", "elite", "combat", "battle"] as const;
 
 export function normalizeCurrentState(rawInput: unknown, source: AdapterDescriptor, capturedAt = new Date().toISOString()): StateEnvelope {
-  if (isHumanEquivalentWrappedState(rawInput)) {
-    return normalizeHumanEquivalentCurrentState(rawInput, source, capturedAt);
+  if (isHumanEnvironmentWrappedState(rawInput)) {
+    return normalizeHumanEnvironmentCurrentState(rawInput, source, capturedAt);
   }
   if (isConnectorV3WrappedState(rawInput)) {
     if (isDirectConnectorV3ConsumerState(rawInput)) {

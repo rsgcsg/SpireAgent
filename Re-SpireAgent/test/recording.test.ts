@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.js";
+import type { LegacyExecutableGameAction } from "../src/domain/actions/legacyAction.js";
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
 import { buildDecisionPrompt } from "../src/prompting/promptBuilder.js";
 import { FileDecisionRecorder, readRunMetadata, readRunRecords, readRunSummary } from "../src/recording/fileDecisionRecorder.js";
@@ -51,7 +52,7 @@ describe("FileDecisionRecorder", () => {
       },
       schemas: { normalizedState: 2, prompt: 2, decisionRecord: 2 }
     };
-    const recorder = new FileDecisionRecorder(dataRoot, metadata);
+    const recorder = new FileDecisionRecorder<LegacyExecutableGameAction>(dataRoot, metadata);
     await recorder.initialize();
     const raw = await fixture("combat") as any;
     const envelope = normalizeCurrentState(raw, TEST_ADAPTER);
@@ -79,7 +80,7 @@ describe("FileDecisionRecorder", () => {
       parsedDecision: { selectedActionId: "combat:end-turn", reasonBrief: "Done." },
       finishReason: "stop"
     };
-    const record: DecisionRecord = {
+    const record: DecisionRecord<LegacyExecutableGameAction> = {
       recordSchemaVersion: 2,
       decisionId: "decision-1",
       runId: recorder.runId,

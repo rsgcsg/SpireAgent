@@ -1,11 +1,11 @@
 import type {
   HumanEnvironmentRead,
   HumanEnvironmentReadResponse,
-  HumanEquivalentObservation
-} from "./humanEquivalentProtocol.js";
+  HumanEnvironmentObservation
+} from "./humanEnvironmentProtocol.js";
 
 export interface HumanEnvironmentDecisionBundle {
-  observation: HumanEquivalentObservation;
+  observation: HumanEnvironmentObservation;
   reads: HumanEnvironmentReadResponse[];
 }
 
@@ -20,7 +20,7 @@ export type HumanEnvironmentReadFetcher = (
  * state-bound C read from the same runtime and environment.
  */
 export async function prefetchHumanEnvironmentDecisionBundle(
-  observation: HumanEquivalentObservation,
+  observation: HumanEnvironmentObservation,
   fetchRead: HumanEnvironmentReadFetcher,
   include: (read: HumanEnvironmentRead) => boolean = () => true
 ): Promise<HumanEnvironmentDecisionBundle> {
@@ -36,7 +36,7 @@ export async function prefetchHumanEnvironmentDecisionBundle(
 }
 
 function assertCoherentRead(
-  observation: HumanEquivalentObservation,
+  observation: HumanEnvironmentObservation,
   opportunity: HumanEnvironmentRead,
   read: HumanEnvironmentReadResponse
 ): void {

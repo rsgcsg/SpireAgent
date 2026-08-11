@@ -78,7 +78,7 @@ public static partial class McpMod
     internal static string StripRichTextTags(string text)
     {
         // Remove BBCode-style tags like [color=red], [/color], etc.
-        // Special case: [img]res://path/to/file.png[/img] â†’ [file.png]
+        // Special case: [img]res://path/to/file.png[/img] â†?[file.png]
         var sb = new StringBuilder();
         int i = 0;
         while (i < text.Length)
