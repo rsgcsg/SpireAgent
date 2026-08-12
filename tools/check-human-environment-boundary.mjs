@@ -106,10 +106,26 @@ for (const retiredSeam of [
 }
 for (const required of [
   "NativeUiActionRuntime", "MutationControlRuntime", "SnapshotIdentityTracker",
-  "ProjectBoundActions", "BuildHumanEnvironmentSnapshot", "HumanReceipt"
+  "ProjectBoundActions", "BuildHumanEnvironmentSnapshot", "HumanReceipt",
+  "GatewayAuthorityContract.HumanEnvironmentExecutionAvailable"
 ]) {
   if (!runtime.includes(required)) failures.push(`Human Environment runtime missing ${required}`);
 }
+if (runtime.includes("ExecutionAvailable: game.Compatibility.ActionExecutionAllowed")) {
+  failures.push("Human Environment capabilities reuse retired business permission as execution readiness");
+}
+
+const gatewayAuthorityContract = "STS2MCP/Authority/GatewayAuthorityContract.cs";
+requireText(
+  gatewayAuthorityContract,
+  "HumanEnvironmentExecutionAvailable",
+  "Human Environment exact-identity admission"
+);
+requireText(
+  gatewayAuthorityContract,
+  "StateObservationAllowed",
+  "fail-closed observable environment requirement"
+);
 
 const transport = read("STS2MCP/McpMod.cs")
   + read("STS2MCP/HumanEnvironment/Transport/McpMod.HumanEnvironment.cs");

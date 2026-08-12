@@ -79,7 +79,9 @@ internal static partial class HumanEnvironmentRuntime
             },
             SnapshotBound: true,
             SingleController: true,
-            ExecutionAvailable: game.Compatibility.ActionExecutionAllowed,
+            ExecutionAvailable: GatewayAuthorityContract.HumanEnvironmentExecutionAvailable(
+                game,
+                host.AssemblyFileSha256),
             new HumanEnvironmentControlPolicy(
                 MutationControlRuntime.Capability().RecommendedRenewalMs),
             new[] { NativePageEvidence.Capability() },

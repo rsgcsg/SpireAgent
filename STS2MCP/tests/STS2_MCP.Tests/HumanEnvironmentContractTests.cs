@@ -1,3 +1,4 @@
+using STS2_MCP.Authority;
 using STS2_MCP.LiveHost.Contracts;
 using STS2_MCP.HumanEnvironment.Protocol;
 using STS2_MCP.HumanEnvironment.Runtime;
@@ -9,6 +10,51 @@ namespace STS2_MCP.Tests;
 
 public sealed class HumanEnvironmentContractTests
 {
+    [Fact]
+    public void ExecutionReadinessUsesExactHumanEnvironmentIdentityNotLegacyBusinessPermission()
+    {
+        var compatibility = new CompatibilityAssessment(
+            Status: "unqualified_modset",
+            TestedGameVersions: Array.Empty<string>(),
+            TestedBuildFingerprints: Array.Empty<string>(),
+            ActionExecutionAllowed: false,
+            StateObservationAllowed: true,
+            InspectionAllowed: false,
+            ActionExecutionSurfaceKinds: Array.Empty<string>(),
+            ActionCanarySurfaceKinds: Array.Empty<string>(),
+            InspectionAllowedKinds: Array.Empty<string>(),
+            InspectionCanaryKinds: Array.Empty<string>(),
+            ObservationOnlySurfaceKinds: Array.Empty<string>(),
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "Current visible UI remains the action authority.")
+        {
+            AdaptationLevel = "human_ui_runtime_binding"
+        };
+        var game = new GameBuildIdentity(
+            "v0.110.1",
+            "db5d3552",
+            "v0.110.1",
+            -205573697,
+            compatibility,
+            null);
+
+        Assert.True(GatewayAuthorityContract.HumanEnvironmentExecutionAvailable(
+            game,
+            "loaded-sha"));
+        Assert.False(GatewayAuthorityContract.HumanEnvironmentExecutionAvailable(
+            game with { MainAssemblyHash = null },
+            "loaded-sha"));
+        Assert.False(GatewayAuthorityContract.HumanEnvironmentExecutionAvailable(
+            game,
+            null));
+        Assert.False(GatewayAuthorityContract.HumanEnvironmentExecutionAvailable(
+            game with
+            {
+                Compatibility = compatibility with { StateObservationAllowed = false }
+            },
+            "loaded-sha"));
+    }
+
     [Fact]
     public void CWireExcludesModeFrameAnnotationsAndNativeBindingOperands()
     {
