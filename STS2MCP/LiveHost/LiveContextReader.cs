@@ -45,7 +45,7 @@ internal static class LiveContextReader
             return new UnknownLiveContext(
                 "unknown",
                 runState?.CurrentRoom?.GetType().Name ?? "no_active_run_context",
-                "This context has not yet received a player-visible Gateway projection.");
+                "This context has not yet received a complete player-visible projection.");
         }
         catch (Exception ex)
         {

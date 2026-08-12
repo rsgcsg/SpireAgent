@@ -14,22 +14,22 @@ describe("runtime evidence provenance", () => {
       .toThrow("AGENT_EVIDENCE_PROVENANCE");
   });
 
-  it("accepts only Human Environment C and separates assisted from pure mode", () => {
-    expect(readRuntimeConfig({ STS2_MCP_PROTOCOL: "he" }).mcp.mode).toBe("he_pure");
-    expect(readRuntimeConfig({ SPIREAGENT_HE_MODE: "he_assisted" }).mcp.mode).toBe("he_assisted");
-    expect(readRuntimeConfig({ SPIREAGENT_HE_MODE: "he_pure" }).mcp.mode).toBe("he_pure");
-    expect(() => readRuntimeConfig({ STS2_MCP_PROTOCOL: "v3" })).toThrow("Human Environment C");
-    expect(() => readRuntimeConfig({ SPIREAGENT_HE_MODE: "semantic_auto" })).toThrow("SPIREAGENT_HE_MODE");
+  it("has one Player Environment path and rejects retired mode selectors", () => {
+    expect(readRuntimeConfig({}).connector.baseUrl).toBe("http://localhost:15526");
+    expect(() => readRuntimeConfig({ STS2_MCP_PROTOCOL: "he" }))
+      .toThrow("retired");
+    expect(() => readRuntimeConfig({ SPIREAGENT_HE_MODE: "he_pure" }))
+      .toThrow("retired");
   });
 
-  it("uses a bounded read-only Gateway startup wait", () => {
-    expect(readRuntimeConfig({}).mcp).toMatchObject({
+  it("uses a bounded read-only connector startup wait", () => {
+    expect(readRuntimeConfig({}).connector).toMatchObject({
       startupWaitMs: 60_000,
       startupPollMs: 500
     });
-    expect(readRuntimeConfig({ STS2_MCP_STARTUP_WAIT_MS: "0" }).mcp.startupWaitMs).toBe(0);
-    expect(() => readRuntimeConfig({ STS2_MCP_STARTUP_POLL_MS: "0" }))
-      .toThrow("STS2_MCP_STARTUP_POLL_MS");
+    expect(readRuntimeConfig({ STS2_CONNECTOR_STARTUP_WAIT_MS: "0" }).connector.startupWaitMs).toBe(0);
+    expect(() => readRuntimeConfig({ STS2_CONNECTOR_STARTUP_POLL_MS: "0" }))
+      .toThrow("STS2_CONNECTOR_STARTUP_POLL_MS");
   });
 
   it("anchors default local evidence under the Re project, not the caller working directory", () => {

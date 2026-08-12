@@ -84,12 +84,12 @@ public static partial class McpMod
         string code,
         Exception exception)
     {
-        GD.PrintErr($"[STS2 Gateway] {code}: {exception}");
+        GD.PrintErr($"[STS2 Player Environment Host] {code}: {exception}");
         SendApiError(
             response,
             500,
             code,
-            $"Gateway operation failed with {exception.GetType().Name}. See local game log for details.");
+            $"Host operation failed with {exception.GetType().Name}. See local game log for details.");
     }
 
     private static void SendApiError(

@@ -6,207 +6,24 @@ using System.Text.Json.Serialization;
 
 namespace STS2_MCP.LiveHost.Contracts;
 
-public sealed record GatewayHostIdentity(
+public sealed record LiveHostIdentity(
     string Id,
     string Name,
     string Version,
-    string UpstreamCommit,
+    string SourceRevision,
     string ModuleVersionId,
     string RuntimeInstanceId)
 {
-    // The file digest identifies the loaded Gateway artifact without exposing its path.
-    public string AssemblyFileSha256 { get; init; } = string.Empty;
-}
-
-public sealed record ActionPermissionScope(
-    string SurfaceKind,
-    string Operation,
-    string Tier)
-{
-    public string GrantId { get; init; } = "static_policy";
-
-    public int GrantVersion { get; init; } = 1;
-
-    public string RuntimeEpoch { get; init; } = "not_session_bound";
-
-    public string EnvironmentDigest { get; init; } = "not_recorded";
-
-    public string PatchDigest { get; init; } = "not_recorded";
-
-    public string OperationFingerprint { get; init; } = "not_recorded";
-
-    public string AdmissionBasis { get; init; } = "reviewed_or_persisted_scope";
-}
-
-public sealed record GatewayPatchInventoryInfo(
-    string Status,
-    string Digest,
-    string Scope,
-    int PatchedMethodCount,
-    IReadOnlyList<string> PatchOwners,
-    IReadOnlyList<string> UnknownOwners,
-    IReadOnlyList<string> Limitations)
-{
-    public static GatewayPatchInventoryInfo Unavailable(string detail) => new(
-        "unavailable",
-        "unavailable",
-        "loaded_harmony_patch_metadata_global_conservative",
-        0,
-        Array.Empty<string>(),
-        Array.Empty<string>(),
-        new[] { detail });
-}
-
-public sealed record PermissionGrantRecord(
-    int SchemaVersion,
-    string GrantId,
-    int GrantVersion,
-    bool Current,
-    string Status,
-    string Mode,
-    string SurfaceKind,
-    string Operation,
-    string Tier,
-    string RiskClass,
-    string RuntimeEpoch,
-    string EnvironmentDigest,
-    string GatewayAssemblySha256,
-    string GatewayModuleVersionId,
-    string ModsetFingerprint,
-    string PatchDigest,
-    string OperationFingerprint,
-    string EvidenceBundleDigest,
-    DateTimeOffset IssuedAt,
-    DateTimeOffset ExpiresAt,
-    string? SupersedesGrantId,
-    string? RevocationReason,
-    IReadOnlyList<string> EvidenceIds)
-{
-    public string AdmissionBasis { get; init; } = "installed_candidate_package";
-}
-
-public sealed record PermissionSystemInfo(
-    int SchemaVersion,
-    string Status,
-    string Mode,
-    string RuntimeEpoch,
-    string PolicyId,
-    string PolicyDigest,
-    bool DynamicSessionPromotionEnabled,
-    GatewayPatchInventoryInfo PatchInventory,
-    IReadOnlyList<PermissionGrantRecord> Grants,
-    IReadOnlyList<string> Limitations)
-{
-    public static PermissionSystemInfo Unavailable { get; } = new(
-        1,
-        "unavailable_fail_closed",
-        "strict",
-        "unavailable",
-        "unavailable",
-        "unavailable",
-        DynamicSessionPromotionEnabled: false,
-        GatewayPatchInventoryInfo.Unavailable(
-            "Permission-system status was not attached to this response."),
-        Array.Empty<PermissionGrantRecord>(),
-        new[] { "No dynamic permission state is available." });
-}
-
-public sealed record PersistentQualificationInfo(
-    string QualificationId,
-    int Version,
-    string Status,
-    string AuthorityTier,
-    string SurfaceKind,
-    string Operation,
-    string ContractKind,
-    string RiskClass,
-    string EnvironmentDigest,
-    string ModsetFingerprint,
-    string PatchDigest,
-    string OperationFingerprint,
-    string CompletionBoundary,
-    string WitnessId,
-    string EvidenceBundleDigest,
-    bool ApplicableToCurrentEnvironment,
-    string Applicability,
-    DateTimeOffset IssuedAt,
-    DateTimeOffset ExpiresAt,
-    string? SupersedesQualificationId,
-    string? StatusReason,
-    IReadOnlyList<string> EvidenceIds);
-
-public sealed record OperationQualificationIdentityInfo(
-    string SurfaceKind,
-    string Operation,
-    string ContractKind,
-    string InteractionDigest,
-    string OwnerDigest,
-    string SourceDigest,
-    string OperandDigest,
-    string CommitDigest,
-    string CompletionDigest,
-    string WitnessDigest,
-    string ContractDigest,
-    string CompletionBoundary,
-    string WitnessId,
-    string RiskClass);
-
-public sealed record QualificationSystemInfo(
-    int SchemaVersion,
-    string Status,
-    string StoreId,
-    string StoreDigest,
-    string CurrentEnvironmentDigest,
-    string OperationCatalogId,
-    string OperationCatalogDigest,
-    bool PersistentAuthorityEnabled,
-    bool SessionCanaryCandidateEnabled,
-    IReadOnlyList<OperationQualificationIdentityInfo> OperationContracts,
-    IReadOnlyList<PersistentQualificationInfo> Qualifications,
-    IReadOnlyList<string> Limitations)
-{
-    public static QualificationSystemInfo Unavailable { get; } = new(
-        2,
-        "unavailable_fail_closed",
-        "unavailable",
-        "unavailable",
-        "unavailable",
-        "unavailable",
-        "unavailable",
-        PersistentAuthorityEnabled: false,
-        SessionCanaryCandidateEnabled: false,
-        Array.Empty<OperationQualificationIdentityInfo>(),
-        Array.Empty<PersistentQualificationInfo>(),
-        new[] { "No persistent qualification store was configured." });
+    // The digest identifies the loaded Host artifact without exposing its path.
+    public string ArtifactSha256 { get; init; } = string.Empty;
 }
 
 public sealed record CompatibilityAssessment(
     string Status,
-    IReadOnlyList<string> TestedGameVersions,
-    IReadOnlyList<string> TestedBuildFingerprints,
     bool ActionExecutionAllowed,
     bool StateObservationAllowed,
     bool InspectionAllowed,
-    IReadOnlyList<string> ActionExecutionSurfaceKinds,
-    IReadOnlyList<string> ActionCanarySurfaceKinds,
-    IReadOnlyList<string> InspectionAllowedKinds,
-    IReadOnlyList<string> InspectionCanaryKinds,
-    IReadOnlyList<string> ObservationOnlySurfaceKinds,
-    IReadOnlyList<string> ObservationCandidateBuildFingerprints,
-    string Detail)
-{
-    // Exact operation scopes are the sole action-authority source for strict clients.
-    public IReadOnlyList<ActionPermissionScope> ActionPermissionScopes { get; init; } =
-        Array.Empty<ActionPermissionScope>();
-
-    // The reviewed embedded policy is auditable data, not self-authorizing
-    // discovery. Unknown or invalid policy data leaves the Gateway fail closed.
-    public string CompatibilityPolicyId { get; init; } = "unavailable";
-
-    public string CompatibilityPolicyDigest { get; init; } = "unavailable";
-
-    public string AdaptationLevel { get; init; } = "diagnostic_only";
-}
+    string Detail);
 
 public sealed record GameBuildIdentity(
     string? Version,
@@ -217,7 +34,7 @@ public sealed record GameBuildIdentity(
     ModsetIdentity? Modset = null)
 {
     // release_info.json is useful provenance, but only the runtime-computed
-    // main assembly hash participates in exact permission decisions.
+    // main assembly hash participates in exact compatibility identity.
     public int? ReleaseDeclaredMainAssemblyHash { get; init; }
 }
 
@@ -239,26 +56,14 @@ public sealed record ModsetIdentity(
     string Status,
     string Fingerprint,
     string FingerprintScope,
-    bool ExactPermissionEligible,
     IReadOnlyList<LoadedModIdentity> Mods,
-    string Detail)
-{
-    public bool QualificationCandidateEligible { get; init; }
+    string Detail);
 
-    public bool PersistentQualificationEligible { get; init; }
-}
-
-public sealed record ObservationPolicyInfo(
+public sealed record InformationPolicyInfo(
     string Id,
     string Scope,
     bool IncludesHiddenInformation,
     string UnknownFieldBehavior);
-
-public sealed record SurfaceCapability(
-    string Kind,
-    string Support,
-    IReadOnlyList<string> Operations,
-    string Evidence);
 
 public sealed record PlayerReadCatalogEntry(
     string Kind,
@@ -282,7 +87,7 @@ public sealed record PlayerVisibilityState(
     IReadOnlyList<string> Missing,
     string UnknownCriticalFieldBehavior);
 
-public sealed record GatewayDiagnostic(
+public sealed record HostDiagnostic(
     string Code,
     string Severity,
     string Category,
@@ -310,7 +115,7 @@ public sealed class PlayerReadContentJsonConverter : JsonConverter<IPlayerReadCo
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions options) =>
-        throw new JsonException("Bridge inspection content is response-only.");
+        throw new JsonException("Player read content is response-only.");
 
     public override void Write(
         Utf8JsonWriter writer,
@@ -349,11 +154,11 @@ public sealed record ShopCatalogInspectionContent(
 
 public sealed record StateCompleteness(
     string PlayerVisibleSemantics,
-    string LegalActions,
+    string InteractionDiscovery,
     IReadOnlyList<string> Sources,
     IReadOnlyList<string> Missing);
 
-public sealed record AuthorityHandoff(
+public sealed record InputOwnership(
     string Status,
     string? SurfaceKind,
     string Reason);
@@ -567,7 +372,7 @@ public sealed class LiveContextJsonConverter : JsonConverter<ILiveContext>
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions options) =>
-        throw new JsonException("Bridge contexts are response-only protocol objects.");
+        throw new JsonException("Player contexts are response-only Host objects.");
 
     public override void Write(
         Utf8JsonWriter writer,
@@ -674,7 +479,7 @@ public sealed class LiveSurfaceJsonConverter : JsonConverter<ILiveSurface>
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions options) =>
-        throw new JsonException("Bridge surfaces are response-only protocol objects.");
+        throw new JsonException("Player surfaces are response-only Host objects.");
 
     public override void Write(
         Utf8JsonWriter writer,
@@ -683,16 +488,10 @@ public sealed class LiveSurfaceJsonConverter : JsonConverter<ILiveSurface>
         JsonSerializer.Serialize(writer, value, value.GetType(), options);
 }
 
-public sealed record DeckEnchantSource(
-    string Kind,
-    string DefinitionId,
-    string BindingEvidence);
-
 public sealed record DeckEnchantSelectionSurface(
     string Kind,
     string Stage,
     string ScreenEntityId,
-    DeckEnchantSource Source,
     string? Prompt,
     int MinSelect,
     int MaxSelect,
@@ -837,7 +636,8 @@ public sealed record GameOverSurface(
     string ScreenEntityId,
     string? ReturnDestination,
     bool CanAdvanceSummary,
-    bool CanReturn) : ILiveSurface;
+    bool CanReturn,
+    IReadOnlyList<VisibleMenuOption> OtherControls) : ILiveSurface;
 
 public sealed record VisibleCharacterChoice(
     string EntityId,
@@ -915,50 +715,6 @@ public sealed record SingleplayerMenuSurface(
     IReadOnlyList<VisibleMenuOption> Options) : ILiveSurface;
 
 /// <summary>
-/// Exact merchant card-removal child surface. This intentionally does not
-/// generalize other deck selectors whose effects and preview semantics differ.
-/// </summary>
-public sealed record DeckRemovalSelectionSurface(
-    string Kind,
-    string Stage,
-    string ScreenEntityId,
-    string Prompt,
-    int MinSelect,
-    int MaxSelect,
-    int SelectedCount,
-    IReadOnlyList<string> SelectedCardEntityIds,
-    bool Cancelable,
-    IReadOnlyList<string> SelectableCardEntityIds,
-    IReadOnlyList<string> DeselectableCardEntityIds,
-    bool CanPreview,
-    bool CanCancelSelection,
-    bool CanCancelPreview,
-    bool CanConfirm,
-    IReadOnlyList<VisibleCard> Cards) : ILiveSurface;
-
-/// <summary>
-/// Purpose-specific deck upgrade selection. Preview cards are the exact
-/// upgraded card representations currently visible in the confirmation stage.
-/// </summary>
-public sealed record DeckUpgradeSelectionSurface(
-    string Kind,
-    string Stage,
-    string ScreenEntityId,
-    string Prompt,
-    int MinSelect,
-    int MaxSelect,
-    int SelectedCount,
-    IReadOnlyList<string> SelectedCardEntityIds,
-    bool Cancelable,
-    IReadOnlyList<string> SelectableCardEntityIds,
-    IReadOnlyList<string> DeselectableCardEntityIds,
-    bool CanCancelSelection,
-    bool CanCancelPreview,
-    bool CanConfirm,
-    IReadOnlyList<VisibleCard> Cards,
-    IReadOnlyList<VisibleCard> PreviewCards) : ILiveSurface;
-
-/// <summary>
 /// Purpose-specific random deck transformation. PreviewKind describes the
 /// visible presentation, not a future outcome; ReplacementKnown must remain
 /// false for random transforms until after commit.
@@ -967,7 +723,6 @@ public sealed record DeckTransformSelectionSurface(
     string Kind,
     string Stage,
     string ScreenEntityId,
-    DeckTransformSource Source,
     string Prompt,
     int MinSelect,
     int MaxSelect,
@@ -989,35 +744,6 @@ public sealed record DeckTransformSelectionSurface(
     public bool CanToggleUpgradeView { get; init; }
 }
 
-public sealed record DeckTransformSource(
-    string Kind,
-    string DefinitionId,
-    string BindingEvidence);
-
-/// <summary>
-/// Native Wood Carvings Bird/Torus selector. The replacement is deterministic
-/// and player-visible before commit, unlike a random transform.
-/// </summary>
-public sealed record WoodCarvingsReplacementSelectionSurface(
-    string Kind,
-    string Stage,
-    string ScreenEntityId,
-    string Prompt,
-    string Branch,
-    string ReplacementDefinitionId,
-    string? ReplacementName,
-    string? ReplacementDescription,
-    int MinSelect,
-    int MaxSelect,
-    int SelectedCount,
-    IReadOnlyList<string> SelectedCardEntityIds,
-    IReadOnlyList<VisibleCard> Cards) : ILiveSurface
-{
-    public IReadOnlyList<string> SelectableCardEntityIds { get; init; } = Array.Empty<string>();
-    public bool CanCancelPreview { get; init; }
-    public bool CanConfirm { get; init; }
-}
-
 public sealed record VisibleCombatCommandOption(
     string EntityId,
     string? Name,
@@ -1032,37 +758,6 @@ public sealed record CombatTurnSurface(
         Array.Empty<VisibleCombatCommandOption>();
     public IReadOnlyList<VisibleCombatCommandOption> UsablePotions { get; init; } =
         Array.Empty<VisibleCombatCommandOption>();
-}
-
-public sealed record CombatPileCardSelectionSurface(
-    string Kind,
-    string ScreenEntityId,
-    string Prompt,
-    string Purpose,
-    string MutationKind,
-    string CommitMode,
-    string SourceKind,
-    string SourceEntityKind,
-    string SourceEntityId,
-    string SourceDefinitionId,
-    string? SourceCardEntityId,
-    string? SourceCardDefinitionId,
-    string PileType,
-    string DestinationPile,
-    string DestinationPosition,
-    string? OverflowDestination,
-    string? ReplacementCardDefinitionId,
-    int MinSelect,
-    int MaxSelect,
-    int SelectedCount,
-    IReadOnlyList<string> SelectedCardEntityIds,
-    bool RequireManualConfirmation,
-    bool Cancelable,
-    IReadOnlyList<VisibleCard> Cards) : ILiveSurface
-{
-    public IReadOnlyList<string> SelectableCardEntityIds { get; init; } = Array.Empty<string>();
-    public IReadOnlyList<string> DeselectableCardEntityIds { get; init; } = Array.Empty<string>();
-    public bool CanConfirm { get; init; }
 }
 
 public sealed record CombatHandCardSelectionSurface(
@@ -1082,30 +777,6 @@ public sealed record CombatHandCardSelectionSurface(
     bool CanClosePeek,
     IReadOnlyList<VisibleCard> Cards) : ILiveSurface;
 
-/// <summary>
-/// Audited event choice whose visible temporary cards are committed as exact
-/// instances to the persistent run deck. This is not a universal simple-grid
-/// selector; source qualification belongs to the provider.
-/// </summary>
-public sealed record EventCardAcquisitionSurface(
-    string Kind,
-    string ScreenEntityId,
-    string Prompt,
-    string Destination,
-    int MinSelect,
-    int MaxSelect,
-    int SelectedCount,
-    IReadOnlyList<string> SelectedCardEntityIds,
-    bool RequireManualConfirmation,
-    IReadOnlyList<VisibleCard> Cards) : ILiveSurface
-{
-    public IReadOnlyList<string> SelectableCardEntityIds { get; init; } =
-        Array.Empty<string>();
-
-    public IReadOnlyList<string> DeselectableCardEntityIds { get; init; } =
-        Array.Empty<string>();
-}
-
 public sealed record VisibleCardRewardAlternative(
     string EntityId,
     int Index,
@@ -1113,7 +784,7 @@ public sealed record VisibleCardRewardAlternative(
     bool Enabled);
 
 /// <summary>
-/// A player-visible room reward. The bridge deliberately exposes only the
+/// A player-visible room reward. The Host deliberately exposes only the
 /// semantic kind and the text already rendered by the reward button.
 /// </summary>
 public sealed record VisibleReward(
@@ -1131,33 +802,6 @@ public sealed record CardRewardSelectionSurface(
 {
     public IReadOnlyList<string> SelectableCardEntityIds { get; init; } =
         Array.Empty<string>();
-}
-
-public sealed record GeneratedCardChoiceSurface(
-    string Kind,
-    string ScreenEntityId,
-    string? Prompt,
-    string Purpose,
-    string SourceKind,
-    string Destination,
-    string SelectedCardCostPolicy,
-    string? OverflowDestination,
-    bool CanSkip,
-    bool IsPeeking,
-    IReadOnlyList<VisibleCard> Cards) : ILiveSurface
-{
-    public IReadOnlyList<string> SelectableCardEntityIds { get; init; } =
-        Array.Empty<string>();
-
-    public bool SkipAvailable { get; init; }
-
-    public string SelectOperation { get; init; } = "";
-
-    public string? SkipOperation { get; init; }
-
-    public string SelectCompletionEvidence { get; init; } = "";
-
-    public string? SkipCompletionEvidence { get; init; }
 }
 
 public sealed record VisibleCardBundle(
@@ -1211,24 +855,3 @@ public sealed record NoActionSurface(
     string Kind,
     string Reason,
     string? Message) : ILiveSurface;
-
-public sealed record GatewayCommandEvent(
-    string Status,
-    DateTimeOffset At,
-    string? Evidence,
-    string? ErrorCode,
-    string? Detail);
-
-public sealed record GatewayCommandOutcomeEvidence(
-    string RequestId,
-    string ExpectedStateId,
-    string ActionId,
-    string Status,
-    string Outcome,
-    string? ObservedStateId,
-    IReadOnlyList<GatewayCommandEvent> Events)
-{
-    public MutationAttribution? Attribution { get; init; }
-
-    public string? CompletionBoundary { get; init; }
-}

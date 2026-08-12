@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildBaselineReport } from "../src/evaluation/baselineReport.js";
-import type { LegacyExecutableGameAction } from "../src/domain/actions/legacyAction.js";
+import type { ExecutableGameAction } from "../src/domain/actions/action.js";
 import type { DecisionRecord, RunMetadata, RunSummary } from "../src/recording/types.js";
 
 describe("M1 baseline report", () => {
@@ -9,22 +9,23 @@ describe("M1 baseline report", () => {
 
     expect(report).toMatchObject({
       source: "local_run_artifacts_read_only",
-      authorizationEffect: "none",
-      qualificationEffect: "none",
+      authorityEffect: "none",
       identityStatus: "exact",
       evidence: { completedGame: true, termination: "completed_run_boundary" },
       metrics: {
         decisionCount: 1,
         outcomes: { executed_and_settled: 1 },
         contexts: { combat: 1 },
-        surfaces: { combat_turn: 1 },
+        surfaces: { player_environment: 1 },
         selectedActions: { end_turn: 1 },
         prompt: { totalUserBytes: 200, averageUserBytes: 200 },
         provider: { attemptCount: 1, totalTokens: 12, invalidSessions: 0 }
       }
     });
     expect(report.identityDigest).toMatch(/^sha256:[0-9a-f]{64}$/u);
-    expect(report.limitations).toContain("report_does_not_grant_permission_or_qualification");
+    expect(report.limitations).toContain(
+      "report_is_read_only_and_does_not_change_player_environment_authority"
+    );
     expect(JSON.stringify(report)).not.toContain("secret model response");
   });
 
@@ -60,30 +61,29 @@ function metadata(withRevision: boolean): RunMetadata {
       endpoint: "http://127.0.0.1:15526",
       capabilities: {},
       negotiated: {
-        bridge_protocol_version: "2.0-preview.test",
-        bridge_assembly_file_sha256: "b".repeat(64),
-        bridge_module_version_id: "mvid",
-        bridge_runtime_instance_id: "epoch",
+        connector_protocol_version: "1.0-rc.1",
+        host_artifact_sha256: "b".repeat(64),
+        host_module_version_id: "mvid",
+        host_runtime_instance_id: "epoch",
+        environment_fingerprint: "environment",
         game_version: "v0.test",
         game_commit: "commit",
         main_assembly_hash: 123,
-        modset_status: "exact_bridge_only",
+        modset_status: "exact_player_environment_only",
         modset_fingerprint: "c".repeat(64),
-        permission_policy_digest: "d".repeat(64),
         runtime_patch_digest: "e".repeat(64)
       }
     },
     provider: { provider: "deepseek", model: "test", thinkingMode: "disabled", maxOutputTokens: 320 },
     evidence: {
       provenance: "unrecorded",
-      declaredBy: "runtime_configuration",
-      qualificationUse: "coverage_only_unless_independently_reviewed"
+      declaredBy: "runtime_configuration"
     },
     schemas: { normalizedState: 29, prompt: 3, decisionRecord: 2 }
   };
 }
 
-function record(): DecisionRecord<LegacyExecutableGameAction> {
+function record(): DecisionRecord<ExecutableGameAction> {
   const attempt = {
     requestKind: "primary" as const,
     startedAt: "2026-01-01T00:00:00.000Z",
@@ -104,12 +104,23 @@ function record(): DecisionRecord<LegacyExecutableGameAction> {
     completedAt: "2026-01-01T00:00:00.020Z",
     preState: {
       rawStateRef: "pre.json",
-      normalizedState: { context: { kind: "combat" }, surface: { kind: "combat_turn" } } as never,
+      normalizedState: { context: { kind: "combat" }, surface: { kind: "player_environment" } } as never,
       stateHash: "state",
       normalizedStateHash: "normalized",
       diagnostics: {} as never
     },
-    allowedActions: [{ id: "action-end", kind: "end_turn", label: "End turn", action: { kind: "end_turn" }, sourceStateHash: "state" }],
+    allowedActions: [{
+      id: "action-end",
+      kind: "end_turn",
+      label: "End turn",
+      action: {
+        kind: "bound_action",
+        choiceId: "action-end",
+        expectedSnapshotId: "snapshot",
+        boundActionId: "action-end"
+      },
+      sourceStateHash: "state"
+    }],
     prompt: {
       promptRef: "prompt.json",
       globalPromptId: "global",

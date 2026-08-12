@@ -21,12 +21,9 @@ namespace STS2_MCP.LiveHost;
 
 internal sealed class CombatTurnSurfaceReader : ILiveSurfaceReader
 {
-    internal const string PlayCardCompletionWitness =
-        "card_transaction_settled_or_required_subsurface_opened";
-    internal const string UsePotionCompletionWitness =
-        "potion_transaction_settled_or_required_subsurface_opened";
-    internal const string EndTurnCompletionWitness =
-        "player_play_phase_ended";
+    internal const string PlayCardDeliveryEvidence = "native_card_play_accepted";
+    internal const string UsePotionDeliveryEvidence = "native_potion_use_enqueued";
+    internal const string EndTurnDeliveryEvidence = "native_end_turn_command_submitted";
 
     public string Kind => "combat_turn";
 
@@ -112,8 +109,8 @@ internal sealed class CombatTurnSurfaceReader : ILiveSurfaceReader
         {
             Diagnostics = new[]
             {
-                new GatewayDiagnostic(
-                    "gateway.visibility.combat_pile_contents_externalized",
+                new HostDiagnostic(
+                    "host.visibility.combat_pile_contents_externalized",
                     "info",
                     "visibility",
                     "none",
@@ -308,14 +305,7 @@ internal sealed class CombatTurnSurfaceReader : ILiveSurfaceReader
 
         if (!expectedCard.TryManualPlay(expectedTarget))
             return NativeInputResult.Rejected("card_target_no_longer_valid", "The card no longer accepts the advertised target.");
-        return NativeInputResult.Started(
-            () => HasQueuedMutationCompletionBoundary(
-                CombatManager.Instance.IsInProgress,
-                expectedPlayer.PlayerCombatState?.Hand.Cards.Contains(expectedCard) != true,
-                RunManager.Instance.ActionQueueSet.IsEmpty,
-                HasRequiredSubsurface()),
-            PlayCardCompletionWitness,
-            allowIntermediateStateChanges: true);
+        return NativeInputResult.Delivered(PlayCardDeliveryEvidence);
     }
 
     internal static NativeInputResult StartUsePotion(
@@ -336,14 +326,7 @@ internal sealed class CombatTurnSurfaceReader : ILiveSurfaceReader
         }
 
         expectedPotion.EnqueueManualUse(expectedTarget);
-        return NativeInputResult.Started(
-            () => HasQueuedMutationCompletionBoundary(
-                CombatManager.Instance.IsInProgress,
-                !ReferenceEquals(expectedPlayer.GetPotionAtSlotIndex(expectedSlot), expectedPotion),
-                RunManager.Instance.ActionQueueSet.IsEmpty,
-                HasRequiredSubsurface()),
-            UsePotionCompletionWitness,
-            allowIntermediateStateChanges: true);
+        return NativeInputResult.Delivered(UsePotionDeliveryEvidence);
     }
 
     internal static NativeInputResult StartEndTurn(Player expectedPlayer)
@@ -355,10 +338,7 @@ internal sealed class CombatTurnSurfaceReader : ILiveSurfaceReader
             return NativeInputResult.Rejected("end_turn_not_available", "The hand UI no longer permits ending the turn.");
 
         PlayerCmd.EndTurn(expectedPlayer, canBackOut: false);
-        return NativeInputResult.Started(
-            () => !CombatManager.Instance.IsInProgress || !IsActionablePlayerTurn(expectedPlayer),
-            EndTurnCompletionWitness,
-            allowIntermediateStateChanges: true);
+        return NativeInputResult.Delivered(EndTurnDeliveryEvidence);
     }
 
     internal static bool CanUsePotion(Player player, PotionModel? potion) =>
@@ -368,19 +348,6 @@ internal sealed class CombatTurnSurfaceReader : ILiveSurfaceReader
         && !potion.IsQueued
         && !potion.Owner.Creature.IsDead
         && potion.PassesCustomUsabilityCheck;
-
-    internal static bool HasQueuedMutationCompletionBoundary(
-        bool combatInProgress,
-        bool sourceMutationObserved,
-        bool actionQueueEmpty,
-        bool requiredSubsurfaceOpened) =>
-        !combatInProgress
-        || requiredSubsurfaceOpened
-        || (sourceMutationObserved && actionQueueEmpty);
-
-    private static bool HasRequiredSubsurface() =>
-        NPlayerHand.Instance?.IsInCardSelection == true
-        || NOverlayStack.Instance?.Peek() != null;
 
     internal static bool IsActionablePlayerTurn(Player player) =>
         CombatManager.Instance.IsInProgress

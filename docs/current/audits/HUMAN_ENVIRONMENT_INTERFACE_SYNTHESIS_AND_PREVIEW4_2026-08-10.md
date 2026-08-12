@@ -45,7 +45,7 @@ Preview.4:
   referent arguments;
 - repeats that public binding in receipts while keeping exact native operands
   private;
-- unifies Inspection and linked detail under advertised `/api/he/reads/{id}`;
+- unifies Inspection and linked detail under advertised `/api/player-environment/reads/{id}`;
 - makes Re preserve visible combat enemies/status/intents and exact target
   bindings;
 - adds strict negative and multi-target consumer tests.

@@ -1,84 +1,81 @@
-# Current Architecture: Human Environment C
+# Current Architecture: Player Environment C
 
-Authority: [ADR-0009](decisions/ADR-0009-human-environment-core-boundaries.md)
+Authority: [ADR-0009](decisions/ADR-0009-player-environment-core-boundaries.md)
 
-## Production Path
+## One Production Path
 
 ```text
-real STS2 runtime
-  -> LiveHost observation readers
-  -> NativeUi candidate discovery and exact native binding
-  -> Authority environment/controller/request admission
-  -> HumanEnvironment Observe / Read / Interact contract
-  -> REST or optional thin MCP transport
-  -> consumer-owned projection such as Re
+STS2 rules, RNG, objects and UI lifecycle
+  -> LiveHost: current fair-player facts and current owner
+  -> NativeUi: private exact binding and native input callback
+  -> PlayerEnvironment: Snapshot / Read / BoundAction / Receipt / successor
+  -> REST or optional MCP transport
+  -> consumer projection such as Re
 ```
 
-There is one production path. Bridge v2 and Connector V3 do not publish state,
-actions or HTTP authority. Retired endpoints return `410` and cannot silently
-resume execution.
+Identity and single-writer control are a hard shell around delivery, not a
+second source of game legality. Current UI actionability publishes actions;
+execute-time native revalidation decides whether that exact input can still be
+delivered.
 
-## C-Core
+## Public Contract
 
-C-Core is a behavior boundary, not one giant assembly namespace. It contains:
+- **Snapshot:** stable current player-visible state, current Interaction,
+  Referents, complete finite BoundActions, Reads, completeness and exact session
+  identity.
+- **Read:** one advertised, state-bound, read-only player information path.
+- **BoundAction:** an opaque finite projection of one private native binding.
+  It does not expose native operands or create legality.
+- **Action request:** request ID, expected snapshot, bound action and controller
+  lease.
+- **Receipt:** `delivered | not_delivered | unknown`, retry policy and an
+  immediate successor when readable. Delivery is not business completion.
 
-- a canonical fair-player snapshot: persistent facts, current interaction,
-  visible referents, completeness, session identity and policy;
-- state-bound, read-only information opportunities;
-- a complete finite projection of current bound actions;
-- one Host-local binding/execution authority;
-- controller, stale-state and idempotency enforcement;
-- `applied | not_applied | unknown` delivery receipts and successor snapshots.
+The public wire is understandable without Bridge/V2/V3 history. Interaction
+content is tagged by `surface.kind` and `context.kind`; exact Godot/STS2 objects
+never leave the Host.
 
-The wire is independently meaningful without knowing Provider, Surface preview,
-Bridge or Connector history. `interaction.content` is tagged by both
-`surface.kind` and `context.kind`. Native objects and operands remain Host-local.
+Visible interaction content is projected before action materialization. Only
+those facts create Referents. A Host-local candidate cannot synthesize a public
+Referent; if any public operand is missing from current facts, the finite
+projection is `truncated`, the Snapshot remains readable, and execution
+authority is empty.
 
 ## Ownership
 
-- **Game/Host:** rules, RNG, effects, object lifetime, native legality and Commit.
-- **LiveHost:** visible facts, one current owner and readiness.
-- **NativeUi:** exact candidates, controls, entities, operands and revalidation.
-- **Authority:** exact environment, one controller, qualification and request
-  lifecycle.
-- **HumanEnvironment:** canonical public observation, reads, bound actions,
-  receipts and successor projection.
-- **Transport:** serialization and transport only.
-- **Consumer:** strategy, model formatting, lazy/eager read policy and progress
-  interpretation. It cannot create facts or legality.
+- **Game/Host:** rules, RNG, effects, native legality and object lifetime.
+- **LiveHost:** visible fact extraction and current owner/readiness.
+- **NativeUi:** entity registry, exact private binding, execution revalidation,
+  native adapters and main-thread input.
+- **PlayerEnvironment:** public truth, reads, projection, stale/idempotent
+  submission, receipts and successor.
+- **Identity/Control:** exact provenance, one writer and attribution only.
+- **Transport:** serialization and delivery only.
+- **Consumer/A:** model projection, read policy, strategy, progress
+  interpretation and recovery; never game legality.
+- **D/P:** optional non-authorizing evaluation and deployment/rollback; neither
+  changes C truth or actions.
 
 ## Consumer Boundary
 
-An LLM consumer may use compact observation plus lazy reads and finite choices.
-A memoryless RL consumer may eagerly aggregate advertised reads into one
-snapshot-coherent bundle. Search or Replay may own different projections. All
-must consume the same C truth and submit the same opaque bound-action identity.
-
-No consumer format defines the C ontology, native operands, legality or result.
-The existing Re decision bundle is a downstream convenience, not a second C.
-Re's production executable action type contains only the opaque HE action.
-Historical index, V2 and V3 action unions live in a fixture-only module that is
-excluded from the production build. Shared orchestration utilities are generic
-and do not interpret retired transport families.
+Re uses compact Snapshot plus optional Reads and finite BoundActions. A future
+RL adapter may eagerly aggregate advertised Reads into one snapshot-coherent
+feature tensor and action mask. Search/Replay may build different deterministic
+views. Every view resolves to the same Host-local binding and Receipt path;
+none redefines C ontology or authority.
 
 ## Information Boundary
 
-Player-visible facts are either in the hot observation, reachable through an
-advertised state-bound read, or explicitly classified partial/unsupported.
-Inspection and native-page evidence never grant mutation authority. Hidden RNG,
-draw order, future events/rewards and inaccessible native state are excluded.
+Stable current facts belong in Snapshot. Stable player-reachable detail may be
+advertised as a state-bound Read. Missing player-visible information is marked
+partial/unsupported; it is not moved to A or D. Hidden RNG, true draw order,
+future events/rewards and inaccessible native state are omitted by policy.
 
-See [Human Information Closure](HUMAN_INFORMATION_CLOSURE.md).
-
-## Delivery Semantics
-
-`applied` proves that C delivered the exact current native input through the
-game-owned path. It does not claim arbitrary downstream business completion.
-Re observes successor stability without reconstructing game rules. `unknown`
-is terminal for automatic retry.
+See [Player Environment Information Closure](PLAYER_ENVIRONMENT_INFORMATION_CLOSURE.md).
 
 ## Non-Goals
 
-C is not a second game engine, business effect simulator, reward API, model API,
-coordinate click service, arbitrary reflection surface or privileged Headless
-lifecycle. Headless, Training, Search and A strategy changes are separate work.
+C is not an LLM API, reward API, strategy engine, business transaction model,
+coordinate/reflection service, privileged simulator or second game engine.
+Headless lifecycle, Training, Search, learning and transient PlayerCue are
+separate work after the C1 stable/inspectable contract is sealed.

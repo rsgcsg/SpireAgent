@@ -5,7 +5,6 @@ using System.Linq;
 using Godot;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes.Cards;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
@@ -22,11 +21,9 @@ namespace STS2_MCP.LiveHost;
 internal sealed class CardBundleSelectionSurfaceReader : ILiveSurfaceReader
 {
     private const string SurfaceKind = "card_bundle_selection";
-    internal const string PreviewCompletionWitness = "exact_bundle_preview_opened";
-    internal const string ConfirmCompletionWitness =
-        "bundle_selection_closed_and_exact_cards_added_to_run_deck";
-    internal const string CancelPreviewCompletionWitness =
-        "bundle_preview_closed_without_commit";
+    internal const string PreviewDeliveryEvidence = "native_bundle_hitbox_clicked";
+    internal const string ConfirmDeliveryEvidence = "native_bundle_confirm_clicked";
+    internal const string CancelPreviewDeliveryEvidence = "native_bundle_cancel_clicked";
 
     public string Kind => SurfaceKind;
 
@@ -56,18 +53,10 @@ internal sealed class CardBundleSelectionSurfaceReader : ILiveSurfaceReader
             .ToArray();
         if (allBundles.Length == 0 || allBundles.Any(bundle => bundle.Bundle == null || bundle.Bundle.Count == 0))
             return BindingUnavailable(game, LiveContextReader.Build(entities), "No complete visible card bundles are bound.");
-        if (!HasExactScrollBoxesSource(allBundles))
-        {
-            return BindingUnavailable(
-                game,
-                LiveContextReader.Build(entities),
-                "The bundle selector is not the exact source-qualified Scroll Boxes add-to-deck lifecycle.");
-        }
-
         bool previewShowing = preview.Visible;
         NCardBundle? selected = previewShowing ? ResolvePreviewedBundle(allBundles, previewCards) : null;
         if (previewShowing && selected == null)
-            return BindingUnavailable(game, LiveContextReader.Build(entities), "The preview cards do not identify exactly one source bundle.");
+            return BindingUnavailable(game, LiveContextReader.Build(entities), "The preview cards do not identify exactly one visible bundle.");
 
         string? prompt = ReadText(banner.label);
         NCardBundle[] exposedBundles = selected == null ? allBundles : new[] { selected };
@@ -116,8 +105,7 @@ internal sealed class CardBundleSelectionSurfaceReader : ILiveSurfaceReader
                 "NChooseABundleSelectionScreen visible overlay",
                 "NCardBundle.Bundle+Hitbox",
                 "NChooseABundleSelectionScreen.%BundlePreviewContainer+%Cards",
-                "NChooseABundleSelectionScreen.%Confirm+%Cancel",
-                "ScrollBoxes.AfterObtained+CardSelectCmd.FromChooseABundleScreen+CardPileCmd.Add(Deck)"
+                "NChooseABundleSelectionScreen.%Confirm+%Cancel"
             },
             Array.Empty<string>());
         string signature = StableIdentityHash.Object(new
@@ -151,12 +139,7 @@ internal sealed class CardBundleSelectionSurfaceReader : ILiveSurfaceReader
         }
 
         expectedBundle.Hitbox.ForceClick();
-        return NativeInputResult.Started(
-            () => IsCurrent(expectedScreen)
-                  && expectedPreview.Visible
-                  && ReferenceEquals(ResolvePreviewedBundle(
-                      McpMod.FindAll<NCardBundle>(expectedScreen).ToArray(), expectedPreviewCards), expectedBundle),
-            PreviewCompletionWitness);
+        return NativeInputResult.Delivered(PreviewDeliveryEvidence);
     }
 
     private static NativeInputResult StartConfirm(
@@ -165,14 +148,10 @@ internal sealed class CardBundleSelectionSurfaceReader : ILiveSurfaceReader
         NConfirmButton expectedConfirm)
     {
         Control? previewCards = expectedScreen.GetNodeOrNull<Control>("%Cards");
-        CardModel[] expectedCards = expectedBundle.Bundle.ToArray();
         if (!IsCurrent(expectedScreen)
             || previewCards == null
             || !ReferenceEquals(ResolvePreviewedBundle(
                 McpMod.FindAll<NCardBundle>(expectedScreen).ToArray(), previewCards), expectedBundle)
-            || expectedCards.Length == 0
-            || expectedCards.Any(card => !ReferenceEquals(card.Owner, expectedCards[0].Owner))
-            || expectedCards.Any(card => expectedCards[0].Owner.Deck.Cards.Contains(card))
             || !expectedConfirm.IsEnabled
             || !McpMod.IsNodeVisible(expectedConfirm))
         {
@@ -180,24 +159,7 @@ internal sealed class CardBundleSelectionSurfaceReader : ILiveSurfaceReader
         }
 
         expectedConfirm.ForceClick();
-        return NativeInputResult.Started(
-            () => !IsCurrent(expectedScreen) && BundleCommittedToDeck(expectedCards),
-            ConfirmCompletionWitness,
-            allowIntermediateStateChanges: true);
-    }
-
-    private static bool BundleCommittedToDeck(IReadOnlyList<CardModel> expectedCards)
-    {
-        try
-        {
-            return expectedCards.Count > 0
-                   && expectedCards.All(card => ReferenceEquals(card.Owner, expectedCards[0].Owner))
-                   && expectedCards.All(card => expectedCards[0].Owner.Deck.Cards.Contains(card));
-        }
-        catch
-        {
-            return false;
-        }
+        return NativeInputResult.Delivered(ConfirmDeliveryEvidence);
     }
 
     private static NativeInputResult StartCancel(
@@ -218,9 +180,7 @@ internal sealed class CardBundleSelectionSurfaceReader : ILiveSurfaceReader
         }
 
         expectedCancel.ForceClick();
-        return NativeInputResult.Started(
-            () => IsCurrent(expectedScreen) && !expectedPreview.Visible,
-            CancelPreviewCompletionWitness);
+        return NativeInputResult.Delivered(CancelPreviewDeliveryEvidence);
     }
 
     internal static NativeInputResult StartDirectPreview(
@@ -322,29 +282,17 @@ internal sealed class CardBundleSelectionSurfaceReader : ILiveSurfaceReader
         NCardBundle[] bundles = McpMod.FindAll<NCardBundle>(screen)
             .Where(McpMod.IsLiveNode)
             .ToArray();
-        if (!HasExactScrollBoxesSource(bundles)
-            || !entities.TryResolve(bundleId, out NCardBundle? resolvedBundle)
+        if (!entities.TryResolve(bundleId, out NCardBundle? resolvedBundle)
             || resolvedBundle == null
             || !bundles.Any(candidate => ReferenceEquals(candidate, resolvedBundle)))
         {
             rejection = NativeInputResult.Rejected(
-                "card_bundle_source_changed",
-                "The exact Scroll Boxes bundle source or selected bundle changed.");
+                "card_bundle_changed",
+                "The exact visible bundle changed.");
             return false;
         }
         bundle = resolvedBundle;
         return true;
-    }
-
-    private static bool HasExactScrollBoxesSource(IReadOnlyList<NCardBundle> bundles)
-    {
-        if (bundles.Count == 0 || bundles.Any(bundle => bundle.Bundle == null || bundle.Bundle.Count == 0))
-            return false;
-        CardModel[] cards = bundles.SelectMany(bundle => bundle.Bundle).ToArray();
-        return cards.Length > 0
-               && cards.All(card => ReferenceEquals(card.Owner, cards[0].Owner))
-               && cards[0].Owner.Relics.Any(relic => relic is ScrollBoxes)
-               && cards.All(card => !cards[0].Owner.Deck.Cards.Contains(card));
     }
 
     private static NCardBundle? ResolvePreviewedBundle(
@@ -405,12 +353,12 @@ internal sealed class CardBundleSelectionSurfaceReader : ILiveSurfaceReader
         {
             Diagnostics = new[]
             {
-                GatewayDiagnostics.Create(
-                    "gateway.surface.card_bundle_selection.binding_unavailable",
+                HostDiagnostics.Create(
+                    "host.surface.card_bundle_selection.binding_unavailable",
                     "error",
                     "surface",
                     "actions_suppressed",
-                    "update_bridge",
+                    "update_host_adapter",
                     reason)
             }
         };

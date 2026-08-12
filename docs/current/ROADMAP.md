@@ -1,39 +1,45 @@
-# Human Environment Roadmap
+# Player Environment Roadmap
 
-## C-0: Clean Ownership
+## C1-S: Source Closure
 
-Status: source complete, verification in progress.
+Status: automated source closure verified; final committed build pending.
 
-The production path is `LiveHost -> NativeUi/Authority -> HumanEnvironment`.
-Retired Provider action publication, V2/V3 runtime authority and HTTP routes are
-absent. Current docs and checks no longer require historical architecture.
+- one Player Environment public contract and route family;
+- one Re decoder/action/executor path;
+- no operation permission, qualification, SourceContract or V2/V3 authority;
+- source-free generic native selector mechanics where current UI is sufficient;
+- machine contract, schema and boundary checks enforce those properties.
+- explicit visible-fact projection excludes Host-private binding IDs, and
+  action candidates cannot create observation referents.
 
-## C-1: Contract Maintainability
+## C1-I: Stable And Inspectable Information
 
-Status: source complete, new-artifact Live proof pending.
+Status: implemented with explicit limits.
 
-Observe/Read/Interact have one machine-readable inventory, strict C#/Re schemas,
-tagged interaction content and a checked consumer boundary. Bound actions remain
-complete, opaque and state-bound. Reads remain independent and non-authorizing.
+Snapshot contains stable current decision facts. Four state-bound Read families
+preserve player-reachable deck, pile, shop and card detail. The optional
+`native_pages.v1` evidence profile implements five bounded page paths without
+changing normal decisions or mutation authority. Hover, arbitrary scrolling and
+unreviewed tooltip subtypes remain explicitly partial/unsupported; the new
+artifact has not yet Live-verified those page paths.
 
-## C-2: Human Information Closure
+## C1-R: Runtime Seal
 
-Status: partial and explicit.
+Status: pending one new exact artifact.
 
-Hot facts and four read families are implemented. `native_pages.v1` supplies a
-default-off evidence path for five native pages. Active hover, arbitrary scroll
-and full tooltip-subtype closure remain unsupported or partial.
+Required evidence:
 
-## C-3: Exact Runtime Proof
+1. source/build/install SHA and MVID match;
+2. cold-loaded protocol/SHA/MVID/runtime/game/Modset match;
+3. current and stale Snapshot/Read/Action cases behave correctly;
+4. source-free one-of-N, deck, transform and combat-pile selectors execute;
+5. settling and visible-unsupported boundaries recover or stop honestly;
+6. one same-artifact ordinary C-only journey reaches a correct run boundary.
 
-Status: blocked on cold-load of the new artifact.
+## After C1
 
-Verify exact artifact SHA/MVID/protocol/game/Modset/runtime, current/stale reads,
-current/stale actions, unsupported/settling behavior, native-page recovery and
-one same-artifact ordinary `he_pure` journey.
-
-## After Clean Baseline
-
-Do not start Headless, a second consumer or a major A upgrade until C-3 closes.
-After that, choose the next program separately. Any new consumer must pass a
-conformance fixture without becoming a second authority.
+Do not reopen C for strategy work. Shift the main program to A after C1-R unless
+new exact-runtime evidence proves a C fact, action, read, stale, idempotency or
+delivery defect. Transient PlayerCue is a bounded C1.x information extension;
+Headless, Training and Search remain separate hosts/adapters rather than C1
+freeze gates.

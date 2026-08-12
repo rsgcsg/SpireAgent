@@ -1,7 +1,7 @@
-"""Thin MCP transport for the STS2 Human-Equivalent Connector.
+"""Thin MCP transport for the STS2 Player Environment.
 
-The adapter forwards state-bound HumanSnapshot reads and exact advertised UI
-bound actions. It owns no game rules, source semantics, authority or completion.
+The adapter forwards state-bound snapshots, reads and exact bound actions. It
+owns no game rules, source semantics, action authority or completion logic.
 """
 
 import argparse
@@ -21,12 +21,12 @@ _trust_env: bool = True
 _http: httpx.AsyncClient | None = None
 _control_lock: asyncio.Lock | None = None
 _control: dict | None = None
-_CONTROL_PROTOCOL = "1.0-preview.6"
-_CONTROL_SCHEMA = "sts2.human-environment/control-1"
+_CONTROL_PROTOCOL = "1.0-rc.1"
+_CONTROL_SCHEMA = "sts2.player-environment/control-1"
 
 
-def _he_url(path: str) -> str:
-    return f"{_base_url}/api/he/{path.lstrip('/')}"
+def _environment_url(path: str) -> str:
+    return f"{_base_url}/api/player-environment/{path.lstrip('/')}"
 
 
 def _get_client() -> httpx.AsyncClient:
@@ -36,18 +36,18 @@ def _get_client() -> httpx.AsyncClient:
     return _http
 
 
-async def _he_get(path: str) -> str:
-    response = await _get_client().get(_he_url(path))
+async def _environment_get(path: str) -> str:
+    response = await _get_client().get(_environment_url(path))
     response.raise_for_status()
     return response.text
 
 
-async def _he_protocol_request(
+async def _environment_request(
     method: str,
     path: str,
     body: dict | None = None,
 ) -> str:
-    response = await _get_client().request(method, _he_url(path), json=body)
+    response = await _get_client().request(method, _environment_url(path), json=body)
     # Stale, not-applied and unknown are protocol outcomes. Preserve JSON.
     return response.text
 
@@ -65,7 +65,7 @@ def _expiry_monotonic(expires_at: str) -> float:
 
 
 async def _control_request(path: str, body: dict) -> dict:
-    response = await _get_client().post(_he_url(path), json=body)
+    response = await _get_client().post(_environment_url(path), json=body)
     try:
         payload = response.json()
     except ValueError as error:
@@ -79,8 +79,8 @@ async def _control_request(path: str, body: dict) -> dict:
         )
     if not isinstance(payload, dict):
         raise RuntimeError("Gateway control response must be a JSON object")
-    # HE reuses the single-writer controller infrastructure. This internal
-    # control DTO does not expose V3 action or business authority.
+    # The control DTO protects single-writer delivery; it does not authorize
+    # game actions or expose business semantics.
     if payload.get("protocol_version") != _CONTROL_PROTOCOL:
         raise RuntimeError("Gateway control protocol does not match this adapter")
     if payload.get("schema") != _CONTROL_SCHEMA:
@@ -92,13 +92,13 @@ async def _ensure_controller() -> dict:
     global _control
     async with _get_control_lock():
         if _control is None:
-            client_instance_id = f"mcp-he-{uuid.uuid4()}"
+            client_instance_id = f"mcp-player-environment-{uuid.uuid4()}"
             registration = await _control_request(
                 "clients/register",
                 {
                     "client_instance_id": client_instance_id,
-                    "product_id": "sts2mcp-python-he-adapter",
-                    "product_name": "STS2 Human-Equivalent MCP Adapter",
+                    "product_id": "sts2mcp-python-player-environment-adapter",
+                    "product_name": "STS2 Player Environment MCP Adapter",
                     "product_version": "1.0.0-dev",
                 },
             )
@@ -151,25 +151,25 @@ def _handle_error(error: Exception) -> str:
 
 
 @mcp.tool()
-async def get_sts2_human_capabilities() -> str:
-    """Read exact loaded identity and Human-Equivalent Connector capability."""
+async def get_sts2_player_environment_capabilities() -> str:
+    """Read exact loaded identity and Player Environment capabilities."""
     try:
-        return await _he_get("capabilities")
+        return await _environment_get("capabilities")
     except Exception as error:
         return _handle_error(error)
 
 
 @mcp.tool()
-async def get_sts2_human_snapshot() -> str:
+async def observe_sts2_player_environment() -> str:
     """Read current player-visible facts, interaction grammar and bound actions."""
     try:
-        return await _he_get("observation")
+        return await _environment_get("snapshot")
     except Exception as error:
         return _handle_error(error)
 
 
 @mcp.tool()
-async def read_sts2_human_information(
+async def read_sts2_player_information(
     read_id: str,
     expected_snapshot_id: str,
 ) -> str:
@@ -177,7 +177,7 @@ async def read_sts2_human_information(
     try:
         encoded_read = quote(read_id, safe="")
         encoded_token = quote(expected_snapshot_id, safe="")
-        return await _he_get(
+        return await _environment_get(
             f"reads/{encoded_read}?expected_snapshot_id={encoded_token}"
         )
     except Exception as error:
@@ -185,7 +185,7 @@ async def read_sts2_human_information(
 
 
 @mcp.tool()
-async def apply_sts2_bound_action(
+async def submit_sts2_bound_action(
     request_id: str,
     expected_snapshot_id: str,
     bound_action_id: str,
@@ -197,7 +197,7 @@ async def apply_sts2_bound_action(
     try:
         control = await _ensure_controller()
         lease = control["lease"]
-        return await _he_protocol_request(
+        return await _environment_request(
             "POST",
             "actions",
             {
@@ -214,16 +214,16 @@ async def apply_sts2_bound_action(
 
 
 @mcp.tool()
-async def get_sts2_ui_delivery_receipt(request_id: str) -> str:
+async def get_sts2_action_receipt(request_id: str) -> str:
     """Read the original request receipt; unknown delivery is terminal."""
     try:
-        return await _he_protocol_request("GET", f"actions/{quote(request_id, safe='')}")
+        return await _environment_request("GET", f"actions/{quote(request_id, safe='')}")
     except Exception as error:
         return _handle_error(error)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="STS2 Human-Equivalent MCP adapter")
+    parser = argparse.ArgumentParser(description="STS2 Player Environment MCP adapter")
     parser.add_argument("--port", type=int, default=15526, help="Gateway HTTP port")
     parser.add_argument("--host", type=str, default="localhost", help="Gateway HTTP host")
     parser.add_argument(

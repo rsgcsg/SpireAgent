@@ -1,8 +1,8 @@
 import { loadEnvironment, readRuntimeConfig } from "../config/env.js";
-import { buildHumanEnvironmentAllowedActions } from "../domain/actions/buildHumanEnvironmentAllowedActions.js";
-import { Sts2HumanEnvironmentAdapter } from "../integrations/sts2mcp/humanEnvironmentAdapter.js";
+import { buildPlayerEnvironmentAllowedActions } from "../domain/actions/buildPlayerEnvironmentAllowedActions.js";
+import { Sts2PlayerEnvironmentAdapter } from "../integrations/sts2mcp/playerEnvironmentAdapter.js";
 import { DeepSeekDecisionProvider } from "../llm/deepseekProvider.js";
-import { normalizeHumanEnvironmentCurrentState } from "../normalization/normalizeHumanEnvironmentCurrentState.js";
+import { normalizePlayerEnvironmentCurrentState } from "../normalization/normalizePlayerEnvironmentCurrentState.js";
 import { createBaselineReport } from "../evaluation/baselineReport.js";
 import { auditPromptArtifacts } from "../prompting/promptAudit.js";
 import { compareRecordedPromptWithShadow, repeatRecordedPromptVariant } from "../prompting/promptShadowComparison.js";
@@ -68,17 +68,14 @@ async function main(): Promise<void> {
   }
 
   if (invocation.command === "inspect") {
-    const adapter = new Sts2HumanEnvironmentAdapter(config.mcp.baseUrl, config.mcp.timeoutMs, {
-      mode: config.mcp.mode,
-      startupWaitMs: config.mcp.startupWaitMs,
-      startupPollMs: config.mcp.startupPollMs,
-      commandPollMs: config.mcp.commandPollMs,
-      commandTimeoutMs: config.mcp.commandTimeoutMs
+    const adapter = new Sts2PlayerEnvironmentAdapter(config.connector.baseUrl, config.connector.timeoutMs, {
+      startupWaitMs: config.connector.startupWaitMs,
+      startupPollMs: config.connector.startupPollMs
     });
     await adapter.initialize();
     const raw = await adapter.readCurrentState();
-    const envelope = normalizeHumanEnvironmentCurrentState(raw, adapter.describe());
-    const allowedActions = buildHumanEnvironmentAllowedActions(
+    const envelope = normalizePlayerEnvironmentCurrentState(raw, adapter.describe());
+    const allowedActions = buildPlayerEnvironmentAllowedActions(
       envelope.currentState,
       envelope.stateHash
     );
@@ -185,7 +182,7 @@ function printTick(runId: string, result: {
 }
 
 function printHelp(): void {
-  process.stdout.write(`RE-P1 commands:\n  npm run agent:inspect\n  npm run agent:connector-canary -- --action-id <advertised-id>\n  npm run agent:tick -- --dry-run\n  npm run agent:tick\n  npm run agent:run -- --max-ticks 20 --delay-ms 250\n    (the npm script opts into one Gateway-advertised run entry; the loop remains one-game bounded)\n  npm run agent:replay -- --run-id <id> [--decision-id <id>]\n  npm run agent:baseline-report [--run-id <id>]\n  npm run agent:prompt-audit [--run-id <id> | --limit-runs <positive-count>]\n  npm run agent:prompt-shadow-compare -- --run-id <id> --decision-id <id>\n  npm run agent:prompt-repeat-baseline -- --run-id <id> --decision-id <id> --samples <2-5> [--variant full|shadow]\n`);
+  process.stdout.write(`RE-P1 commands:\n  npm run agent:inspect\n  npm run agent:connector-canary -- --action-id <advertised-id>\n  npm run agent:tick -- --dry-run\n  npm run agent:tick\n  npm run agent:run -- --max-ticks 20 --delay-ms 250\n    (the npm script opts into one Player Environment-advertised run entry; the loop remains one-game bounded)\n  npm run agent:replay -- --run-id <id> [--decision-id <id>]\n  npm run agent:baseline-report [--run-id <id>]\n  npm run agent:prompt-audit [--run-id <id> | --limit-runs <positive-count>]\n  npm run agent:prompt-shadow-compare -- --run-id <id> --decision-id <id>\n  npm run agent:prompt-repeat-baseline -- --run-id <id> --decision-id <id> --samples <2-5> [--variant full|shadow]\n`);
 }
 
 main().catch((error) => {

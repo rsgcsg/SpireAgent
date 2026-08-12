@@ -34,16 +34,7 @@ internal static class LiveObservationReader
     private static readonly ReaderRegistration[] ReaderRegistrations =
     {
         new("deck_enchant_selection", static () => new DeckEnchantSurfaceReader()),
-        new("deck_removal_selection", static () => new DeckRemovalSelectionSurfaceReader()),
-        new("relic_deck_removal_selection", static () => new PreciseScissorsRemovalSurfaceReader()),
-        new("reward_deck_removal_selection", static () => new RewardCardRemovalSurfaceReader()),
-        new("deck_upgrade_selection", static () => new DeckUpgradeSelectionSurfaceReader()),
-        new("deck_transform_selection", static () => new DeckTransformSelectionSurfaceReader()),
-        new("wood_carvings_replacement_selection", static () => new WoodCarvingsReplacementSurfaceReader()),
-        new("combat_pile_card_selection", static () => new CombatPileCardSelectionSurfaceReader()),
         new("combat_hand_card_selection", static () => new CombatHandCardSelectionSurfaceReader()),
-        new("event_card_acquisition", static () => new EventCardAcquisitionSurfaceReader()),
-        new("generated_card_choice", static () => new GeneratedCardChoiceSurfaceReader()),
         new("card_bundle_selection", static () => new CardBundleSelectionSurfaceReader()),
         new("card_reward_selection", static () => new CardRewardSurfaceReader()),
         new("reward_claim", static () => new RewardClaimSurfaceReader()),
@@ -56,7 +47,6 @@ internal static class LiveObservationReader
         new("character_select", static () => new CharacterSelectSurfaceReader()),
         new("main_menu", static () => new MainMenuSurfaceReader()),
         new("singleplayer_menu", static () => new SingleplayerMenuSurfaceReader()),
-        new("rest_site", static () => new RestSiteSurfaceReader()),
         new("event_dialogue", static () => new EventDialogueSurfaceReader()),
         new("event_option", static () => new EventOptionSurfaceReader())
     };
@@ -69,7 +59,7 @@ internal static class LiveObservationReader
 
     public static LiveObservation Build(NativeEntityRegistry entities)
     {
-        return Build(entities, GatewayAuthorityRuntime.ReadCurrentGameIdentity());
+        return Build(entities, EnvironmentIdentityRuntime.ReadGame());
     }
 
     public static LiveObservation Build(
@@ -90,8 +80,8 @@ internal static class LiveObservationReader
                 $"Active surface capture failed closed: {ex.GetType().Name}.",
                 new[] { $"active_surface_capture_failed:{ex.GetType().Name}" },
                 context: null,
-                GatewayDiagnostics.Create(
-                    "gateway.surface.capture_failed",
+                HostDiagnostics.Create(
+                    "host.surface.capture_failed",
                     "error",
                     "surface",
                     "actions_suppressed",
@@ -106,12 +96,12 @@ internal static class LiveObservationReader
                 game.Compatibility.Detail,
                 new[] { "game_build_identity_not_exact" },
                 context: null,
-                GatewayDiagnostics.Create(
-                    "gateway.identity.observation_not_allowed",
+                HostDiagnostics.Create(
+                    "host.identity.observation_not_allowed",
                     "error",
                     "identity",
                     "actions_suppressed",
-                    "update_bridge",
+                    "update_host",
                     game.Compatibility.Detail));
         }
 
@@ -120,11 +110,11 @@ internal static class LiveObservationReader
             return Unsupported(
                 game,
                 "multiplayer_run",
-                "Multiplayer semantics are not implemented by the current Gateway.",
-                new[] { "multiplayer_gateway_not_implemented" },
+                "Multiplayer semantics are not implemented by the current Player Environment Host.",
+                new[] { "multiplayer_player_environment_not_implemented" },
                 context: null,
-                GatewayDiagnostics.Create(
-                    "gateway.compatibility.multiplayer_not_implemented",
+                HostDiagnostics.Create(
+                    "host.compatibility.multiplayer_not_implemented",
                     "error",
                     "compatibility",
                     "surface_unsupported",
@@ -145,8 +135,8 @@ internal static class LiveObservationReader
                 $"The {provider} provider failed closed: {resolution.Failure.GetType().Name}.",
                 new[] { $"surface_provider_failed:{provider}:{resolution.Failure.GetType().Name}" },
                 LiveContextReader.Build(entities),
-                GatewayDiagnostics.Create(
-                    "gateway.surface.provider_failed",
+                HostDiagnostics.Create(
+                    "host.surface.reader_failed",
                     "error",
                     "runtime",
                     "surface_unsupported",
@@ -164,8 +154,8 @@ internal static class LiveObservationReader
                 $"Multiple semantic surface providers matched: {string.Join(", ", resolution.MatchedKinds)}.",
                 new[] { "ambiguous_surface_provider_match" },
                 LiveContextReader.Build(entities),
-                GatewayDiagnostics.Create(
-                    "gateway.surface.ambiguous_owner",
+                HostDiagnostics.Create(
+                    "host.surface.ambiguous_owner",
                     "error",
                     "surface",
                     "actions_suppressed",
@@ -184,19 +174,19 @@ internal static class LiveObservationReader
         return Unsupported(
             game,
             snapshot.SourceType,
-            "This surface has not yet received a game-fact-audited v2 adapter.",
+            "The current player-visible input owner is not represented by the Player Environment.",
             new[] { "surface_not_implemented" },
             LiveContextReader.Build(entities),
-            GatewayDiagnostics.Create(
-                "gateway.surface.not_implemented",
+            HostDiagnostics.Create(
+                "host.surface.not_implemented",
                 "warning",
                 "surface",
                 "surface_unsupported",
                 "change_surface"),
-            new AuthorityHandoff(
+            new InputOwnership(
                 "none_fail_closed",
                 null,
-                "No semantic Gateway surface owns the current input state."));
+                "No Player Environment interaction owns the current input state."));
     }
 
     private static LiveObservation? TryBuildCombatNoInputTransition(
@@ -261,14 +251,14 @@ internal static class LiveObservationReader
             game,
             Array.Empty<string>())
         {
-            AuthorityHandoff = new AuthorityHandoff(
+            InputOwnership = new InputOwnership(
                 "none_fail_closed",
                 null,
-                "The exact combat transition has no player input owner; the Gateway will only observe and poll."),
+                "The exact combat transition has no player input owner; the Host will only observe and poll."),
             Diagnostics = new[]
             {
-                GatewayDiagnostics.Create(
-                    "gateway.lifecycle.no_input_transition",
+                HostDiagnostics.Create(
+                    "host.lifecycle.no_input_transition",
                     "info",
                     "runtime",
                     "none",
@@ -333,14 +323,14 @@ internal static class LiveObservationReader
             game,
             Array.Empty<string>())
         {
-            AuthorityHandoff = new AuthorityHandoff(
+            InputOwnership = new InputOwnership(
                 "none_fail_closed",
                 null,
-                "The native run-mount transition has no current input owner; the Gateway observes without publishing actions."),
+                "The native run-mount transition has no current input owner; the Host observes without publishing actions."),
             Diagnostics = new[]
             {
-                GatewayDiagnostics.Create(
-                    "gateway.lifecycle.run_mount_settling",
+                HostDiagnostics.Create(
+                    "host.lifecycle.run_mount_settling",
                     "info",
                     "runtime",
                     "none",
@@ -423,14 +413,14 @@ internal static class LiveObservationReader
             game,
             Array.Empty<string>())
         {
-            AuthorityHandoff = new AuthorityHandoff(
+            InputOwnership = new InputOwnership(
                 "none_fail_closed",
                 null,
-                "The exact room model has no mounted player-input owner; the Gateway observes and polls without publishing commands."),
+                "The exact room model has no mounted player-input owner; the Host observes and polls without publishing actions."),
             Diagnostics = new[]
             {
-                GatewayDiagnostics.Create(
-                    "gateway.lifecycle.known_room_no_input_transition",
+                HostDiagnostics.Create(
+                    "host.lifecycle.known_room_no_input_transition",
                     "info",
                     "runtime",
                     "none",
@@ -488,14 +478,14 @@ internal static class LiveObservationReader
         string reason,
         IReadOnlyList<string> warnings,
         ILiveContext? context,
-        GatewayDiagnostic diagnostic,
-        AuthorityHandoff? authorityHandoff = null)
+        HostDiagnostic diagnostic,
+        InputOwnership? inputOwnership = null)
     {
         var surface = new UnsupportedSurface("unsupported", sourceType, reason);
         context ??= new UnknownLiveContext(
             "unknown",
             sourceType,
-            "No qualified Gateway context projection is safe for this unsupported surface.");
+            "No complete player-visible context projection is safe for this unsupported surface.");
         var completeness = new StateCompleteness(
             "not_implemented",
             "empty_fail_closed",
@@ -512,24 +502,13 @@ internal static class LiveObservationReader
             game,
             warnings)
         {
-            AuthorityHandoff = authorityHandoff ?? new AuthorityHandoff(
+            InputOwnership = inputOwnership ?? new InputOwnership(
                 "none_fail_closed",
                 null,
-                "The Gateway could not prove a safe action-authority handoff for this state."),
+                "The Host could not identify one safe current input owner for this state."),
             Diagnostics = new[] { diagnostic }
         };
     }
-
-    internal static LiveObservation ApplyCurrentAuthority(LiveObservation observation) =>
-        observation.Surface is UnsupportedSurface
-            ? observation with
-            {
-                AuthorityHandoff = new AuthorityHandoff(
-                    "none_fail_closed",
-                    null,
-                    "An unsupported surface cannot own Gateway mutation authority.")
-            }
-            : observation;
 
     internal static LiveObservation ApplyMissingPersistentStatePolicy(
         LiveObservation observation,
@@ -556,18 +535,18 @@ internal static class LiveObservationReader
             Reason: "settling"
         }
         && string.Equals(
-            observation.AuthorityHandoff.Status,
+            observation.InputOwnership.Status,
             "none_fail_closed",
             StringComparison.Ordinal)
-        && observation.AuthorityHandoff.SurfaceKind == null
+        && observation.InputOwnership.SurfaceKind == null
         && string.Equals(
-            observation.Completeness.LegalActions,
+            observation.Completeness.InteractionDiscovery,
             "none_no_input_owner",
             StringComparison.Ordinal);
 
     private static LiveObservation DeferMissingPersistentState(
         LiveObservation observation,
-        GatewayDiagnostic? failure)
+        HostDiagnostic? failure)
     {
         var completeness = observation.Completeness with
         {
@@ -577,8 +556,8 @@ internal static class LiveObservationReader
                 .Distinct()
                 .ToArray()
         };
-        var diagnostic = new GatewayDiagnostic(
-            "gateway.persistent_state.deferred_during_run_mount_transition",
+        var diagnostic = new HostDiagnostic(
+            "host.persistent_state.deferred_during_run_mount_transition",
             "warning",
             "visibility",
             "field_omitted",
@@ -601,7 +580,7 @@ internal static class LiveObservationReader
 
     private static LiveObservation FailClosedForMissingPersistentState(
         LiveObservation observation,
-        GatewayDiagnostic? failure)
+        HostDiagnostic? failure)
     {
         var surface = new UnsupportedSurface(
             "unsupported",
@@ -628,10 +607,10 @@ internal static class LiveObservationReader
             observation.Game,
             observation.Warnings.Append("active_run_persistent_visible_state_unavailable").ToArray())
         {
-            AuthorityHandoff = new AuthorityHandoff(
+            InputOwnership = new InputOwnership(
                 "none_fail_closed",
                 null,
-                "The Gateway cannot grant action authority without the decision-relevant persistent run HUD."),
+                "The Host cannot expose executable actions without the decision-relevant persistent run HUD."),
             Diagnostics = failure == null
                 ? observation.Diagnostics
                 : observation.Diagnostics.Append(failure).ToArray()

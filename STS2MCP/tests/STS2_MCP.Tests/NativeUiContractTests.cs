@@ -24,87 +24,6 @@ public sealed class NativeUiContractTests
             4));
     }
 
-    [Theory]
-    [InlineData(true, "settling", "combat_turn", 0, false, "supported")]
-    [InlineData(true, "settling", "treasure_room", 0, false, "supported")]
-    [InlineData(true, "ready", "combat_turn", 0, false, "unsupported")]
-    [InlineData(true, "ready", "combat_turn", 1, true, "trial")]
-    [InlineData(true, "ready", "combat_turn", 1, false, "supported")]
-    [InlineData(true, "settling", "unsupported", 0, false, "unsupported")]
-    [InlineData(false, "settling", "combat_turn", 0, false, "unsupported")]
-    public void ExecutionSupportKeepsKnownSettlingInteractionsDistinctFromUnsupported(
-        bool actionExecutionAllowed,
-        string readiness,
-        string surfaceKind,
-        int bindingCount,
-        bool hasTrialBinding,
-        string expected)
-    {
-        Assert.Equal(
-            expected,
-            NativeUiActionRuntime.ClassifyExecutionSupport(
-                actionExecutionAllowed,
-                readiness,
-                surfaceKind,
-                bindingCount,
-                hasTrialBinding));
-    }
-
-    [Fact]
-    public void SourceUnresolvedSurfaceIsVisibleButUnsupportedEvenWhileDegraded()
-    {
-        Assert.Equal(
-            "unsupported",
-            NativeUiActionRuntime.ClassifyExecutionSupport(
-                actionExecutionAllowed: true,
-                readiness: "degraded",
-                surfaceKind: "deck_enchant_selection",
-                bindingCount: 0,
-                hasTrialBinding: false,
-                visibleUnsupported: true));
-    }
-
-    [Theory]
-    [InlineData(true, true, true, false)]
-    [InlineData(false, true, true, true)]
-    [InlineData(true, false, true, true)]
-    [InlineData(true, true, false, true)]
-    public void CombatHandConfirmAcceptsControlConsumptionOrOwnerHandoff(
-        bool ownerIsCurrent,
-        bool confirmIsEnabled,
-        bool confirmIsVisible,
-        bool expected)
-    {
-        Assert.Equal(
-            expected,
-            CombatHandCardSelectionSurfaceReader.ConfirmCompletionObserved(
-                ownerIsCurrent,
-                confirmIsEnabled,
-                confirmIsVisible));
-    }
-
-    [Theory]
-    [InlineData(false, false, false, false, true)]
-    [InlineData(true, false, false, true, true)]
-    [InlineData(true, true, true, false, true)]
-    [InlineData(true, true, false, false, false)]
-    [InlineData(true, false, true, false, false)]
-    public void CombatMutationCompletionWaitsForNativeQueueSettlement(
-        bool combatInProgress,
-        bool sourceMutationObserved,
-        bool actionQueueEmpty,
-        bool requiredSubsurfaceOpened,
-        bool expected)
-    {
-        Assert.Equal(
-            expected,
-            CombatTurnSurfaceReader.HasQueuedMutationCompletionBoundary(
-                combatInProgress,
-                sourceMutationObserved,
-                actionQueueEmpty,
-                requiredSubsurfaceOpened));
-    }
-
     [Fact]
     public void GenericControlsOnOneOwnerHaveDistinctSemanticOperands()
     {
@@ -157,117 +76,6 @@ public sealed class NativeUiContractTests
     }
 
     [Fact]
-    public void DeckUpgradeNativeDiscoveryKeepsStageAndExactMembership()
-    {
-        var card = new VisibleCard(
-            "deck-card-a", "STRIKE", "Strike", "Attack", "1", null,
-            "Deal 6 damage.", "Basic", false, true, null);
-        var selecting = new DeckUpgradeSelectionSurface(
-            "deck_upgrade_selection",
-            "selecting",
-            "upgrade-screen",
-            "Choose a card to Upgrade.",
-            1,
-            1,
-            0,
-            Array.Empty<string>(),
-            true,
-            new[] { card.EntityId },
-            Array.Empty<string>(),
-            true,
-            false,
-            false,
-            new[] { card },
-            Array.Empty<VisibleCard>());
-        NativeUiActionDescriptor[] selectingCommands =
-            NativeUiActionRuntime.DescribeDeckUpgradeCommands(selecting).ToArray();
-
-        Assert.Contains(selectingCommands, command =>
-            command.Kind == "toggle_deck_upgrade_card"
-            && command.EntityBindings!.Any(binding =>
-                binding.Role == "screen" && binding.EntityId == "upgrade-screen")
-            && command.EntityBindings!.Any(binding =>
-                binding.Role == "card" && binding.EntityId == card.EntityId));
-        Assert.Contains(selectingCommands, command =>
-            command.Kind == "cancel_deck_upgrade_selection");
-        Assert.DoesNotContain(selectingCommands, command =>
-            command.Kind is "confirm_deck_upgrade" or "cancel_deck_upgrade_preview");
-
-        var preview = selecting with
-        {
-            Stage = "preview",
-            SelectedCount = 1,
-            SelectedCardEntityIds = new[] { card.EntityId },
-            SelectableCardEntityIds = Array.Empty<string>(),
-            CanCancelSelection = false,
-            CanCancelPreview = true,
-            CanConfirm = true
-        };
-        NativeUiActionDescriptor[] previewCommands =
-            NativeUiActionRuntime.DescribeDeckUpgradeCommands(preview).ToArray();
-
-        Assert.Contains(previewCommands, command =>
-            command.Kind == "cancel_deck_upgrade_preview");
-        NativeUiActionDescriptor confirm = Assert.Single(previewCommands, command =>
-            command.Kind == "confirm_deck_upgrade");
-        Assert.Contains(confirm.EntityBindings!, binding =>
-            binding.Role == "card" && binding.EntityId == card.EntityId);
-        Assert.DoesNotContain(previewCommands, command =>
-            command.Kind is "toggle_deck_upgrade_card" or "cancel_deck_upgrade_selection");
-    }
-
-    [Fact]
-    public void DeckRemovalNativeDiscoveryKeepsSourceSpecificContractsSeparate()
-    {
-        var card = new VisibleCard(
-            "deck-card-a", "STRIKE", "Strike", "Attack", "1", null,
-            "Deal 6 damage.", "Basic", false, true, null);
-        var merchant = new DeckRemovalSelectionSurface(
-            "deck_removal_selection",
-            "selecting",
-            "removal-screen",
-            "Choose a card to remove.",
-            1,
-            1,
-            1,
-            new[] { card.EntityId },
-            true,
-            Array.Empty<string>(),
-            new[] { card.EntityId },
-            true,
-            true,
-            false,
-            false,
-            new[] { card });
-
-        NativeUiActionDescriptor[] commands =
-            NativeUiActionRuntime.DescribeDeckRemovalCommands(merchant).ToArray();
-
-        Assert.Contains(commands, command => command.Kind == "toggle_deck_removal_card");
-        Assert.Contains(commands, command => command.Kind == "preview_deck_removal");
-        Assert.Contains(commands, command => command.Kind == "cancel_deck_removal_selection");
-        Assert.All(commands, command => Assert.Contains(
-            command.EntityBindings!,
-            binding => binding.Role == "screen" && binding.EntityId == "removal-screen"));
-
-        NativeUiActionDescriptor[] relic = NativeUiActionRuntime.DescribeDeckRemovalCommands(
-            merchant with { Kind = "relic_deck_removal_selection" }).ToArray();
-        Assert.Contains(relic, command => command.Key.StartsWith(
-            "deselect_precise_scissors_removal_card",
-            StringComparison.Ordinal));
-        Assert.DoesNotContain(relic, command =>
-            command.Kind == "cancel_deck_removal_selection");
-
-        NativeUiActionDescriptor[] reward = NativeUiActionRuntime.DescribeDeckRemovalCommands(
-            merchant with { Kind = "reward_deck_removal_selection" }).ToArray();
-        Assert.Contains(reward, command => command.Key.StartsWith(
-            "deselect_card_removal_reward_removal_card",
-            StringComparison.Ordinal));
-        Assert.Contains(reward, command =>
-            command.Kind == "cancel_deck_removal_selection");
-    }
-
-    [Fact]
     public void DeckEnchantNativeDiscoveryKeepsPurposeStageAndMembership()
     {
         var card = new VisibleCard(
@@ -277,10 +85,6 @@ public sealed class NativeUiContractTests
             "deck_enchant_selection",
             "selecting",
             "enchant-screen",
-            new DeckEnchantSource(
-                "symbiote_event",
-                "SYMBIOTE",
-                "Symbiote+exact_task"),
             "Choose a card.",
             1,
             1,
@@ -380,10 +184,6 @@ public sealed class NativeUiContractTests
             "deck_transform_selection",
             "selecting",
             "transform-screen",
-            new DeckTransformSource(
-                "whispering_hollow_event",
-                "WHISPERING_HOLLOW",
-                "WhisperingHollow.Hug+CardSelectCmd.FromDeckForTransformation"),
             "Choose a card to transform.",
             1,
             1,
@@ -409,66 +209,32 @@ public sealed class NativeUiContractTests
             command.EntityBindings!,
             binding => binding.Role == "screen" && binding.EntityId == "transform-screen"));
 
-        var wood = new WoodCarvingsReplacementSelectionSurface(
-            "wood_carvings_replacement_selection",
-            "preview",
-            "wood-screen",
-            "Choose a card.",
-            "bird",
-            "PECK",
-            "Peck",
-            "Replacement",
-            1,
-            1,
-            1,
-            new[] { card.EntityId },
-            new[] { card })
-        {
-            CanConfirm = true,
-            CanCancelPreview = true
-        };
-        NativeUiActionDescriptor[] woodCommands =
-            NativeUiActionRuntime.DescribeWoodCarvingsCommands(wood).ToArray();
-        Assert.Contains(woodCommands, command => command.Kind == "confirm_wood_carvings_replacement");
-        Assert.Contains(woodCommands, command => command.Kind == "cancel_wood_carvings_replacement_preview");
-
-        var pile = new CombatPileCardSelectionSurface(
-            "combat_pile_card_selection",
+        var pile = new NativeCombatPileSelectionSurface(
+            NativeCombatPileSelection.SurfaceKind,
+            "selecting",
             "pile-screen",
             "Choose a card.",
-            "move cards",
-            "move_selected_cards",
-            "manual_confirm",
-            "cleanse",
-            "card",
-            "source-card",
-            "CLEANSE",
-            "source-card",
-            "CLEANSE",
             "discard",
-            "draw",
-            "top",
-            null,
-            null,
             0,
             1,
             1,
             new[] { card.EntityId },
-            true,
-            false,
-            new[] { card })
-        {
-            DeselectableCardEntityIds = new[] { card.EntityId },
-            CanConfirm = true
-        };
+            Array.Empty<string>(),
+            new[] { card.EntityId },
+            Cancelable: false,
+            CanCancel: false,
+            CanConfirm: true,
+            Cards: new[] { card });
         NativeUiActionDescriptor[] pileCommands =
-            NativeUiActionRuntime.DescribeCombatPileCommands(pile).ToArray();
-        Assert.Contains(pileCommands, command => command.Kind == "toggle_combat_pile_card");
+            NativeCombatPileSelection.DescribeCommands(pile).ToArray();
+        Assert.Contains(pileCommands, command => command.Kind == NativeCombatPileSelection.DeselectOperation);
         NativeUiActionDescriptor pileConfirm = Assert.Single(
             pileCommands,
-            command => command.Kind == "confirm_combat_pile_selection");
+            command => command.Kind == NativeCombatPileSelection.ConfirmOperation);
         Assert.Contains(pileConfirm.EntityBindings!, binding =>
-            binding.Role == "source" && binding.EntityId == "source-card");
+            binding.Role == "screen" && binding.EntityId == "pile-screen");
+        Assert.DoesNotContain(pileCommands.SelectMany(command => command.EntityBindings!), binding =>
+            binding.Role == "source");
     }
 
     [Fact]
@@ -510,112 +276,6 @@ public sealed class NativeUiContractTests
         Assert.Contains(previewStage, command => command.Kind == "confirm_card_bundle");
         Assert.Contains(previewStage, command => command.Kind == "cancel_card_bundle_preview");
         Assert.DoesNotContain(previewStage, command => command.Kind == "preview_card_bundle");
-    }
-
-    [Fact]
-    public void EventRemovalNativeDiscoveryRequiresExactSourceStageAndMembership()
-    {
-        var first = new VisibleCard(
-            "deck-card-a", "STRIKE", "Strike", "Attack", "1", null,
-            "Deal 6 damage.", "Basic", false, true, null);
-        var second = first with
-        {
-            EntityId = "deck-card-b",
-            DefinitionId = "DEFEND",
-            Name = "Defend"
-        };
-        var selecting = new EventDeckRemovalSelectionSurface(
-            EventDeckRemovalSelection.SurfaceKind,
-            "selecting",
-            "event-removal-screen",
-            EventDeckRemovalSelection.SourceKind,
-            "remove_two_cards_then_gain_spore_mind",
-            "Choose 2 cards to remove.",
-            2,
-            2,
-            1,
-            new[] { first.EntityId },
-            new[] { second.EntityId },
-            new[] { first.EntityId },
-            false,
-            false,
-            new[] { "remove_selected_cards", "add_spore_mind", "finish_event" },
-            new[] { first, second });
-
-        NativeUiActionDescriptor[] selectingCommands =
-            EventDeckRemovalSelection.DescribeCommands(selecting).ToArray();
-        Assert.Contains(selectingCommands, command =>
-            command.Kind == "toggle_event_deck_removal_card"
-            && command.EntityBindings!.Any(binding =>
-                binding.Role == "card" && binding.EntityId == second.EntityId));
-        Assert.DoesNotContain(selectingCommands, command =>
-            command.Kind == "confirm_event_deck_removal");
-
-        var preview = selecting with
-        {
-            Stage = "preview",
-            SelectedCount = 2,
-            SelectedCardEntityIds = new[] { first.EntityId, second.EntityId },
-            SelectableCardEntityIds = Array.Empty<string>(),
-            DeselectableCardEntityIds = Array.Empty<string>(),
-            CanCancelPreview = true,
-            CanConfirm = true
-        };
-        NativeUiActionDescriptor[] previewCommands =
-            EventDeckRemovalSelection.DescribeCommands(preview).ToArray();
-        Assert.Contains(previewCommands, command =>
-            command.Kind == "cancel_event_deck_removal_preview");
-        NativeUiActionDescriptor confirm = Assert.Single(previewCommands, command =>
-            command.Kind == "confirm_event_deck_removal");
-        Assert.Equal(2, confirm.EntityBindings!.Count(binding => binding.Role == "card"));
-
-        Assert.Empty(EventDeckRemovalSelection.DescribeCommands(
-            selecting with { SourceKind = "unknown" }));
-        Assert.Equal(
-            "ReachIntoTheFlesh",
-            LuminousChoirDeckRemovalSourcePatch.ResolveTargetMethod().Name);
-        Assert.Equal(
-            EventDeckRemovalSourceBinding.Resolution.None,
-            EventDeckRemovalSourceBinding.Read(out EventDeckRemovalSourceBinding.ActiveBinding? binding));
-        Assert.Null(binding);
-    }
-
-    [Fact]
-    public void EventRemovalWitnessRequiresWholeNativeTransaction()
-    {
-        var removedA = new object();
-        var removedB = new object();
-        var retained = new object();
-        var sporeMind = new object();
-        object[] baseline = { removedA, removedB, retained };
-        object[] selected = { removedA, removedB };
-        object[] completed = { retained, sporeMind };
-
-        Assert.True(EventDeckRemovalSelection.CompletionSatisfied(
-            true, true, true, baseline, completed, selected, 0, 1));
-        Assert.False(EventDeckRemovalSelection.CompletionSatisfied(
-            true, true, false, baseline, completed, selected, 0, 1));
-        Assert.False(EventDeckRemovalSelection.CompletionSatisfied(
-            true, true, true, baseline, new[] { removedA, retained, sporeMind }, selected, 0, 1));
-        Assert.False(EventDeckRemovalSelection.CompletionSatisfied(
-            true, true, true, baseline, completed, selected, 0, 0));
-
-        Assert.True(EventDeckRemovalSelection.ToggleCompletionSatisfied(
-            isCurrent: true,
-            isSelected: true,
-            expectedSelected: false));
-        Assert.True(EventDeckRemovalSelection.ToggleCompletionSatisfied(
-            isCurrent: true,
-            isSelected: false,
-            expectedSelected: true));
-        Assert.False(EventDeckRemovalSelection.ToggleCompletionSatisfied(
-            isCurrent: false,
-            isSelected: true,
-            expectedSelected: false));
-        Assert.False(EventDeckRemovalSelection.ToggleCompletionSatisfied(
-            isCurrent: true,
-            isSelected: false,
-            expectedSelected: false));
     }
 
     [Fact]
@@ -784,15 +444,12 @@ public sealed class NativeUiContractTests
     [Fact]
     public void GeneratedChoiceNativeOperandsBindOwnerAndExactCard()
     {
-        var surface = new GeneratedCardChoiceSurface(
-            "generated_card_choice",
+        var surface = new NativeGeneratedCardChoiceSurface(
+            NativeGeneratedCardChoice.SurfaceKind,
+            "choosing",
             "generated-screen",
             "Choose a Card",
-            "choose_one_generated_combat_card",
-            "skill_potion",
-            "combat_hand",
-            "free_this_turn",
-            "combat_discard_if_hand_full",
+            new[] { "generated-card" },
             CanSkip: true,
             IsPeeking: false,
             Cards: new[]
@@ -803,27 +460,19 @@ public sealed class NativeUiContractTests
                 new VisibleCard(
                     "blocked-card", "BATTLE_TRANCE", "Battle Trance", "Skill", "0", null,
                     "Draw cards.", "Uncommon", false, false, null)
-            })
-        {
-            SelectableCardEntityIds = new[] { "generated-card" },
-            SkipAvailable = true,
-            SelectOperation = "select_generated_combat_card",
-            SkipOperation = "skip_generated_combat_card_choice",
-            SelectCompletionEvidence = "exact-generated-combat-card-witness",
-            SkipCompletionEvidence = "unchanged-combat-piles-witness"
-        };
+            });
         NativeUiActionDescriptor[] commands =
-            NativeUiActionRuntime.DescribeGeneratedCardChoiceCommands(surface).ToArray();
+            NativeGeneratedCardChoice.DescribeCommands(surface).ToArray();
 
         Assert.Equal(2, commands.Length);
-        Assert.Contains(commands, command => command.Kind == "select_generated_combat_card"
+        Assert.Contains(commands, command => command.Kind == NativeGeneratedCardChoice.SelectOperation
             && command.EntityBindings!.Any(binding => binding.EntityId == "generated-card"));
         Assert.DoesNotContain(commands, command => command.EntityBindings!.Any(binding =>
             binding.EntityId == "blocked-card"));
-        Assert.Contains(commands, command => command.Kind == "skip_generated_combat_card_choice");
+        Assert.Contains(commands, command => command.Kind == NativeGeneratedCardChoice.SkipOperation);
 
         Dictionary<string, string> select = NativeUiActionRuntime.BuildCommandOperands(
-            "select_generated_combat_card",
+            NativeGeneratedCardChoice.SelectOperation,
             "select_entity",
             new[]
             {
@@ -831,57 +480,56 @@ public sealed class NativeUiContractTests
                 new ActionEntityBinding("card", "generated-card")
             });
         Dictionary<string, string> skip = NativeUiActionRuntime.BuildCommandOperands(
-            "skip_generated_combat_card_choice",
+            NativeGeneratedCardChoice.SkipOperation,
             "activate_control",
             new[] { new ActionEntityBinding("screen", "generated-screen") });
 
         Assert.Equal("generated-screen", select["screen_id"]);
         Assert.Equal("generated-card", select["card_id"]);
         Assert.Equal("generated-screen", skip["screen_id"]);
-        Assert.Equal("skip_generated_combat_card_choice", skip["control_id"]);
+        Assert.Equal(NativeGeneratedCardChoice.SkipOperation, skip["control_id"]);
         Assert.DoesNotContain("action_id", select.Keys);
         Assert.DoesNotContain("action_id", skip.Keys);
     }
 
     [Fact]
-    public void EventCardAcquisitionNativeDiscoveryKeepsExactSelectionState()
+    public void SimpleCardSelectionUsesCurrentUiFactsWithoutOpeningSourceAuthority()
     {
-        static VisibleCard Card(string entityId, string name, bool selected) =>
-            new(entityId, name.ToUpperInvariant(), name, "Skill", "1", null, null,
-                "Common", false, selected, null);
-        var surface = new EventCardAcquisitionSurface(
-            "event_card_acquisition",
-            "event-grid",
-            "Choose cards",
-            "run_deck",
+        var card = new VisibleCard(
+            "simple-card", "STRIKE", "Strike", "Attack", "1", null,
+            "Deal 6 damage.", "Basic", false, true, null);
+        var surface = new NativeSimpleCardSelectionSurface(
+            NativeSimpleCardSelection.SurfaceKind,
+            "selecting",
+            "simple-screen",
+            "Choose a card",
             1,
             2,
             1,
-            new[] { "card-selected" },
-            RequireManualConfirmation: false,
-            new[]
-            {
-                Card("card-option", "Option", selected: false),
-                Card("card-selected", "Selected", selected: true),
-                Card("card-blocked", "Blocked", selected: false)
-            })
-        {
-            SelectableCardEntityIds = new[] { "card-option" },
-            DeselectableCardEntityIds = new[] { "card-selected" }
-        };
+            new[] { card.EntityId },
+            Array.Empty<string>(),
+            new[] { card.EntityId },
+            Cancelable: true,
+            RequireManualConfirmation: true,
+            CanCancel: true,
+            CanConfirm: true,
+            Cards: new[] { card });
 
         NativeUiActionDescriptor[] commands =
-            NativeUiActionRuntime.DescribeEventCardAcquisitionCommands(surface).ToArray();
+            NativeSimpleCardSelection.DescribeCommands(surface).ToArray();
 
-        Assert.Equal(2, commands.Length);
         Assert.Contains(commands, command =>
-            command.Kind == "select_event_card_acquisition"
-            && command.EntityBindings!.Any(binding => binding.EntityId == "card-option"));
-        Assert.Contains(commands, command =>
-            command.Kind == "deselect_event_card_acquisition"
-            && command.EntityBindings!.Any(binding => binding.EntityId == "card-selected"));
-        Assert.DoesNotContain(commands.SelectMany(command => command.EntityBindings!),
-            binding => binding.EntityId == "card-blocked");
+            command.Kind == NativeSimpleCardSelection.DeselectOperation
+            && command.EntityBindings!.Any(binding =>
+                binding.Role == "card" && binding.EntityId == card.EntityId));
+        Assert.Contains(commands, command => command.Kind == NativeSimpleCardSelection.ConfirmOperation);
+        Assert.Contains(commands, command => command.Kind == NativeSimpleCardSelection.CancelOperation);
+        Assert.All(commands, command => Assert.Contains(
+            command.EntityBindings!,
+            binding => binding.Role == "screen" && binding.EntityId == "simple-screen"));
+        Assert.DoesNotContain(
+            commands.SelectMany(command => command.EntityBindings!),
+            binding => binding.Role == "source");
     }
 
     [Fact]
@@ -902,27 +550,6 @@ public sealed class NativeUiContractTests
     }
 
     [Fact]
-    public void RestHealCompletionAcceptsExactRewardChildHandoff()
-    {
-        Assert.True(RestSiteSurfaceReader.HasHealCompletionBoundary(
-            currentHpReached: true,
-            optionProgressed: false,
-            rewardChildOpened: true));
-        Assert.True(RestSiteSurfaceReader.HasHealCompletionBoundary(
-            currentHpReached: true,
-            optionProgressed: true,
-            rewardChildOpened: false));
-        Assert.False(RestSiteSurfaceReader.HasHealCompletionBoundary(
-            currentHpReached: false,
-            optionProgressed: true,
-            rewardChildOpened: true));
-        Assert.False(RestSiteSurfaceReader.HasHealCompletionBoundary(
-            currentHpReached: true,
-            optionProgressed: false,
-            rewardChildOpened: false));
-    }
-
-    [Fact]
     public void RestNativeDescriptorsBindOnlyEnabledOptionsAndCurrentProceedControl()
     {
         var surface = new RestSiteSurface(
@@ -935,7 +562,7 @@ public sealed class NativeUiContractTests
             },
             CanProceed: true);
 
-        NativeUiActionDescriptor[] commands = NativeUiActionRuntime.DescribeRestSiteCommands(surface).ToArray();
+        NativeUiActionDescriptor[] commands = NativeRestSite.DescribeCommands(surface).ToArray();
 
         Assert.Equal(2, commands.Length);
         NativeUiActionDescriptor choose = Assert.Single(commands, command => command.Kind == "choose_rest_option");
@@ -972,122 +599,6 @@ public sealed class NativeUiContractTests
         Assert.Equal("node-b", map["map_node_id"]);
         Assert.Equal("screen-c", rest["screen_id"]);
         Assert.Equal("option-d", rest["rest_option_id"]);
-    }
-
-    [Fact]
-    public void DeckEnchantRegistryLoadsReviewedExactSourceContracts()
-    {
-        Assert.Null(DeckEnchantSourceContractRegistry.LoadError);
-        Assert.Equal(4, DeckEnchantSourceContractRegistry.Contracts.Count);
-        Assert.Equal(
-            new[]
-            {
-                "kifuda_relic_pickup",
-                "royal_stamp_relic_pickup",
-                "self_help_book_event",
-                "symbiote_event"
-            },
-            DeckEnchantSourceContractRegistry.Contracts
-                .Select(contract => contract.SourceKind)
-                .OrderBy(kind => kind, StringComparer.Ordinal));
-    }
-
-    [Fact]
-    public void RoyalStampEnchantSourceRequiresExactOwnerAndNativeShape()
-    {
-        DeckEnchantSourceContract contract = Assert.Single(
-            DeckEnchantSourceContractRegistry.Contracts,
-            candidate => candidate.SourceKind == "royal_stamp_relic_pickup");
-
-        Assert.True(DeckEnchantSourceContractRegistry.MatchesSourceShape(
-            contract,
-            "owned_relic",
-            "MegaCrit.Sts2.Core.Models.Relics.RoyalStamp",
-            "ROYAL_STAMP",
-            "MegaCrit.Sts2.Core.Models.Enchantments.RoyallyApproved",
-            1,
-            1,
-            1,
-            requireManualConfirmation: false,
-            cancelable: false));
-        Assert.False(DeckEnchantSourceContractRegistry.MatchesSourceShape(
-            contract,
-            "current_event",
-            "MegaCrit.Sts2.Core.Models.Relics.RoyalStamp",
-            "ROYAL_STAMP",
-            "MegaCrit.Sts2.Core.Models.Enchantments.RoyallyApproved",
-            1,
-            1,
-            1,
-            requireManualConfirmation: false,
-            cancelable: false));
-        Assert.False(DeckEnchantSourceContractRegistry.MatchesSourceShape(
-            contract,
-            "owned_relic",
-            "MegaCrit.Sts2.Core.Models.Relics.RoyalStamp",
-            "ROYAL_STAMP",
-            "MegaCrit.Sts2.Core.Models.Enchantments.RoyallyApproved",
-            2,
-            1,
-            1,
-            requireManualConfirmation: false,
-            cancelable: false));
-    }
-
-    [Fact]
-    public void SymbioteAndKifudaContractsDoNotCollapseDifferentOwnersOrBounds()
-    {
-        DeckEnchantSourceContract symbiote = Assert.Single(
-            DeckEnchantSourceContractRegistry.Contracts,
-            candidate => candidate.SourceKind == "symbiote_event");
-        DeckEnchantSourceContract kifuda = Assert.Single(
-            DeckEnchantSourceContractRegistry.Contracts,
-            candidate => candidate.SourceKind == "kifuda_relic_pickup");
-
-        Assert.True(DeckEnchantSourceContractRegistry.MatchesSourceShape(
-            symbiote,
-            "current_event",
-            symbiote.SourceType,
-            symbiote.DefinitionId,
-            symbiote.EnchantmentTypes[0],
-            1,
-            1,
-            1,
-            requireManualConfirmation: false,
-            cancelable: false));
-        Assert.False(DeckEnchantSourceContractRegistry.MatchesSourceShape(
-            symbiote,
-            "owned_relic",
-            symbiote.SourceType,
-            symbiote.DefinitionId,
-            symbiote.EnchantmentTypes[0],
-            1,
-            1,
-            1,
-            requireManualConfirmation: false,
-            cancelable: false));
-        Assert.True(DeckEnchantSourceContractRegistry.MatchesSourceShape(
-            kifuda,
-            "owned_relic",
-            kifuda.SourceType,
-            kifuda.DefinitionId,
-            kifuda.EnchantmentTypes[0],
-            3,
-            0,
-            3,
-            requireManualConfirmation: true,
-            cancelable: false));
-        Assert.False(DeckEnchantSourceContractRegistry.MatchesSourceShape(
-            kifuda,
-            "owned_relic",
-            kifuda.SourceType,
-            kifuda.DefinitionId,
-            kifuda.EnchantmentTypes[0],
-            3,
-            1,
-            1,
-            requireManualConfirmation: false,
-            cancelable: false));
     }
 
     [Fact]
@@ -1161,14 +672,26 @@ public sealed class NativeUiContractTests
             "game-over-screen",
             null,
             true,
-            false);
+            false,
+            Array.Empty<VisibleMenuOption>());
         var summary = new GameOverSurface(
             "game_over",
             "summary",
             "game-over-screen",
             "main_menu",
             false,
-            true);
+            true,
+            new[]
+            {
+                new VisibleMenuOption(
+                    "view-run",
+                    "view_run",
+                    "View Run",
+                    null,
+                    true,
+                    "visible_unsupported",
+                    "outside C1")
+            });
 
         NativeUiActionDescriptor advance = Assert.Single(
             NativeUiActionRuntime.DescribeGameOverCommands(intro));
@@ -1570,8 +1093,7 @@ public sealed class NativeUiContractTests
                     new[] { "creature-session-2", "creature-session-3" })
             },
             Array.Empty<ActionEntityBinding>(),
-            "native_ui_binding",
-            "supported");
+            "native_ui_binding");
 
         Assert.True(NativeUiActionRuntime.OperandsMatch(
             candidate,

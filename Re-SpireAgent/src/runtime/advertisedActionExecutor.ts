@@ -37,8 +37,8 @@ export type AdvertisedActionExecution =
 
 /**
  * The single Re-side execution boundary for an action advertised by the
- * current observation. It adds no game legality: the Gateway remains the
- * authority and revalidates again when the command is submitted.
+ * current observation. It adds no game legality: the Player Environment Host
+ * remains the authority and revalidates again when the action is submitted.
  */
 export async function executeAdvertisedAction<TAction extends { kind: string }>(input: {
   readonly pre: StateEnvelope;
@@ -84,7 +84,7 @@ export async function executeAdvertisedAction<TAction extends { kind: string }>(
         stage: "adapter_stale",
         outcome: "not_executed_stale_state",
         adapterResult,
-        error: "Gateway rejected the action because its state binding became stale"
+        error: "Player Environment rejected the action because its snapshot binding became stale"
       };
     }
     const unknown = adapterResult.outcome === "unknown";
@@ -105,11 +105,11 @@ export async function executeAdvertisedAction<TAction extends { kind: string }>(
     adapterResult.confirmedStateToken,
     input.selectedAction.kind
   );
-  const bridgeCheckpointPending = adapterResult.settlementAuthority === "adapter_confirmed"
+  const successorCheckpointPending = adapterResult.settlementAuthority === "adapter_confirmed"
     && settlement.status !== "settled";
   const outcome = settlement.status === "settled"
     ? "executed_and_settled"
-    : bridgeCheckpointPending
+    : successorCheckpointPending
       ? "executed_checkpoint_pending"
       : "executed_unsettled";
   return {

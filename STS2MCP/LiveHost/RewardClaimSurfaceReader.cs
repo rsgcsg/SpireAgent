@@ -205,12 +205,7 @@ internal sealed class RewardClaimSurfaceReader : ILiveSurfaceReader
                 "The exact rewards screen, reward, or local player is no longer available.");
         }
 
-        NRewardButton[] buttons = McpMod.FindAll<NRewardButton>(screen)
-            .Where(candidate => McpMod.IsNodeVisible(candidate) && candidate.Reward != null)
-            .OrderBy(candidate => candidate.Position.Y)
-            .ThenBy(candidate => candidate.Position.X)
-            .ToArray();
-        return StartClaim(screen, player, button, button.Reward, buttons);
+        return StartClaim(screen, player, button, button.Reward);
     }
 
     internal static NativeInputResult StartProceed(
@@ -226,12 +221,7 @@ internal sealed class RewardClaimSurfaceReader : ILiveSurfaceReader
                 "The exact rewards screen or proceed control is no longer available.");
         }
 
-        NRewardButton[] buttons = McpMod.FindAll<NRewardButton>(screen)
-            .Where(candidate => McpMod.IsNodeVisible(candidate) && candidate.Reward != null)
-            .OrderBy(candidate => candidate.Position.Y)
-            .ThenBy(candidate => candidate.Position.X)
-            .ToArray();
-        return StartProceed(screen, proceed, buttons);
+        return StartProceed(screen, proceed);
     }
 
     internal static NativeInputResult StartDiscardPotion(
@@ -264,8 +254,7 @@ internal sealed class RewardClaimSurfaceReader : ILiveSurfaceReader
         NRewardsScreen expectedScreen,
         Player expectedPlayer,
         NRewardButton expectedButton,
-        Reward expectedReward,
-        IReadOnlyList<NRewardButton> previousButtons)
+        Reward expectedReward)
     {
         if (!IsCurrent(expectedScreen)
             || !McpMod.FindAll<NRewardButton>(expectedScreen).Any(button => ReferenceEquals(button, expectedButton))
@@ -280,17 +269,12 @@ internal sealed class RewardClaimSurfaceReader : ILiveSurfaceReader
         }
 
         expectedButton.ForceClick();
-        return NativeInputResult.Started(
-            () => !IsCurrent(expectedScreen)
-                  || !ReferenceEquals(NOverlayStack.Instance?.Peek(), expectedScreen)
-                  || RewardSetChanged(expectedScreen, previousButtons),
-            "reward_claimed_or_reward_surface_replaced");
+        return NativeInputResult.Delivered("native_reward_button_clicked");
     }
 
     private static NativeInputResult StartProceed(
         NRewardsScreen expectedScreen,
-        NProceedButton expectedButton,
-        IReadOnlyList<NRewardButton> previousButtons)
+        NProceedButton expectedButton)
     {
         if (!IsCurrent(expectedScreen)
             || McpMod.FindFirst<NProceedButton>(expectedScreen) is not { } currentButton
@@ -304,12 +288,7 @@ internal sealed class RewardClaimSurfaceReader : ILiveSurfaceReader
         }
 
         expectedButton.ForceClick();
-        return NativeInputResult.Started(
-            () => !IsCurrent(expectedScreen)
-                  || RewardSetChanged(expectedScreen, previousButtons)
-                  || IsVisibleMapAfterRewards(),
-            "rewards_proceeded_or_visible_map_opened_or_reward_surface_replaced",
-            allowIntermediateStateChanges: true);
+        return NativeInputResult.Delivered("native_rewards_proceed_button_clicked");
     }
 
     private static NativeInputResult StartDiscardPotion(
@@ -335,19 +314,7 @@ internal sealed class RewardClaimSurfaceReader : ILiveSurfaceReader
             (uint)expectedSlot,
             CombatManager.Instance.IsInProgress);
         RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(action);
-        return NativeInputResult.Started(
-            () => !IsCurrent(expectedScreen)
-                  || !ReferenceEquals(expectedPlayer.GetPotionAtSlotIndex(expectedSlot), expectedPotion),
-            "potion_slot_cleared_or_reward_surface_replaced");
-    }
-
-    private static bool RewardSetChanged(NRewardsScreen screen, IReadOnlyList<NRewardButton> previousButtons)
-    {
-        NRewardButton[] currentButtons = McpMod.FindAll<NRewardButton>(screen)
-            .Where(button => McpMod.IsNodeVisible(button) && button.Reward != null)
-            .ToArray();
-        return currentButtons.Length != previousButtons.Count
-               || currentButtons.Where((button, index) => !ReferenceEquals(button, previousButtons[index])).Any();
+        return NativeInputResult.Delivered("native_discard_potion_action_enqueued");
     }
 
     private static bool IsCurrent(NRewardsScreen screen) =>
@@ -384,6 +351,6 @@ internal sealed class RewardClaimSurfaceReader : ILiveSurfaceReader
             new[] { "NRewardsScreen exact-version binding" },
             missing,
             "reward_claim_binding_unavailable",
-            "gateway.surface.reward_claim.binding_unavailable",
-            "Reward source, controls, or completion semantics are not exact.");
+            "host.surface.reward_claim.binding_unavailable",
+            "The current visible reward entries or controls are not exact.");
 }

@@ -2,20 +2,20 @@
 
 ## New Engineer Path
 
-1. [Human Environment guide](HUMAN_ENVIRONMENT_NEW_ENGINEER_GUIDE.md)
+1. [Player Environment guide](PLAYER_ENVIRONMENT_NEW_ENGINEER_GUIDE.md)
 2. [Status](STATUS.md)
 3. [Architecture](ARCHITECTURE.md)
-4. [Human Information Closure](HUMAN_INFORMATION_CLOSURE.md)
-5. [ADR-0009](decisions/ADR-0009-human-environment-core-boundaries.md)
-6. [Implementation plan](HUMAN_ENVIRONMENT_IMPLEMENTATION_PLAN.md)
+4. [Information Closure](PLAYER_ENVIRONMENT_INFORMATION_CLOSURE.md)
+5. [ADR-0009](decisions/ADR-0009-player-environment-core-boundaries.md)
+6. [Implementation plan](PLAYER_ENVIRONMENT_IMPLEMENTATION_PLAN.md)
 7. [Roadmap](ROADMAP.md)
 
 ## Component Contracts
 
-- [Gateway HE protocol](../../STS2MCP/docs/human-environment/PROTOCOL.md)
-- [Gateway HE coverage](../../STS2MCP/docs/human-environment/COVERAGE.md)
-- [Re HE integration](../../Re-SpireAgent/docs/HUMAN_ENVIRONMENT_INTEGRATION.md)
-- [Machine-readable inventory](../../contracts/human-environment-contract.json)
+- [Player Environment protocol](../../STS2MCP/docs/player-environment/PROTOCOL.md)
+- [Player Environment coverage](../../STS2MCP/docs/player-environment/COVERAGE.md)
+- [Re integration](../../Re-SpireAgent/docs/PLAYER_ENVIRONMENT_INTEGRATION.md)
+- [Machine-readable contract](../../contracts/player-environment-contract.json)
 
 ## Operations
 
@@ -27,10 +27,11 @@
 
 ## Evidence And History
 
-- [2026-08-12 clean-baseline closeout](audits/HUMAN_ENVIRONMENT_CLEAN_BASELINE_CLOSEOUT_2026-08-12.md)
+- [2026-08-12 predecessor clean-baseline closeout](audits/HUMAN_ENVIRONMENT_CLEAN_BASELINE_CLOSEOUT_2026-08-12.md)
 - [2026-08-11 core/projection reaudit](audits/HUMAN_ENVIRONMENT_CORE_AND_PROJECTION_REAUDIT_2026-08-11.md)
-- [2026-08-11 temporary-freeze evidence](audits/HUMAN_ENVIRONMENT_TEMPORARY_FREEZE_CLOSEOUT_2026-08-11.md)
+- [2026-08-11 predecessor temporary-freeze evidence](audits/HUMAN_ENVIRONMENT_TEMPORARY_FREEZE_CLOSEOUT_2026-08-11.md)
 
-Dated audits preserve what their exact source/artifact/runtime established.
-They are not current implementation instructions. ADR-0008, Connector V3 and
-Bridge v2 documents explain migration history only.
+Dated audits preserve what their exact source, artifact and runtime established;
+they are not current implementation instructions. ADR-0008, Connector V3 and
+Bridge v2 are superseded migration history. Only the documents above define
+current Player Environment C1 source truth.

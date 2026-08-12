@@ -21,21 +21,16 @@ using STS2_MCP.LiveHost.Contracts;
 namespace STS2_MCP.LiveHost;
 
 /// <summary>
-/// Exact-build single-player treasure-room contract. The four stages retain
-/// different business commits and completion witnesses instead of flattening
-/// the room into a generic reward button.
+/// Exact-build single-player treasure-room adapter. The four UI stages remain
+/// distinct because they expose different native controls and current owners.
 /// </summary>
 internal sealed class TreasureRoomSurfaceReader : ILiveSurfaceReader
 {
     private const string SurfaceKind = "treasure_room";
-    internal const string OpenChestCompletionWitness =
-        "treasure_chest_opened_and_result_stage_reached";
-    internal const string ChooseRelicCompletionWitness =
-        "treasure_relic_owned_and_selection_closed";
-    internal const string SkipRelicCompletionWitness =
-        "treasure_relic_skipped_without_inventory_change_and_room_left";
-    internal const string ProceedCompletionWitness =
-        "treasure_room_left_or_map_opened";
+    internal const string OpenChestDeliveryEvidence = "native_treasure_chest_clicked";
+    internal const string ChooseRelicDeliveryEvidence = "native_treasure_relic_holder_clicked";
+    internal const string SkipRelicDeliveryEvidence = "native_treasure_skip_button_clicked";
+    internal const string ProceedDeliveryEvidence = "native_treasure_proceed_button_clicked";
     private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
     private static readonly FieldInfo? CollectionOpenField =
         typeof(NTreasureRoom).GetField("_isRelicCollectionOpen", Flags);
@@ -205,7 +200,7 @@ internal sealed class TreasureRoomSurfaceReader : ILiveSurfaceReader
             RunManager.Instance.TreasureRoomRelicSynchronizer.CurrentRelics?.ToArray()
             ?? Array.Empty<RelicModel>();
         if (runState?.CurrentRoom is not TreasureRoom room
-            || LocalContext.GetMe(runState) is not { } player
+            || LocalContext.GetMe(runState) == null
             || NRun.Instance?.TreasureRoom is not { } uiRoom
             || !string.Equals(
                 entities.GetId(uiRoom, "treasure_room"),
@@ -223,7 +218,7 @@ internal sealed class TreasureRoomSurfaceReader : ILiveSurfaceReader
                 "treasure_relic_changed",
                 "The exact treasure room or relic entity is no longer current.");
         }
-        return StartChoose(room, uiRoom, collection, holder, relic, player);
+        return StartChoose(room, uiRoom, collection, holder, relic);
     }
 
     internal static NativeInputResult StartSkip(
@@ -232,7 +227,7 @@ internal sealed class TreasureRoomSurfaceReader : ILiveSurfaceReader
     {
         RunState? runState = RunManager.Instance.DebugOnlyGetState();
         if (runState?.CurrentRoom is not TreasureRoom room
-            || LocalContext.GetMe(runState) is not { } player
+            || LocalContext.GetMe(runState) == null
             || NRun.Instance?.TreasureRoom is not { } uiRoom
             || !string.Equals(
                 entities.GetId(uiRoom, "treasure_room"),
@@ -245,7 +240,7 @@ internal sealed class TreasureRoomSurfaceReader : ILiveSurfaceReader
                 "treasure_skip_changed",
                 "The exact treasure room or skip owner is no longer current.");
         }
-        return StartSkip(room, uiRoom, collection, uiRoom.ProceedButton, player);
+        return StartSkip(room, uiRoom, collection, uiRoom.ProceedButton);
     }
 
     internal static NativeInputResult StartProceed(
@@ -307,33 +302,7 @@ internal sealed class TreasureRoomSurfaceReader : ILiveSurfaceReader
         }
 
         expectedChest.ForceClick();
-        return NativeInputResult.Started(
-            () => OpenChestResultReached(expectedRoom, expectedUi),
-            OpenChestCompletionWitness,
-            allowIntermediateStateChanges: true);
-    }
-
-    private static bool OpenChestResultReached(
-        TreasureRoom expectedRoom,
-        NTreasureRoom expectedUi)
-    {
-        if (!IsCurrent(expectedRoom, expectedUi)
-            || !TryReadBool(ChestOpenedField, expectedUi, out bool chestOpened)
-            || !TryReadBool(CollectionOpenField, expectedUi, out bool collectionOpen))
-        {
-            return false;
-        }
-
-        int relicCount = RunManager.Instance.TreasureRoomRelicSynchronizer.CurrentRelics?.Count ?? 0;
-        NProceedButton proceed = expectedUi.ProceedButton;
-        bool normalProceedReady = !proceed.IsSkip
-                                  && proceed.IsEnabled
-                                  && McpMod.IsNodeVisible(proceed);
-        return TreasureLifecycleFacts.OpenChestResultReached(
-            chestOpened,
-            collectionOpen,
-            relicCount,
-            normalProceedReady);
+        return NativeInputResult.Delivered(OpenChestDeliveryEvidence);
     }
 
     private static NativeInputResult StartChoose(
@@ -341,10 +310,8 @@ internal sealed class TreasureRoomSurfaceReader : ILiveSurfaceReader
         NTreasureRoom expectedUi,
         NTreasureRoomRelicCollection expectedCollection,
         NTreasureRoomRelicHolder expectedHolder,
-        RelicModel expectedRelic,
-        Player expectedPlayer)
+        RelicModel expectedRelic)
     {
-        int beforeCount = CountRelic(expectedPlayer, expectedRelic.Id.Entry);
         RelicModel[] current =
             RunManager.Instance.TreasureRoomRelicSynchronizer.CurrentRelics?.ToArray()
             ?? Array.Empty<RelicModel>();
@@ -359,8 +326,7 @@ internal sealed class TreasureRoomSurfaceReader : ILiveSurfaceReader
             || !ReferenceEquals(holderRelic, expectedRelic)
             || !expectedHolder.IsEnabled
             || !McpMod.IsNodeVisible(expectedHolder)
-            || expectedHolder.MouseFilter == Control.MouseFilterEnum.Ignore
-            || CountRelic(expectedPlayer, expectedRelic.Id.Entry) != beforeCount)
+            || expectedHolder.MouseFilter == Control.MouseFilterEnum.Ignore)
         {
             return NativeInputResult.Rejected(
                 "treasure_relic_changed",
@@ -368,22 +334,15 @@ internal sealed class TreasureRoomSurfaceReader : ILiveSurfaceReader
         }
 
         expectedHolder.ForceClick();
-        return NativeInputResult.Started(
-            () => CountRelic(expectedPlayer, expectedRelic.Id.Entry) > beforeCount
-                  && (!IsCurrent(expectedRoom, expectedUi)
-                      || TryReadBool(CollectionOpenField, expectedUi, out bool stillOpen) && !stillOpen),
-            ChooseRelicCompletionWitness,
-            allowIntermediateStateChanges: true);
+        return NativeInputResult.Delivered(ChooseRelicDeliveryEvidence);
     }
 
     private static NativeInputResult StartSkip(
         TreasureRoom expectedRoom,
         NTreasureRoom expectedUi,
         NTreasureRoomRelicCollection expectedCollection,
-        NProceedButton expectedProceed,
-        Player expectedPlayer)
+        NProceedButton expectedProceed)
     {
-        int beforeRelicCount = expectedPlayer.Relics.Count;
         if (!IsCurrent(expectedRoom, expectedUi)
             || !TryReadBool(CollectionOpenField, expectedUi, out bool collectionOpen)
             || !collectionOpen
@@ -399,13 +358,7 @@ internal sealed class TreasureRoomSurfaceReader : ILiveSurfaceReader
         }
 
         expectedProceed.ForceClick();
-        return NativeInputResult.Started(
-            () => expectedPlayer.Relics.Count == beforeRelicCount
-                  && (!ReferenceEquals(RunManager.Instance.DebugOnlyGetState()?.CurrentRoom, expectedRoom)
-                      || NMapScreen.Instance?.IsOpen == true),
-            SkipRelicCompletionWitness,
-            allowIntermediateStateChanges: true,
-            completionBoundary: "transaction_settled");
+        return NativeInputResult.Delivered(SkipRelicDeliveryEvidence);
     }
 
     private static NativeInputResult StartProceed(
@@ -425,21 +378,13 @@ internal sealed class TreasureRoomSurfaceReader : ILiveSurfaceReader
         }
 
         expectedProceed.ForceClick();
-        return NativeInputResult.Started(
-            () => !ReferenceEquals(RunManager.Instance.DebugOnlyGetState()?.CurrentRoom, expectedRoom)
-                  || NMapScreen.Instance?.IsOpen == true,
-            ProceedCompletionWitness,
-            allowIntermediateStateChanges: true,
-            completionBoundary: "continuation_handoff_observed");
+        return NativeInputResult.Delivered(ProceedDeliveryEvidence);
     }
 
     private static bool IsCurrent(TreasureRoom expectedRoom, NTreasureRoom expectedUi) =>
         ReferenceEquals(RunManager.Instance.DebugOnlyGetState()?.CurrentRoom, expectedRoom)
         && McpMod.IsLiveNode(expectedUi)
         && ActiveScreenContext.Instance.IsCurrent(expectedUi);
-
-    private static int CountRelic(Player player, string definitionId) =>
-        player.Relics.Count(relic => string.Equals(relic.Id.Entry, definitionId, StringComparison.Ordinal));
 
     private static bool TryReadBool(FieldInfo? field, object instance, out bool value)
     {
@@ -490,12 +435,12 @@ internal sealed class TreasureRoomSurfaceReader : ILiveSurfaceReader
         {
             Diagnostics = new[]
             {
-                GatewayDiagnostics.Create(
-                    "gateway.surface.treasure_room.binding_unavailable",
+                HostDiagnostics.Create(
+                    "host.surface.treasure_room.binding_unavailable",
                     "error",
                     "surface",
                     "actions_suppressed",
-                    "update_bridge",
+                    "update_host_adapter",
                     reason)
             }
         };
@@ -521,12 +466,4 @@ internal static class TreasureLifecycleFacts
                 ? currentRelicCount > 0 ? "relic_choice" : "opening"
                 : "completed";
 
-    public static bool OpenChestResultReached(
-        bool chestOpened,
-        bool collectionOpen,
-        int currentRelicCount,
-        bool normalProceedReady) =>
-        chestOpened
-        && (collectionOpen && currentRelicCount > 0
-            || !collectionOpen && normalProceedReady);
 }

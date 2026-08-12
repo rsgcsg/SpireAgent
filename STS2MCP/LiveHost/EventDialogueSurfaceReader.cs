@@ -23,8 +23,7 @@ namespace STS2_MCP.LiveHost;
 internal sealed class EventDialogueSurfaceReader : ILiveSurfaceReader
 {
     private const string SurfaceKind = "event_dialogue";
-    internal const string AdvanceCompletionWitness =
-        "exact_dialogue_index_advanced_or_event_room_closed";
+    internal const string AdvanceDeliveryEvidence = "native_dialogue_hitbox_clicked";
 
     private static readonly FieldInfo? CurrentLineField =
         typeof(NAncientEventLayout).GetField(
@@ -187,11 +186,7 @@ internal sealed class EventDialogueSurfaceReader : ILiveSurfaceReader
         }
 
         expectedHitbox.ForceClick();
-        return NativeInputResult.Started(
-            () => !ReferenceEquals(NEventRoom.Instance, expectedRoom)
-                  || !McpMod.IsLiveNode(expectedLayout)
-                  || (CurrentLineField?.GetValue(expectedLayout) is int nextLine && nextLine > expectedLine),
-            AdvanceCompletionWitness);
+        return NativeInputResult.Delivered(AdvanceDeliveryEvidence);
     }
 
     private static string? ReadLineText(NAncientDialogueLine line)
@@ -267,12 +262,12 @@ internal sealed class EventDialogueSurfaceReader : ILiveSurfaceReader
         {
             Diagnostics = new[]
             {
-                GatewayDiagnostics.Create(
-                    "gateway.surface.event_dialogue.binding_unavailable",
+                HostDiagnostics.Create(
+                    "host.surface.event_dialogue.binding_unavailable",
                     "error",
                     "surface",
                     "actions_suppressed",
-                    "update_bridge",
+                    "update_host_adapter",
                     reason)
             }
         };

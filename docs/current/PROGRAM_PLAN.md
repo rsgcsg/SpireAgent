@@ -2,7 +2,7 @@
 
 ## Current Outcome
 
-Create a newcomer-readable Human Environment baseline for the real STS2 Host.
+Create a newcomer-readable Player Environment baseline for the real STS2 Host.
 One canonical fair-player world and one execution authority serve any consumer.
 
 ## Active Work
@@ -10,7 +10,8 @@ One canonical fair-player world and one execution authority serve any consumer.
 1. Complete automated verification of the ownership and naming migration.
 2. Build and safely install the resulting artifact.
 3. Cold-load and verify exact runtime identity.
-4. Exercise `he_pure`, current/stale reads and native-page evidence/recovery.
+4. Exercise the Player Environment-only Re path, current/stale Reads and
+   native-page evidence/recovery.
 5. Record exact new-artifact evidence before considering a freeze.
 
 ## Invariants

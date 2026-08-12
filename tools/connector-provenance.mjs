@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
-export function gatewaySourceIdentity(workspace) {
+export function playerEnvironmentSourceIdentity(workspace) {
   const headResult = spawnSync("git", ["rev-parse", "--verify", "HEAD"], {
     cwd: workspace,
     encoding: "utf8",
@@ -78,7 +78,10 @@ export function evaluateBuildProvenance({
   const errors = [];
   if (builtSha && !buildMetadata) errors.push("build_provenance_missing");
   if (buildMetadata) {
-    if (buildMetadata.gateway_source_digest !== currentSource?.sourceDigest) {
+    if (buildMetadata.source_revision !== currentSource?.revision) {
+      errors.push("source_build_revision_mismatch");
+    }
+    if (buildMetadata.player_environment_source_digest !== currentSource?.sourceDigest) {
       errors.push("source_build_digest_mismatch");
     }
     if (buildMetadata.source_protocol !== currentProtocol) {
@@ -96,8 +99,13 @@ export function evaluateBuildProvenance({
       errors.push("installed_provenance_mvid_mismatch");
     }
     if (buildMetadata
-        && installedMetadata.gateway_source_digest !== buildMetadata.gateway_source_digest) {
+        && installedMetadata.player_environment_source_digest
+          !== buildMetadata.player_environment_source_digest) {
       errors.push("build_installed_provenance_mismatch");
+    }
+    if (buildMetadata
+        && installedMetadata.source_revision !== buildMetadata.source_revision) {
+      errors.push("build_installed_revision_mismatch");
     }
   }
   return { ok: errors.length === 0, errors };

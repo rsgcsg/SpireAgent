@@ -19,16 +19,14 @@ namespace STS2_MCP.LiveHost;
 
 /// <summary>
 /// Exact-build ordinary single-player game-over lifecycle. The intro Continue
-/// and the later return button are distinct UI commits; unlike v1 this never
+/// and the later return button are distinct UI controls; this never
 /// invokes a hidden fallback method to skip the current visible stage.
 /// </summary>
 internal sealed class GameOverSurfaceReader : ILiveSurfaceReader
 {
     private const string SurfaceKind = "game_over";
-    internal const string AdvanceCompletionWitness =
-        "game_over_summary_animation_started";
-    internal const string ReturnCompletionWitness =
-        "game_over_closed_and_main_menu_loaded";
+    internal const string AdvanceDeliveryEvidence = "native_game_over_proceed_button_clicked";
+    internal const string ReturnDeliveryEvidence = "native_game_over_return_button_clicked";
     private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
     private static readonly FieldInfo? ScoreField = typeof(NGameOverScreen).GetField("_score", Flags);
     private static readonly FieldInfo? AnimatingSummaryField =
@@ -83,13 +81,6 @@ internal sealed class GameOverSurfaceReader : ILiveSurfaceReader
 
         bool continueReady = IsAdvanceable(screen, continueButton);
         bool returnReady = IsActionable(mainMenuButton);
-        bool unsupportedControlReady = IsActionable(viewRunButton) || IsActionable(leaderboardButton);
-        if (unsupportedControlReady)
-        {
-            return BindingUnavailable(
-                game,
-                "An enabled game-over control without a qualified semantic contract is visible.");
-        }
         if (continueReady && returnReady)
             return BindingUnavailable(game, "Game-over intro and return controls are simultaneously actionable.");
 
@@ -117,7 +108,22 @@ internal sealed class GameOverSurfaceReader : ILiveSurfaceReader
             screenId,
             destination,
             continueReady,
-            returnReady);
+            returnReady,
+            new[]
+            {
+                VisibleUnsupportedControl(
+                    viewRunButton,
+                    entities,
+                    "view_run",
+                    "View Run",
+                    "Run-history navigation is outside the C1 ordinary journey envelope."),
+                VisibleUnsupportedControl(
+                    leaderboardButton,
+                    entities,
+                    "leaderboard",
+                    "Leaderboard",
+                    "Network leaderboard navigation is outside the C1 ordinary journey envelope.")
+            }.Where(control => control != null).Cast<VisibleMenuOption>().ToArray());
         bool hasActionableControl = continueReady || returnReady;
         string readiness = hasActionableControl ? "ready" : "settling";
         var completeness = new StateCompleteness(
@@ -128,7 +134,7 @@ internal sealed class GameOverSurfaceReader : ILiveSurfaceReader
             new[]
             {
                 "NOverlayStack.Peek+ActiveScreenContext exact input ownership",
-                "NGameOverScreen.%ContinueButton+%MainMenuButton",
+                "NGameOverScreen.%ContinueButton+%MainMenuButton+%ViewRunButton+%LeaderboardButton",
                 "NGameOverScreen._isAnimatingSummary+%RunSummaryContainer",
                 "RunManager.History.Win+RunState.GameMode+TotalFloor+AscensionLevel",
                 "NGameOverScreen._score exact-version binding",
@@ -217,13 +223,7 @@ internal sealed class GameOverSurfaceReader : ILiveSurfaceReader
         }
 
         expectedButton.ForceClick();
-        return NativeInputResult.Started(
-            () => ReferenceEquals(NOverlayStack.Instance?.Peek(), expectedScreen)
-                  && AnimatingSummaryField?.GetValue(expectedScreen) is bool isAnimating
-                  && isAnimating
-                  && !expectedButton.IsEnabled,
-            AdvanceCompletionWitness,
-            allowIntermediateStateChanges: true);
+        return NativeInputResult.Delivered(AdvanceDeliveryEvidence);
     }
 
     private static NativeInputResult StartReturn(
@@ -241,12 +241,28 @@ internal sealed class GameOverSurfaceReader : ILiveSurfaceReader
         }
 
         expectedButton.ForceClick();
-        return NativeInputResult.Started(
-            () => NGame.Instance?.MainMenu != null
-                  && !RunManager.Instance.IsInProgress
-                  && (!McpMod.IsLiveNode(expectedScreen) || !McpMod.IsNodeVisible(expectedScreen)),
-            ReturnCompletionWitness,
-            allowIntermediateStateChanges: true);
+        return NativeInputResult.Delivered(ReturnDeliveryEvidence);
+    }
+
+    private static VisibleMenuOption? VisibleUnsupportedControl(
+        NButton button,
+        NativeEntityRegistry entities,
+        string semanticId,
+        string fallbackLabel,
+        string blockedReason)
+    {
+        if (!McpMod.IsNodeVisible(button))
+            return null;
+        Label? label = McpMod.FindFirst<Label>(button);
+        string text = string.IsNullOrWhiteSpace(label?.Text) ? fallbackLabel : label.Text;
+        return new VisibleMenuOption(
+            entities.GetId(button, "game_over_control"),
+            semanticId,
+            text,
+            null,
+            button.IsEnabled,
+            "visible_unsupported",
+            blockedReason);
     }
 
     private static LiveObservation BindingUnavailable(GameBuildIdentity game, string detail)

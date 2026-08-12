@@ -72,26 +72,25 @@ export class SuccessorWatcher<TAction extends { kind: string } = ExecutableGameA
       }
       if (last.stateHash !== before.stateHash) lastChanged = last;
       if (settlementAuthority === "adapter_confirmed") {
-        const beforeToken = bridgeStateToken(before);
-        const observedToken = bridgeStateToken(last);
+        const beforeToken = environmentSnapshotId(before);
+        const observedToken = environmentSnapshotId(last);
         if (confirmedStateToken
             && beforeToken
             && observedToken === beforeToken
             && confirmedStateToken !== beforeToken) {
           continue;
         }
-        if (isCoherentUnsupportedSuccessor(before, last)
-            || last.currentState.stability === "non_actionable") {
+        if (last.currentState.stability === "non_actionable") {
           return settled(last, polls, started, transientObservationErrors, lastTransientObservationError);
         }
         if (!isSemanticCheckpoint(last)) {
           stableCandidate = undefined;
           continue;
         }
-        // Gateway completion proves the action-local native outcome. Re still
+        // The receipt proves action-local input delivery. Re still
         // waits for a repeatable actionable successor before spending another
         // model call; this observes quiescence without reconstructing native
-        // legality or broadening the Gateway's completion claim.
+        // legality or turning delivery into a business-completion claim.
         if (stableCandidate?.stateHash === last.stateHash) {
           return settled(last, polls, started, transientObservationErrors, lastTransientObservationError);
         }
@@ -142,25 +141,10 @@ function settled(
   };
 }
 
-function bridgeStateToken(envelope: StateEnvelope): string | undefined {
-  const surface = envelope.currentState.surface as { bridgeStateId?: unknown };
-  if (typeof surface.bridgeStateId === "string") return surface.bridgeStateId;
-  const observation = envelope.currentState.bridgeObservation;
-  return typeof observation?.stateId === "string" ? observation.stateId : undefined;
-}
-
-function isCoherentUnsupportedSuccessor(
-  before: StateEnvelope,
-  after: StateEnvelope
-): boolean {
-  const beforeToken = bridgeStateToken(before);
-  const afterToken = bridgeStateToken(after);
-  return after.diagnostics.status !== "invalid"
-    && after.currentState.surface.kind === "unsupported"
-    && after.currentState.bridgeObservation?.coherent === true
-    && typeof beforeToken === "string"
-    && typeof afterToken === "string"
-    && afterToken !== beforeToken;
+function environmentSnapshotId(envelope: StateEnvelope): string | undefined {
+  return envelope.currentState.surface.kind === "player_environment"
+    ? envelope.currentState.surface.snapshotId
+    : undefined;
 }
 
 function isEndTurn(actionKind: string): boolean {

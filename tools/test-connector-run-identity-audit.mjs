@@ -33,9 +33,9 @@ function action(id, entityId) {
   };
 }
 
-function humanSnapshot({ snapshotId, interactionId, actions }) {
+function playerSnapshot({ snapshotId, interactionId, actions }) {
   return {
-    human_snapshot: {
+    player_snapshot: {
       snapshot_id: snapshotId,
       status: "interactive",
       interaction: { interaction_id: interactionId },
@@ -44,6 +44,12 @@ function humanSnapshot({ snapshotId, interactionId, actions }) {
         actions
       }
     }
+  };
+}
+
+function historicalHumanSnapshot({ snapshotId, interactionId, actions }) {
+  return {
+    human_snapshot: playerSnapshot({ snapshotId, interactionId, actions }).player_snapshot
   };
 }
 
@@ -161,31 +167,53 @@ try {
     historical: true
   })));
 
-  const humanRecord = record({
+  const playerRecord = record({
     decisionId: "decision-4",
-    preRef: "snapshots/human-pre.json",
-    postRef: "snapshots/human-post.json",
+    preRef: "snapshots/player-pre.json",
+    postRef: "snapshots/player-post.json",
     entityId: "card-5"
   });
-  humanRecord.allowedActions[0].kind = "play";
-  humanRecord.allowedActions[0].entityBindings = [
+  playerRecord.allowedActions[0].kind = "play";
+  playerRecord.allowedActions[0].entityBindings = [
     { role: "subject", entityId: "card-5" },
     { role: "target", entityId: "enemy-1" }
   ];
-  writeFileSync(path.join(snapshots, "human-pre.json"), JSON.stringify(humanSnapshot({
+  writeFileSync(path.join(snapshots, "player-pre.json"), JSON.stringify(playerSnapshot({
     snapshotId: "snapshot-1",
     interactionId: "combat-1",
     actions: [humanAction("bound-1", "card-5", "enemy-1")]
   })));
-  writeFileSync(path.join(snapshots, "human-post.json"), JSON.stringify(humanSnapshot({
+  writeFileSync(path.join(snapshots, "player-post.json"), JSON.stringify(playerSnapshot({
     snapshotId: "snapshot-2",
     interactionId: "combat-1",
     actions: [humanAction("bound-1", "card-5", "enemy-1")]
   })));
 
+  const historicalHumanRecord = record({
+    decisionId: "decision-5",
+    preRef: "snapshots/human-pre.json",
+    postRef: "snapshots/human-post.json",
+    entityId: "card-6"
+  });
+  historicalHumanRecord.allowedActions[0].kind = "play";
+  historicalHumanRecord.allowedActions[0].entityBindings = [
+    { role: "subject", entityId: "card-6" },
+    { role: "target", entityId: "enemy-2" }
+  ];
+  writeFileSync(path.join(snapshots, "human-pre.json"), JSON.stringify(historicalHumanSnapshot({
+    snapshotId: "snapshot-3",
+    interactionId: "combat-2",
+    actions: [humanAction("bound-2", "card-6", "enemy-2")]
+  })));
+  writeFileSync(path.join(snapshots, "human-post.json"), JSON.stringify(historicalHumanSnapshot({
+    snapshotId: "snapshot-4",
+    interactionId: "combat-2",
+    actions: [humanAction("bound-2", "card-6", "enemy-2")]
+  })));
+
   writeFileSync(
     path.join(run, "decisions.jsonl"),
-    `${JSON.stringify(semanticRecord)}\n${JSON.stringify(compositeRecord)}\n${JSON.stringify(historicalRecord)}\n${JSON.stringify(humanRecord)}\n`
+    `${JSON.stringify(semanticRecord)}\n${JSON.stringify(compositeRecord)}\n${JSON.stringify(historicalRecord)}\n${JSON.stringify(playerRecord)}\n${JSON.stringify(historicalHumanRecord)}\n`
   );
 
   const result = auditRunIdentity({ run: "run-fixture", runsDirectory: root });
@@ -197,23 +225,25 @@ try {
   assert.equal(result.run.exact_identity.runtime_instance_id, "he-runtime-fixture");
   assert.equal(result.run.exact_identity.patch_digest, "patch-fixture");
   assert.equal(result.run.exact_identity.permission_policy_digest, "policy-fixture");
-  assert.equal(result.summary.stale_refusal_count, 4);
-  assert.equal(result.summary.semantic_changed, 2);
+  assert.equal(result.summary.stale_refusal_count, 5);
+  assert.equal(result.summary.semantic_changed, 3);
   assert.equal(result.summary.authority_changed, 1);
   assert.equal(result.summary.neither_identity_changed, 1);
   assert.equal(result.summary.composite_only_stale_findings, 1);
   assert.equal(result.summary.formal_state_identity_findings, 2);
   assert.equal(result.summary.historical_identity_shadow_findings, 1);
-  assert.equal(result.summary.human_environment_snapshot_findings, 1);
-  assert.equal(result.summary.selected_bound_action_still_published, 3);
+  assert.equal(result.summary.player_environment_snapshot_findings, 1);
+  assert.equal(result.summary.historical_human_environment_snapshot_findings, 1);
+  assert.equal(result.summary.selected_bound_action_still_published, 4);
   assert.equal(result.summary.selected_bound_action_not_published, 1);
   assert.equal(result.summary.migration_signal, "composite_only_stale_observed");
   assert.equal(result.findings[0].selected_bound_action_continuity, "same_kind_and_operands_published");
   assert.equal(result.findings[1].selected_bound_action_continuity, "not_published_with_same_kind_and_operands");
   assert.equal(result.findings[2].identity_evidence_source, "historical_identity_shadow");
-  assert.equal(result.findings[3].identity_evidence_source, "human_environment_snapshot");
+  assert.equal(result.findings[3].identity_evidence_source, "player_environment_snapshot");
   assert.equal(result.findings[3].pre_state_id, "snapshot-1");
   assert.equal(result.findings[3].post_state_id, "snapshot-2");
+  assert.equal(result.findings[4].identity_evidence_source, "historical_human_environment_snapshot");
 } finally {
   rmSync(root, { recursive: true, force: true });
 }

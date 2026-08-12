@@ -13,13 +13,11 @@ internal sealed record LiveObservation(
     GameBuildIdentity Game,
     IReadOnlyList<string> Warnings)
 {
-    public string CandidateAdmission { get; init; } = "business_contract";
-
-    public AuthorityHandoff AuthorityHandoff { get; init; } = new(
-        "gateway_owned",
+    public InputOwnership InputOwnership { get; init; } = new(
+        "current_ui_owned",
         Surface.Kind,
-        "The current semantic surface is owned by the Gateway; fallback authority is forbidden.");
+        "The exact current native UI owns this interaction.");
 
-    public IReadOnlyList<GatewayDiagnostic> Diagnostics { get; init; } =
-        Array.Empty<GatewayDiagnostic>();
+    public IReadOnlyList<HostDiagnostic> Diagnostics { get; init; } =
+        Array.Empty<HostDiagnostic>();
 }

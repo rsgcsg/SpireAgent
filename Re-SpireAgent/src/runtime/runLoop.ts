@@ -7,7 +7,7 @@ export interface RunLoopOptions {
   dryRun?: boolean;
   /** Finish game-over cleanup, then stop before any top-level menu action. */
   stopAtRunBoundary?: boolean;
-  /** Permit only Gateway-advertised actions to cross the top-level run boundary. */
+  /** Permit only Player Environment-advertised actions to cross the top-level run boundary. */
   allowRunEntry?: boolean;
   onTick?: (result: TickResult) => void;
 }

@@ -52,7 +52,7 @@ internal sealed class MutationControllerCoordinator
 
                 existing.Touch(now);
                 return new MutationClientRegistrationResult(
-                    GatewayAuthorityContract.ControlProtocol,
+                    MutationControlContract.ProtocolVersion,
                     _runtimeInstanceId,
                     existing.ToRecord(),
                     _controller?.ToInfo());
@@ -60,7 +60,7 @@ internal sealed class MutationControllerCoordinator
 
             if (_clientsBySession.Count >= MaxRegisteredClients)
                 throw new InvalidOperationException(
-                    "The runtime client registry is full. Restart the Gateway to clear local sessions.");
+                    "The runtime client registry is full. Restart the Player Environment Host to clear local sessions.");
 
             string sessionId = "client_" + Guid.NewGuid().ToString("N");
             var client = new MutableClient(
@@ -73,7 +73,7 @@ internal sealed class MutationControllerCoordinator
             _clientsBySession[sessionId] = client;
             _sessionByInstance[instanceId] = sessionId;
             return new MutationClientRegistrationResult(
-                GatewayAuthorityContract.ControlProtocol,
+                MutationControlContract.ProtocolVersion,
                 _runtimeInstanceId,
                 client.ToRecord(),
                 _controller?.ToInfo());
@@ -86,7 +86,7 @@ internal sealed class MutationControllerCoordinator
         {
             ExpireController(_clock());
             return new MutationControlSnapshot(
-                GatewayAuthorityContract.ControlProtocol,
+                MutationControlContract.ProtocolVersion,
                 _runtimeInstanceId,
                 _clientsBySession.Values
                     .Select(client => client.ToRecord())
@@ -103,7 +103,7 @@ internal sealed class MutationControllerCoordinator
             DateTimeOffset now = _clock();
             ExpireController(now);
             if (!TryGetClient(request.ClientSessionId, now, out MutableClient? client))
-                return Rejected("client_session_not_found", "Register this client in the current Gateway runtime before acquiring control.");
+                return Rejected("client_session_not_found", "Register this client in the current Host runtime before acquiring control.");
             MutableClient activeClient = client!;
 
             if (_controller != null)
@@ -122,7 +122,7 @@ internal sealed class MutationControllerCoordinator
                 activeClient.ClientSessionId,
                 now,
                 now + _leaseTtl);
-            return Accepted("controller_acquired", "Mutation control was acquired for this Gateway runtime.", activeClient);
+            return Accepted("controller_acquired", "Mutation control was acquired for this Host runtime.", activeClient);
         }
     }
 
@@ -133,7 +133,7 @@ internal sealed class MutationControllerCoordinator
             DateTimeOffset now = _clock();
             ExpireController(now);
             if (!TryGetClient(request.ClientSessionId, now, out MutableClient? client))
-                return Rejected("client_session_not_found", "The client session does not belong to this Gateway runtime.");
+                return Rejected("client_session_not_found", "The client session does not belong to this Host runtime.");
             MutableClient activeClient = client!;
             if (!MatchesCurrentLease(request))
                 return Rejected("controller_lease_stale", "The controller lease id or generation is no longer current.");
@@ -150,14 +150,14 @@ internal sealed class MutationControllerCoordinator
             DateTimeOffset now = _clock();
             ExpireController(now);
             if (!TryGetClient(request.ClientSessionId, now, out MutableClient? client))
-                return Rejected("client_session_not_found", "The client session does not belong to this Gateway runtime.");
+                return Rejected("client_session_not_found", "The client session does not belong to this Host runtime.");
             MutableClient activeClient = client!;
             if (!MatchesCurrentLease(request))
                 return Rejected("controller_lease_stale", "The controller lease id or generation is no longer current.");
 
             _controller = null;
             return new MutationLeaseResult(
-                GatewayAuthorityContract.ControlProtocol,
+                MutationControlContract.ProtocolVersion,
                 _runtimeInstanceId,
                 "controller_released",
                 "Mutation control was released.",
@@ -176,7 +176,7 @@ internal sealed class MutationControllerCoordinator
             {
                 return MutationAdmission.Reject(
                     "client_session_not_found",
-                    "Mutation commands require a client session registered in the current Gateway runtime.");
+                    "Mutation commands require a client session registered in the current Host runtime.");
             }
             MutableClient activeClient = client!;
             if (!MatchesCurrentLease(new MutationLeaseRequest(
@@ -245,7 +245,7 @@ internal sealed class MutationControllerCoordinator
         string detail,
         MutableClient client) =>
         new(
-            GatewayAuthorityContract.ControlProtocol,
+            MutationControlContract.ProtocolVersion,
             _runtimeInstanceId,
             status,
             detail,
@@ -254,7 +254,7 @@ internal sealed class MutationControllerCoordinator
 
     private MutationLeaseResult Rejected(string status, string detail) =>
         new(
-            GatewayAuthorityContract.ControlProtocol,
+            MutationControlContract.ProtocolVersion,
             _runtimeInstanceId,
             status,
             detail,

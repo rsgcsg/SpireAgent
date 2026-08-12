@@ -39,18 +39,18 @@ internal static class NativeUiFailClosedObservation
             game,
             new[] { warning })
         {
-            AuthorityHandoff = new AuthorityHandoff(
+            InputOwnership = new InputOwnership(
                 "none_fail_closed",
                 null,
                 authorityReason),
             Diagnostics = new[]
             {
-                GatewayDiagnostics.Create(
+                HostDiagnostics.Create(
                     diagnosticCode,
                     "error",
                     "surface",
                     "actions_suppressed",
-                    "update_bridge",
+                    "update_host_adapter",
                     reason)
             }
         };

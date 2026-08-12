@@ -9,8 +9,6 @@ using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Nodes.Events;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
-using MegaCrit.Sts2.Core.Nodes.Screens.Map;
-using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using STS2_MCP.LiveHost.Contracts;
@@ -19,10 +17,8 @@ namespace STS2_MCP.LiveHost;
 
 internal sealed class EventOptionSurfaceReader : ILiveSurfaceReader
 {
-    internal const string ChooseCompletionWitness =
-        "event_option_replaced_or_required_subsurface_opened";
-    internal const string ProceedCompletionWitness =
-        "event_proceed_opened_map_or_left_room";
+    internal const string ChooseDeliveryEvidence = "native_event_option_button_clicked";
+    internal const string ProceedDeliveryEvidence = "native_event_proceed_button_clicked";
 
     public string Kind => "event_option";
 
@@ -160,32 +156,10 @@ internal sealed class EventOptionSurfaceReader : ILiveSurfaceReader
             return NativeInputResult.Rejected("event_option_changed", "The event option is no longer enabled at the advertised position.");
         }
 
-        IOverlayScreen? previousOverlay = NOverlayStack.Instance?.Peek();
         expectedButton.ForceClick();
-        if (expectedOption.IsProceed)
-        {
-            return StartAsyncEventTransition(
-                () => !ReferenceEquals(NEventRoom.Instance, expectedRoom)
-                      || NMapScreen.Instance?.IsOpen == true,
-                ProceedCompletionWitness);
-        }
-
-        return StartAsyncEventTransition(
-            () => !ReferenceEquals(NEventRoom.Instance, expectedRoom)
-                  || CombatManager.Instance.IsInProgress
-                  || (NOverlayStack.Instance?.Peek() is { } currentOverlay
-                      && !ReferenceEquals(currentOverlay, previousOverlay))
-                  || HasReplacementOptions(expectedRoom, currentButtons),
-            ChooseCompletionWitness);
+        return NativeInputResult.Delivered(
+            expectedOption.IsProceed ? ProceedDeliveryEvidence : ChooseDeliveryEvidence);
     }
-
-    internal static NativeInputResult StartAsyncEventTransition(
-        Func<bool> completionProbe,
-        string completionEvidence) =>
-        NativeInputResult.Started(
-            completionProbe,
-            completionEvidence,
-            allowIntermediateStateChanges: true);
 
     internal static NativeInputResult StartOption(
         NativeEntityRegistry entities,
@@ -229,18 +203,6 @@ internal sealed class EventOptionSurfaceReader : ILiveSurfaceReader
             matches[0].Button,
             option,
             matches[0].Index);
-    }
-
-    private static bool HasReplacementOptions(
-        NEventRoom expectedRoom,
-        IReadOnlyList<NEventOptionButton> previous)
-    {
-        if (!ReferenceEquals(NEventRoom.Instance, expectedRoom) || expectedRoom.Layout == null)
-            return true;
-        NEventOptionButton[] current = expectedRoom.Layout.OptionButtons.ToArray();
-        return current.Length > 0
-               && (current.Length != previous.Count
-                   || current.Where((button, index) => !ReferenceEquals(button, previous[index])).Any());
     }
 
     private static string BuildLabel(EventOption option)

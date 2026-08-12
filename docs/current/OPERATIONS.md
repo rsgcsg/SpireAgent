@@ -34,7 +34,7 @@ npm --prefix Re-SpireAgent run agent:prompt-repeat-baseline -- --run-id <id> --d
 See [Internal development and evaluation](DEVELOPMENT_AND_EVALUATION.md) for
 the capability inventory and missing scenario/eval infrastructure.
 
-## STS2 Gateway
+## STS2 Player Environment Host
 
 Preferred root entrypoints:
 
@@ -45,7 +45,6 @@ npm run deploy
 npm run verify:loaded
 npm run connector -- show-status
 npm run connector -- test
-npm run connector -- audit
 npm run connector -- build
 npm run connector -- install
 npm run connector -- collect-evidence
@@ -54,14 +53,14 @@ npm run connector -- collect-evidence
 `doctor` is read-only. `deploy` runs the complete source checks, writes
 source-to-build provenance, builds, backs up and installs while the game is
 closed. It does not claim loaded state. The CLI owns no game semantics,
-permission, completion or compatibility claims. Use
+legality or completion. Use
 `npm run connector -- help` for the full command map.
 
 Set `STS2_GAME_DIR` to the exact local Steam installation, then use the
 platform-specific commands in `STS2MCP/README.md` to run C# tests, Python MCP
 syntax checks, and a Release build. Close the game before replacing an
 installed DLL. Build/install evidence is not proof of loaded runtime identity;
-capture that identity before claiming a canary or qualification.
+capture that identity before claiming a Live mutation or journey.
 
 ## Repository Checks
 
@@ -71,9 +70,10 @@ npm run check:docs
 git diff --check
 ```
 
-`npm run check` delegates only to the active Re project. Gateway checks remain
-environment-dependent and should be recorded separately.
+`npm run check` runs Re, current docs/contracts, CLI and run-identity checks.
+Host C# tests remain environment-dependent and run through
+`npm run connector -- test` when exact local STS2 assemblies are available.
 
-The public CI workflow checks Re and active documentation on Linux. Gateway
+The public CI workflow checks Re and active documentation on Linux. Host
 tests and Release builds still require proprietary local game assemblies and
-remain explicit local checks; CI success is not Gateway qualification.
+remain explicit local checks; CI success is not loaded or Live evidence.

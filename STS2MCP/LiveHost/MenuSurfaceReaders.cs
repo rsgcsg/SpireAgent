@@ -83,7 +83,7 @@ internal sealed class MainMenuSurfaceReader : ILiveSurfaceReader
                 canOpenSingleplayer ? "actionable" : "visible_unsupported",
                 canOpenSingleplayer ? null : "The exact Single Player control is not currently enabled."),
             Option(entities, multiplayerButton, "multiplayer", Label(multiplayerButton, "Multiplayer"),
-                "visible_unsupported", "Multiplayer is outside the current single-player Gateway scope."),
+                "visible_unsupported", "Multiplayer is outside the current single-player Player Environment scope."),
             Option(entities, timelineButton, "timeline", Label(timelineButton, "Timeline"),
                 "visible_unsupported", "Timeline navigation is not implemented."),
             Option(entities, settingsButton, "settings", Label(settingsButton, "Settings"),
@@ -152,10 +152,7 @@ internal sealed class MainMenuSurfaceReader : ILiveSurfaceReader
         }
 
         expectedButton.ForceClick();
-        return NativeInputResult.Started(
-            () => RunManager.Instance.IsInProgress,
-            "saved_singleplayer_run_became_active",
-            allowIntermediateStateChanges: true);
+        return NativeInputResult.Delivered("native_continue_run_button_clicked");
     }
 
     internal static NativeInputResult StartContinue(
@@ -203,10 +200,7 @@ internal sealed class MainMenuSurfaceReader : ILiveSurfaceReader
         }
 
         expectedButton.ForceClick();
-        return NativeInputResult.Started(
-            () => NGame.Instance?.MainMenu?.SubmenuStack?.Peek() is NSingleplayerSubmenu or NCharacterSelectScreen,
-            "singleplayer_or_character_select_owner_became_active",
-            allowIntermediateStateChanges: true);
+        return NativeInputResult.Delivered("native_singleplayer_button_clicked");
     }
 
     internal static NativeInputResult StartOpenSingleplayer(
@@ -281,7 +275,7 @@ internal sealed class MainMenuSurfaceReader : ILiveSurfaceReader
         NButton button,
         string semanticId,
         string label,
-        string bridgeSupport,
+        string actionSupport,
         string? blockedReason)
     {
         if (!McpMod.IsNodeVisible(button))
@@ -292,7 +286,7 @@ internal sealed class MainMenuSurfaceReader : ILiveSurfaceReader
             label,
             null,
             button.IsEnabled,
-            bridgeSupport,
+            actionSupport,
             blockedReason);
     }
 
@@ -307,10 +301,8 @@ internal sealed class MainMenuSurfaceReader : ILiveSurfaceReader
 
 internal sealed class SingleplayerMenuSurfaceReader : ILiveSurfaceReader
 {
-    internal const string OpenStandardCompletionWitness =
-        "standard_character_select_owner_became_active";
-    internal const string BackCompletionWitness =
-        "singleplayer_submenu_owner_changed";
+    internal const string OpenStandardDeliveryEvidence = "native_standard_run_button_clicked";
+    internal const string BackDeliveryEvidence = "native_singleplayer_back_button_clicked";
 
     public string Kind => "singleplayer_menu";
 
@@ -395,10 +387,7 @@ internal sealed class SingleplayerMenuSurfaceReader : ILiveSurfaceReader
         if (!IsCurrent(expectedScreen) || !IsUsable(expectedButton))
             return NativeInputResult.Rejected("singleplayer_standard_changed", "The Standard control is no longer current and enabled.");
         expectedButton.ForceClick();
-        return NativeInputResult.Started(
-            () => NGame.Instance?.MainMenu?.SubmenuStack?.Peek() is NCharacterSelectScreen,
-            OpenStandardCompletionWitness,
-            allowIntermediateStateChanges: true);
+        return NativeInputResult.Delivered(OpenStandardDeliveryEvidence);
     }
 
     internal static NativeInputResult StartStandard(
@@ -429,10 +418,7 @@ internal sealed class SingleplayerMenuSurfaceReader : ILiveSurfaceReader
         if (!IsCurrent(expectedScreen) || !IsUsable(expectedButton))
             return NativeInputResult.Rejected("singleplayer_back_changed", "The Back control is no longer current and enabled.");
         expectedButton.ForceClick();
-        return NativeInputResult.Started(
-            () => !ReferenceEquals(NGame.Instance?.MainMenu?.SubmenuStack?.Peek(), expectedScreen),
-            BackCompletionWitness,
-            allowIntermediateStateChanges: true);
+        return NativeInputResult.Delivered(BackDeliveryEvidence);
     }
 
     internal static NativeInputResult StartBack(
@@ -470,7 +456,7 @@ internal sealed class SingleplayerMenuSurfaceReader : ILiveSurfaceReader
         NButton button,
         string semanticId,
         string fallbackLabel,
-        string bridgeSupport,
+        string actionSupport,
         string? blockedReason)
     {
         if (!McpMod.IsNodeVisible(button))
@@ -487,7 +473,7 @@ internal sealed class SingleplayerMenuSurfaceReader : ILiveSurfaceReader
             title,
             description,
             button.IsEnabled,
-            bridgeSupport,
+            actionSupport,
             blockedReason);
     }
 

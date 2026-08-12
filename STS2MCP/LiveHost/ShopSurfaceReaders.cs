@@ -2,7 +2,6 @@ using STS2_MCP.NativeUi;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Merchant;
 using MegaCrit.Sts2.Core.Entities.Players;
@@ -13,7 +12,6 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens;
-using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Nodes.Screens.ScreenContext;
@@ -32,16 +30,11 @@ namespace STS2_MCP.LiveHost;
 internal sealed class ShopInventorySurfaceReader : ILiveSurfaceReader
 {
     private const string SurfaceKind = "shop_inventory";
-    internal const string CardPurchaseCompletionWitness =
-        "shop_card_purchase_committed_with_exact_card_gold_and_entry_witness";
-    internal const string PotionPurchaseCompletionWitness =
-        "shop_potion_purchase_committed_with_exact_slot_gold_and_entry_witness";
-    internal const string RelicPurchaseCompletionWitness =
-        "shop_relic_purchase_committed_or_linked_reward_handoff_observed";
-    internal const string CardRemovalHandoffCompletionWitness =
-        "shop_card_removal_selector_opened_or_removal_completed";
-    internal const string CloseInventoryCompletionWitness =
-        "shop_inventory_closed";
+    internal const string CardPurchaseDeliveryEvidence = "native_shop_card_purchase_started";
+    internal const string PotionPurchaseDeliveryEvidence = "native_shop_potion_purchase_started";
+    internal const string RelicPurchaseDeliveryEvidence = "native_shop_relic_purchase_started";
+    internal const string CardRemovalDeliveryEvidence = "native_shop_removal_purchase_started";
+    internal const string CloseInventoryDeliveryEvidence = "native_shop_back_button_clicked";
 
     public string Kind => SurfaceKind;
 
@@ -287,12 +280,8 @@ internal sealed class ShopInventorySurfaceReader : ILiveSurfaceReader
         MerchantEntry expectedEntry,
         NMerchantSlot expectedSlot,
         int expectedPrice,
-        Func<bool> productAcquired,
-        Func<bool> entryAdvanced,
-        Func<bool> productAbsentBeforePurchase,
         Func<bool>? extraValidator,
-        Func<bool>? nativeContinuationVisible,
-        string completionEvidence)
+        string deliveryEvidence)
     {
         if (!ShopSurfaceFacts.IsCurrentInventory(expectedMerchantRoom, expectedRoom, expectedInventory)
             || !ReferenceEquals(expectedSlot.Entry, expectedEntry)
@@ -301,7 +290,6 @@ internal sealed class ShopInventorySurfaceReader : ILiveSurfaceReader
             || expectedEntry.Cost != expectedPrice
             || !McpMod.IsNodeVisible(expectedSlot)
             || !expectedSlot.Hitbox.IsEnabled
-            || !productAbsentBeforePurchase()
             || extraValidator?.Invoke() == false)
         {
             return NativeInputResult.Rejected(
@@ -309,11 +297,9 @@ internal sealed class ShopInventorySurfaceReader : ILiveSurfaceReader
                 "The advertised shop offer is no longer current and purchasable.");
         }
 
-        int goldBeforePurchase = expectedInventory.Player.Gold;
-        Task<bool> purchaseTask;
         try
         {
-            purchaseTask = expectedEntry.OnTryPurchaseWrapper(expectedInventory);
+            TaskHelper.RunSafely(expectedEntry.OnTryPurchaseWrapper(expectedInventory));
         }
         catch (Exception)
         {
@@ -322,30 +308,8 @@ internal sealed class ShopInventorySurfaceReader : ILiveSurfaceReader
                 "The exact merchant purchase command could not be started.");
         }
 
-        return NativeInputResult.Started(
-            () => ShopPurchaseCompletionWitness.IsComplete(
-                purchaseTask.IsCompleted,
-                purchaseTask.IsCompletedSuccessfully,
-                purchaseTask.IsCompletedSuccessfully && purchaseTask.Result,
-                goldBeforePurchase,
-                expectedInventory.Player.Gold,
-                expectedPrice,
-                productAcquired(),
-                entryAdvanced(),
-                HasVisibleLinkedRewardContinuation(),
-                nativeContinuationVisible?.Invoke() == true),
-            completionEvidence,
-            allowIntermediateStateChanges: true,
-            completionBoundary: "native_commit_observed");
+        return NativeInputResult.Delivered(deliveryEvidence);
     }
-
-    private static bool HasVisibleLinkedRewardContinuation() =>
-        NOverlayStack.Instance?.Peek() is NRewardsScreen rewards
-        && ActiveInputResolver.IsVisibleActiveOverlay(rewards);
-
-    private static bool HasExactRelicAcquisitionContinuation(RelicModel expectedRelic) =>
-        NOverlayStack.Instance?.Peek() is NDeckEnchantSelectScreen enchantScreen
-        && DeckEnchantSurfaceReader.IsKifudaContinuation(enchantScreen, expectedRelic);
 
     private static NativeInputResult StartCardRemoval(
         MerchantRoom expectedMerchantRoom,
@@ -369,16 +333,7 @@ internal sealed class ShopInventorySurfaceReader : ILiveSurfaceReader
         }
 
         TaskHelper.RunSafely(expectedEntry.OnTryPurchaseWrapper(expectedInventory));
-        return NativeInputResult.Started(
-            () => expectedEntry.Used
-                  || (NOverlayStack.Instance?.Peek() is NDeckCardSelectScreen
-                      && ShopSurfaceFacts.IsCurrentMerchant(
-                          expectedMerchantRoom,
-                          expectedRoom,
-                          expectedInventory)),
-            CardRemovalHandoffCompletionWitness,
-            allowIntermediateStateChanges: true,
-            completionBoundary: "continuation_handoff_observed");
+        return NativeInputResult.Delivered(CardRemovalDeliveryEvidence);
     }
 
     internal static NativeInputResult StartCardPurchase(
@@ -403,12 +358,8 @@ internal sealed class ShopInventorySurfaceReader : ILiveSurfaceReader
             binding.Entry,
             binding.Slot,
             expectedPrice,
-            () => binding.Inventory.Player.Deck.Cards.Any(value => ReferenceEquals(value, card)),
-            () => !ReferenceEquals(binding.Entry.CreationResult?.Card, card),
-            () => binding.Inventory.Player.Deck.Cards.All(value => !ReferenceEquals(value, card)),
             null,
-            null,
-            CardPurchaseCompletionWitness);
+            CardPurchaseDeliveryEvidence);
     }
 
     internal static NativeInputResult StartRelicPurchase(
@@ -433,12 +384,8 @@ internal sealed class ShopInventorySurfaceReader : ILiveSurfaceReader
             binding.Entry,
             binding.Slot,
             expectedPrice,
-            () => binding.Inventory.Player.Relics.Any(value => ReferenceEquals(value, relic)),
-            () => !ReferenceEquals(binding.Entry.Model, relic),
-            () => binding.Inventory.Player.Relics.All(value => !ReferenceEquals(value, relic)),
             null,
-            () => HasExactRelicAcquisitionContinuation(relic),
-            RelicPurchaseCompletionWitness);
+            RelicPurchaseDeliveryEvidence);
     }
 
     internal static NativeInputResult StartPotionPurchase(
@@ -463,12 +410,8 @@ internal sealed class ShopInventorySurfaceReader : ILiveSurfaceReader
             binding.Entry,
             binding.Slot,
             expectedPrice,
-            () => ShopSurfaceFacts.ContainsPotionInstance(binding.Inventory.Player, potion),
-            () => !ReferenceEquals(binding.Entry.Model, potion),
-            () => !ShopSurfaceFacts.ContainsPotionInstance(binding.Inventory.Player, potion),
             () => ShopSurfaceFacts.CanProcurePotion(binding.Inventory.Player, potion),
-            null,
-            PotionPurchaseCompletionWitness);
+            PotionPurchaseDeliveryEvidence);
     }
 
     internal static NativeInputResult StartCardRemoval(
@@ -598,9 +541,7 @@ internal sealed class ShopInventorySurfaceReader : ILiveSurfaceReader
         }
 
         expectedBackButton.ForceClick();
-        return NativeInputResult.Started(
-            () => !expectedRoom.Inventory.IsOpen,
-            CloseInventoryCompletionWitness);
+        return NativeInputResult.Delivered(CloseInventoryDeliveryEvidence);
     }
 
     private static LiveObservation BindingUnavailable(GameBuildIdentity game, string reason)
@@ -624,12 +565,12 @@ internal sealed class ShopInventorySurfaceReader : ILiveSurfaceReader
         {
             Diagnostics = new[]
             {
-                GatewayDiagnostics.Create(
-                    "gateway.surface.shop_inventory.binding_unavailable",
+                HostDiagnostics.Create(
+                    "host.surface.shop_inventory.binding_unavailable",
                     "error",
                     "surface",
                     "actions_suppressed",
-                    "update_bridge",
+                    "update_host_adapter",
                     reason)
             }
         };
@@ -643,10 +584,8 @@ internal sealed class ShopInventorySurfaceReader : ILiveSurfaceReader
 internal sealed class ShopRoomSurfaceReader : ILiveSurfaceReader
 {
     private const string SurfaceKind = "shop_room";
-    internal const string OpenInventoryCompletionWitness =
-        "shop_inventory_opened";
-    internal const string ProceedCompletionWitness =
-        "shop_room_left_or_map_opened";
+    internal const string OpenInventoryDeliveryEvidence = "native_merchant_button_clicked";
+    internal const string ProceedDeliveryEvidence = "native_shop_proceed_button_clicked";
 
     public string Kind => SurfaceKind;
 
@@ -716,9 +655,7 @@ internal sealed class ShopRoomSurfaceReader : ILiveSurfaceReader
         }
 
         expectedRoom.MerchantButton.ForceClick();
-        return NativeInputResult.Started(
-            () => expectedRoom.Inventory.IsOpen,
-            OpenInventoryCompletionWitness);
+        return NativeInputResult.Delivered(OpenInventoryDeliveryEvidence);
     }
 
     internal static NativeInputResult StartOpenInventory(
@@ -760,11 +697,7 @@ internal sealed class ShopRoomSurfaceReader : ILiveSurfaceReader
         }
 
         expectedRoom.ProceedButton.ForceClick();
-        return NativeInputResult.Started(
-            () => !ReferenceEquals(RunManager.Instance.DebugOnlyGetState()?.CurrentRoom, expectedMerchantRoom)
-                  || NMapScreen.Instance?.IsOpen == true,
-            ProceedCompletionWitness,
-            allowIntermediateStateChanges: true);
+        return NativeInputResult.Delivered(ProceedDeliveryEvidence);
     }
 
     internal static NativeInputResult StartProceed(
@@ -869,25 +802,4 @@ internal static class ShopSurfaceFacts
             : !affordable ? "insufficient_gold"
             : !canPurchase ? "ui_control_disabled"
             : null;
-}
-
-internal static class ShopPurchaseCompletionWitness
-{
-    public static bool IsComplete(
-        bool taskCompleted,
-        bool taskCompletedSuccessfully,
-        bool purchaseSucceeded,
-        int goldBeforePurchase,
-        int currentGold,
-        int expectedPrice,
-        bool productAcquired,
-        bool entryAdvanced,
-        bool linkedRewardContinuationVisible,
-        bool nativeContinuationVisible = false) =>
-        ((taskCompletedSuccessfully && purchaseSucceeded && entryAdvanced)
-         || (!taskCompleted && linkedRewardContinuationVisible)
-         || (!taskCompleted && nativeContinuationVisible))
-        && expectedPrice >= 0
-        && currentGold == goldBeforePurchase - expectedPrice
-        && productAcquired;
 }

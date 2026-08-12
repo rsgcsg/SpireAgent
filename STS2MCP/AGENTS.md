@@ -1,7 +1,7 @@
-# STS2 Human Environment Engineering Guide
+# STS2 Player Environment Engineering Guide
 
-Read `../docs/current/HUMAN_ENVIRONMENT_NEW_ENGINEER_GUIDE.md`, ADR-0009 and
-`docs/human-environment/` before changing the connector.
+Read `../docs/current/PLAYER_ENVIRONMENT_NEW_ENGINEER_GUIDE.md`, ADR-0009 and
+`docs/player-environment/` before changing the connector.
 
 ## Boundaries
 
@@ -10,9 +10,9 @@ Read `../docs/current/HUMAN_ENVIRONMENT_NEW_ENGINEER_GUIDE.md`, ADR-0009 and
   publish executable actions.
 - `NativeUi` owns exact controls, entities, operands and execute-time
   revalidation.
-- `Authority` owns exact-environment admission, controller integrity,
-  idempotency and qualification.
-- `HumanEnvironment` owns public Observe/Read/Interact semantics.
+- `Authority` owns exact identity, controller integrity and request
+  idempotency. It does not grant business/source permissions.
+- `PlayerEnvironment` owns public Observe/Read/Interact semantics.
 - REST and MCP transport bytes only.
 
 Never accept an index, coordinate, node path, arbitrary method/reflection target
@@ -35,7 +35,7 @@ For a new interaction or read:
 6. update coverage and repository status.
 
 Fixtures prove source behavior, not game compatibility. Keep source, test,
-build, install, load, Live and qualification evidence separate.
+build, install, load and Live evidence separate.
 
 ## Validation
 
@@ -45,5 +45,4 @@ dotnet build STS2_MCP.csproj -c Release -p:STS2GameDir="E:\SteamLibrary\steamapp
 python -m py_compile mcp/server.py
 ```
 
-Never commit game assemblies, local config, `.env.local`, logs, run data or
-local MCP permissions.
+Never commit game assemblies, local config, `.env.local`, logs or run data.

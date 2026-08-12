@@ -1,20 +1,20 @@
 # Re-SpireAgent Engineering Guide
 
-Re is a consumer of Human Environment C. Read ADR-0009 and
-`docs/HUMAN_ENVIRONMENT_INTEGRATION.md` before changing its connector path.
+Re is a consumer of Player Environment C. Read ADR-0009 and
+`docs/PLAYER_ENVIRONMENT_INTEGRATION.md` before changing its connector path.
 
 ## Current Pipeline
 
 ```text
-HE JSON -> strict decoder -> HumanEnvironmentRawState
--> normalizeHumanEnvironmentCurrentState
--> buildHumanEnvironmentAllowedActions
+Player Environment Snapshot -> strict decoder -> PlayerEnvironmentRawState
+-> normalizePlayerEnvironmentCurrentState
+-> buildPlayerEnvironmentAllowedActions
 -> prompt -> strict model decision
 -> exact advertised action submit -> receipt -> successor supervision
 ```
 
 - The model chooses a local ID, never a native payload.
-- Allowed actions come only from the current complete HE bound-action catalog.
+- Allowed actions come only from the current complete bound-action catalog.
 - Re does not reconstruct native legality, effects or completion.
 - Invalid schema, stale snapshot, unknown choice or receipt mismatch fails
   closed. Unknown delivery is never retried.
@@ -23,9 +23,9 @@ HE JSON -> strict decoder -> HumanEnvironmentRawState
 
 ## Module Ownership
 
-- `src/integrations/sts2mcp/humanEnvironment*`: strict wire/client adapter
-- `src/normalization/normalizeHumanEnvironmentCurrentState.ts`: raw-to-domain
-- `src/domain/actions/buildHumanEnvironmentAllowedActions.ts`: finite import
+- `src/integrations/sts2mcp/playerEnvironment*`: strict wire/client adapter
+- `src/normalization/normalizePlayerEnvironmentCurrentState.ts`: raw-to-domain
+- `src/domain/actions/buildPlayerEnvironmentAllowedActions.ts`: finite import
 - `src/prompting/`: model format only
 - `src/runtime/`: stale, loop, receipt and successor supervision
 - `src/recording/`: append-only local evidence

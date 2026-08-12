@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using STS2_MCP.Authority;
 using STS2_MCP.LiveHost.Contracts;
 
 namespace STS2_MCP.NativeUi;
@@ -32,13 +31,9 @@ public sealed record NativeUiActionCandidate(
     IReadOnlyDictionary<string, string> Operands,
     IReadOnlyDictionary<string, NativeUiOperandDomain> OperandDomains,
     IReadOnlyList<ActionEntityBinding> EntityBindings,
-    string BindingKind,
-    string AuthorityState);
+    string BindingKind);
 
-internal sealed record NativeUiBoundAction(
-    NativeUiActionCandidate Candidate,
-    OperationPermissionBinding? PermissionBinding,
-    BoundOperationContract? ContractBinding);
+internal sealed record NativeUiBoundAction(NativeUiActionCandidate Candidate);
 
 internal sealed record NativeUiInput(
     string? Command,

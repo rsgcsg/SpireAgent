@@ -35,10 +35,6 @@ export interface PromptInformationAudit {
   readonly currentStateComponentBytes: Readonly<Record<string, number>>;
   /** Evidence of repeated representations; it does not assert strategic harm. */
   readonly duplicateCandidates: {
-    readonly playerAndInspectionRunDeck: number;
-    readonly playerAndInspectionDrawPile: number;
-    readonly playerAndInspectionDiscardPile: number;
-    readonly playerAndInspectionExhaustPile: number;
     readonly surfaceAndPayloadActionMenus: number;
   };
   readonly shadowProjection: {
@@ -85,10 +81,6 @@ export async function auditPromptArtifacts(
   const componentBytes = new Map<string, number>();
   const surfaces = new Map<string, { contextKind: string; surfaceKind: string; bytes: number[] }>();
   const duplicateCandidates = {
-    playerAndInspectionRunDeck: 0,
-    playerAndInspectionDrawPile: 0,
-    playerAndInspectionDiscardPile: 0,
-    playerAndInspectionExhaustPile: 0,
     surfaceAndPayloadActionMenus: 0
   };
   const shadowBytes: number[] = [];
@@ -204,31 +196,15 @@ async function readPromptArtifact(path: string): Promise<ParsedPromptArtifact | 
 function countDuplicatedFacts(
   artifact: ParsedPromptArtifact,
   target: {
-    playerAndInspectionRunDeck: number;
-    playerAndInspectionDrawPile: number;
-    playerAndInspectionDiscardPile: number;
-    playerAndInspectionExhaustPile: number;
     surfaceAndPayloadActionMenus: number;
   }
 ): void {
-  const player = isJsonObject(artifact.currentState.player) ? artifact.currentState.player : undefined;
-  const inspectionFacts = isJsonObject(artifact.currentState.bridgeInspectionFacts)
-    ? artifact.currentState.bridgeInspectionFacts
-    : undefined;
-  if (sameJsonField(player, inspectionFacts, "runDeck")) target.playerAndInspectionRunDeck += 1;
-  if (sameJsonField(player, inspectionFacts, "drawPile")) target.playerAndInspectionDrawPile += 1;
-  if (sameJsonField(player, inspectionFacts, "discardPile")) target.playerAndInspectionDiscardPile += 1;
-  if (sameJsonField(player, inspectionFacts, "exhaustPile")) target.playerAndInspectionExhaustPile += 1;
-
   const surface = isJsonObject(artifact.currentState.surface) ? artifact.currentState.surface : undefined;
-  if (surface && Array.isArray(surface.legalActions) && artifact.allowedActions.length > 0) {
+  if (surface
+      && (Array.isArray(surface.boundActions) || Array.isArray(surface.legalActions))
+      && artifact.allowedActions.length > 0) {
     target.surfaceAndPayloadActionMenus += 1;
   }
-}
-
-function sameJsonField(left: JsonObject | undefined, right: JsonObject | undefined, key: string): boolean {
-  if (!left || !right || !(key in left) || !(key in right)) return false;
-  return JSON.stringify(left[key]) === JSON.stringify(right[key]);
 }
 
 function summarizeBytes(values: readonly number[]): PromptByteSummary {

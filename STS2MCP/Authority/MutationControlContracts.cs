@@ -3,6 +3,11 @@ using System.Collections.Generic;
 
 namespace STS2_MCP.Authority;
 
+internal static class MutationControlContract
+{
+    internal const string ProtocolVersion = "player-environment-control-1";
+}
+
 public sealed record MutationControlCapability(
     string Status,
     bool RegistrationRequiredForMutation,

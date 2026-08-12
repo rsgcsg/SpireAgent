@@ -1,31 +1,14 @@
-# Headless STS2 Future Subproject
+# Headless STS2 Future Host
 
-Status: documentation only; implementation deferred.
+Status: documentation only; implementation deferred until after C1.
 
-SpireAgent does not currently contain, run, qualify, or authorize a Headless
-STS2 host. This directory records a future subproject boundary so Headless work
-does not leak into the current live Bridge, Re-SpireAgent, permissions, or
-evidence.
+Headless is a separate Host implementation, not a mode inside LiveHost. It may
+eventually implement the same fair-player Player Environment semantics, but it
+owns separate lifecycle, build, runtime identity and conformance evidence.
 
-The current real-game connection is defined by
-[Live STS2 Connection Boundary](../../../STS2MCP/docs/bridge-v2/LIVE_GAME_CONNECTION_BOUNDARY.md).
-The future design, admission gate, phases, and acceptance criteria are in
-[TARGET_ARCHITECTURE.md](TARGET_ARCHITECTURE.md).
+It must not inherit Live native bindings, loaded evidence or controller state.
+Reset, seed, clone/fork, fast-step and scenario mutation are privileged Host
+control APIs outside Player Environment C. No Headless code or proprietary game
+artifact is part of the current C1 freeze gate.
 
-## Current Decision
-
-- Headless is a separate future subproject, not `headless=true` inside a live
-  Provider.
-- It may eventually live in this monorepo, but it must have its own host
-  identity, build, setup, tests, runtime process, patch inventory, evidence,
-  permission scope, and release artifact.
-- It may reuse reviewed protocol-neutral contracts and pure safety machinery;
-  it must not inherit live bindings, evidence, qualification, or permission.
-- No substantive Headless code should be added until the admission gate is
-  explicitly passed.
-- No game DLL, patched DLL, PCK, game asset, local run output, or proprietary
-  fixture may be committed.
-
-The `wuhao21/sts2-cli` project is a useful primary implementation reference,
-not an adopted SpireAgent architecture or evidence source. Source review alone
-does not qualify either project.
+See [Target Architecture](TARGET_ARCHITECTURE.md) for the bounded future split.

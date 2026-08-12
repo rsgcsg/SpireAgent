@@ -2,25 +2,25 @@ import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.js";
-import type { LegacyExecutableGameAction } from "../src/domain/actions/legacyAction.js";
-import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
+import { buildPlayerEnvironmentAllowedActions } from "../src/domain/actions/buildPlayerEnvironmentAllowedActions.js";
+import type { ExecutableGameAction } from "../src/domain/actions/action.js";
+import { normalizePlayerEnvironmentCurrentState } from "../src/normalization/normalizePlayerEnvironmentCurrentState.js";
 import { buildDecisionPrompt } from "../src/prompting/promptBuilder.js";
 import { FileDecisionRecorder, readRunMetadata, readRunRecords, readRunSummary } from "../src/recording/fileDecisionRecorder.js";
 import type { DecisionRecord, RunMetadata } from "../src/recording/types.js";
-import { fixture, TEST_ADAPTER } from "./helpers.js";
+import { TEST_ADAPTER, wrapSnapshot } from "./helpers.js";
 
 describe("FileDecisionRecorder", () => {
   it("rejects unsafe replay path segments", async () => {
     await expect(readRunMetadata("data/runs", "../outside")).rejects.toThrow("Unsafe path segment");
   });
 
-  it("keeps a v1 decision record replay-readable without reinterpreting its normalized state", async () => {
-    const dataRoot = await mkdtemp(join(tmpdir(), "re-spire-agent-legacy-"));
+  it("keeps a v1 decision record replay-readable without reinterpreting its state", async () => {
+    const dataRoot = await mkdtemp(join(tmpdir(), "re-spire-agent-history-"));
     await mkdir(join(dataRoot, "run-v1"), { recursive: true });
     await writeFile(join(dataRoot, "run-v1", "decisions.jsonl"), `${JSON.stringify({
       recordSchemaVersion: 1,
-      decisionId: "legacy-decision",
+      decisionId: "historical-decision",
       runId: "run-v1",
       tick: 1,
       startedAt: "2026-01-01T00:00:00.000Z",
@@ -36,27 +36,26 @@ describe("FileDecisionRecorder", () => {
     expect(records[0]?.recordSchemaVersion).toBe(1);
   });
 
-  it("persists pre/post raw state, full prompt, provider response, and the decision record", async () => {
+  it("persists the Player Environment snapshot, prompt, provider response, and receipt-facing action", async () => {
     const dataRoot = await mkdtemp(join(tmpdir(), "re-spire-agent-"));
     const metadata: RunMetadata = {
       metadataSchemaVersion: 1,
       runId: "run-recording-test",
       startedAt: "2026-01-01T00:00:00.000Z",
       agentVersion: "test",
-      adapter: { adapterId: "sts2mcp-rest", endpoint: "http://localhost:15526", capabilities: {} },
+      adapter: { adapterId: "sts2-player-environment", endpoint: "http://localhost:15526", capabilities: {} },
       provider: { provider: "deepseek", model: "fake", thinkingMode: "disabled", maxOutputTokens: 100 },
       evidence: {
         provenance: "fixture",
-        declaredBy: "runtime_configuration",
-        qualificationUse: "coverage_only_unless_independently_reviewed"
+        declaredBy: "runtime_configuration"
       },
-      schemas: { normalizedState: 2, prompt: 2, decisionRecord: 2 }
+      schemas: { normalizedState: 32, prompt: 3, decisionRecord: 2 }
     };
-    const recorder = new FileDecisionRecorder<LegacyExecutableGameAction>(dataRoot, metadata);
+    const recorder = new FileDecisionRecorder<ExecutableGameAction>(dataRoot, metadata);
     await recorder.initialize();
-    const raw = await fixture("combat") as any;
-    const envelope = normalizeCurrentState(raw, TEST_ADAPTER);
-    const actions = buildAllowedActions(envelope.currentState, envelope.stateHash);
+    const raw = wrapSnapshot();
+    const envelope = normalizePlayerEnvironmentCurrentState(raw, TEST_ADAPTER);
+    const actions = buildPlayerEnvironmentAllowedActions(envelope.currentState, envelope.stateHash);
     const prompt = buildDecisionPrompt(envelope.currentState, actions);
     const prepared = await recorder.prepare({
       decisionId: "decision-1",
@@ -76,11 +75,13 @@ describe("FileDecisionRecorder", () => {
       requestBodyRedacted: {},
       requestBodyHash: "sha256:request",
       rawProviderResponse: { choices: [] },
-      rawResponseText: '{"selectedActionId":"combat:end-turn","reasonBrief":"Done."}',
-      parsedDecision: { selectedActionId: "combat:end-turn", reasonBrief: "Done." },
+      rawResponseText: '{"selectedActionId":"end-turn","reasonBrief":"Done."}',
+      parsedDecision: { selectedActionId: "end-turn", reasonBrief: "Done." },
       finishReason: "stop"
     };
-    const record: DecisionRecord<LegacyExecutableGameAction> = {
+    const selected = actions[0];
+    expect(selected).toBeDefined();
+    const record: DecisionRecord<ExecutableGameAction> = {
       recordSchemaVersion: 2,
       decisionId: "decision-1",
       runId: recorder.runId,
@@ -96,7 +97,13 @@ describe("FileDecisionRecorder", () => {
         session: { provider: "deepseek", model: "fake", attempts: [attempt], finalAttempt: attempt },
         validation: { valid: true, outcome: "valid" }
       },
-      execution: { attempted: true, selectedActionId: "combat:end-turn", action: { kind: "end_turn" }, stateHashMatchedBeforeExecution: true },
+      execution: {
+        attempted: true,
+        selectedActionId: selected!.id,
+        action: selected!.action,
+        stateHashMatchedBeforeExecution: true,
+        adapterResult: { delivery: "delivered" }
+      },
       settlement: { status: "settled", polls: 1, elapsedMs: 1 },
       postState: { ...prepared.preState, rawStateRef: "pending" },
       outcome: "executed_and_settled"
@@ -118,9 +125,10 @@ describe("FileDecisionRecorder", () => {
     const savedRecord = JSON.parse((await readFile(join(runDir, "decisions.jsonl"), "utf8")).trim());
     expect(savedPrompt.systemPrompt).toBe(prompt.systemPrompt);
     expect(savedPrompt.userPrompt).toBe(prompt.userPrompt);
-    expect(savedResponse.finalAttempt.rawResponseText).toContain("combat:end-turn");
+    expect(savedResponse.finalAttempt.rawResponseText).toContain("end-turn");
     expect(savedRecord.preState.rawStateRef).toBe("snapshots/decision-1-pre.raw.json");
     expect(savedRecord.postState.rawStateRef).toBe("snapshots/decision-1-post.raw.json");
+    expect(savedRecord.execution.action).toEqual(selected!.action);
     expect(savedRecord.llm.responseRef).toBe("responses/decision-1.response.json");
     await expect(readRunSummary(dataRoot, recorder.runId)).resolves.toMatchObject({
       runId: recorder.runId,

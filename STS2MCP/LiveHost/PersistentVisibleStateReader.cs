@@ -14,7 +14,7 @@ namespace STS2_MCP.LiveHost;
 internal sealed record PersistentVisibleStateBuildResult(
     bool RunActive,
     PersistentVisibleState? State,
-    GatewayDiagnostic? Failure);
+    HostDiagnostic? Failure);
 
 /// <summary>
 /// Projects strategy-relevant facts rendered by the persistent single-player
@@ -119,8 +119,8 @@ internal static class PersistentVisibleStateReader
         Exception exception) => new(
             runActive,
             null,
-            GatewayDiagnostics.Create(
-                $"gateway.shared_state.{code}",
+            HostDiagnostics.Create(
+                $"host.shared_state.{code}",
                 "error",
                 "visibility",
                 "actions_suppressed",

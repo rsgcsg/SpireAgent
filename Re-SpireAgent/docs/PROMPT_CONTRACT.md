@@ -29,8 +29,8 @@ No API key or executable MCP payload enters the Prompt.
 The complete normalized state is still recorded for replay, validation and
 audit. Projection v1 records the source-state hash, exact projection hash,
 omitted evidence fields and deduplicated fact groups. These hashes do not grant
-action authority. Execution still checks the in-memory allowed-action
-whitelist and current Gateway state.
+action authority. Execution resolves the local choice against the in-memory
+allowed-action table and submits only the current C-issued `bound_action_id`.
 
 The implementation file retains the historical
 `shadowStrategyProjection.ts` name and `buildShadowStrategyProjection`
@@ -66,9 +66,9 @@ menus removed.
 
 `agent:prompt-shadow-compare` and `agent:prompt-repeat-baseline` remain
 non-mutating provider experiments over recorded bundles. They never contact the
-Gateway or create a run. The current provider comparison was blocked by the
+Player Environment Host or create a run. The current provider comparison was blocked by the
 network, so no strategy-equivalence claim exists.
 
 State guides explain schema semantics and visible constraints only. They must
 not become per-screen strategy scripts. Strategy, memory and learning remain
-outside this V3 freeze.
+outside the C1 connector freeze.

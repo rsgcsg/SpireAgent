@@ -1,7 +1,7 @@
 # ADR-0008: UI-First Connector Transition
 
 Status: superseded by
-[`ADR-0009`](ADR-0009-human-environment-core-boundaries.md)
+[`ADR-0009`](ADR-0009-player-environment-core-boundaries.md)
 
 Date: 2026-08-04
 
@@ -31,11 +31,11 @@ authority under inherited versioned directories.
 ADR-0009 replaces that implementation framing with current ownership:
 
 ```text
-LiveHost -> NativeUi + Authority -> HumanEnvironment -> Transport -> Consumer
+LiveHost -> NativeUi + Identity/Control -> PlayerEnvironment -> Transport -> Consumer
 ```
 
 The current protocol, implementation status and evidence boundary are defined
-by the Human Environment protocol, current status and dated closeout. Nothing
+by the Player Environment protocol, current status and dated closeout. Nothing
 in this superseded ADR freezes the current source, grants authority, or lets old
 runtime evidence qualify a new artifact.
 

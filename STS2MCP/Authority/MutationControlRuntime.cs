@@ -7,7 +7,7 @@ namespace STS2_MCP.Authority;
 internal static class MutationControlRuntime
 {
     private static readonly MutationControllerCoordinator Coordinator = new(
-        GatewayAuthorityRuntime.HostIdentity().RuntimeInstanceId);
+        EnvironmentIdentityRuntime.HostIdentity().RuntimeInstanceId);
 
     public static MutationClientRegistrationResult Register(
         MutationClientRegistrationRequest request) => Coordinator.Register(request);

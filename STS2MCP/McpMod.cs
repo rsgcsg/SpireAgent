@@ -22,8 +22,6 @@ public static partial class McpMod
     public const string Version = "0.6.0-dev";
     public const int DefaultPort = 15526;
     private const string ConfigFileName = "STS2_MCP.conf";
-    private const string QualificationStoreFileName =
-        "STS2_MCP.qualifications.json";
 
     private static HttpListener? _listener;
     private static Thread? _serverThread;
@@ -39,8 +37,6 @@ public static partial class McpMod
 
     private sealed record RuntimeConfig(
         int Port,
-        EnvironmentPermissionMode PermissionMode,
-        string? QualificationStorePath,
         bool NativePageEvidenceEnabled);
 
     private static RuntimeConfig LoadRuntimeConfig()
@@ -52,8 +48,6 @@ public static partial class McpMod
             if (modDir == null)
                 return new RuntimeConfig(
                     DefaultPort,
-                    EnvironmentPermissionMode.BalancedGray,
-                    null,
                     NativePageEvidenceEnabled: false);
 
             string configPath = Path.Combine(modDir, ConfigFileName);
@@ -64,9 +58,7 @@ public static partial class McpMod
                     var defaultConfig = new Dictionary<string, object>
                     {
                         ["port"] = DefaultPort,
-                        ["permission_mode"] = "balanced_gray",
-                        ["qualification_store"] = QualificationStoreFileName,
-                        ["human_environment_native_page_evidence_enabled"] = false
+                        ["player_environment_native_page_evidence_enabled"] = false
                     };
                     string json = JsonSerializer.Serialize(defaultConfig, _jsonOptions);
                     File.WriteAllText(configPath, json);
@@ -78,8 +70,6 @@ public static partial class McpMod
                 }
                 return new RuntimeConfig(
                     DefaultPort,
-                    EnvironmentPermissionMode.BalancedGray,
-                    Path.Combine(modDir, QualificationStoreFileName),
                     NativePageEvidenceEnabled: false);
             }
 
@@ -98,50 +88,9 @@ public static partial class McpMod
                     $"[STS2 MCP] Invalid or missing 'port' in {configPath}, using default {DefaultPort}");
             }
 
-            string? permissionMode = doc.RootElement.TryGetProperty(
-                "permission_mode",
-                out JsonElement modeElement)
-                ? modeElement.GetString()
-                : null;
-            if (permissionMode is not null
-                && permissionMode is not (
-                    "strict"
-                    or "balanced_gray"
-                    or "developer_gray"
-                    or "migration_exploration"))
-            {
-                GD.PrintErr(
-                    $"[STS2 MCP] Invalid permission_mode '{permissionMode}' in {configPath}; failing closed to strict");
-                permissionMode = "strict";
-            }
-            string? qualificationStore = QualificationStoreFileName;
-            if (doc.RootElement.TryGetProperty(
-                    "qualification_store",
-                    out JsonElement qualificationElement))
-            {
-                qualificationStore = qualificationElement.ValueKind switch
-                {
-                    JsonValueKind.Null => null,
-                    JsonValueKind.String
-                        when string.Equals(
-                            qualificationElement.GetString(),
-                            "disabled",
-                            StringComparison.OrdinalIgnoreCase) => null,
-                    JsonValueKind.String
-                        when !string.IsNullOrWhiteSpace(
-                            qualificationElement.GetString()) =>
-                        qualificationElement.GetString(),
-                    _ => QualificationStoreFileName
-                };
-            }
-            string? qualificationStorePath = qualificationStore == null
-                ? null
-                : Path.IsPathRooted(qualificationStore)
-                    ? qualificationStore
-                    : Path.Combine(modDir, qualificationStore);
             bool nativePageEvidenceEnabled = false;
             if (doc.RootElement.TryGetProperty(
-                    "human_environment_native_page_evidence_enabled",
+                    "player_environment_native_page_evidence_enabled",
                     out JsonElement nativePageEvidenceElement))
             {
                 if (nativePageEvidenceElement.ValueKind is JsonValueKind.True or JsonValueKind.False)
@@ -151,23 +100,19 @@ public static partial class McpMod
                 else
                 {
                     GD.PrintErr(
-                        $"[STS2 MCP] Invalid human_environment_native_page_evidence_enabled in {configPath}; keeping the optional evidence profile disabled");
+                        $"[STS2 MCP] Invalid player_environment_native_page_evidence_enabled in {configPath}; keeping the optional evidence profile disabled");
                 }
             }
             return new RuntimeConfig(
                 configuredPort,
-                EnvironmentPermissionManager.ParseMode(permissionMode),
-                qualificationStorePath,
                 nativePageEvidenceEnabled);
         }
         catch (Exception ex)
         {
             GD.PrintErr(
-                $"[STS2 MCP] Failed to load config: {ex.Message}; using default port and strict permission mode");
+                $"[STS2 MCP] Failed to load config: {ex.Message}; using safe defaults");
             return new RuntimeConfig(
                 DefaultPort,
-                EnvironmentPermissionMode.Strict,
-                null,
                 NativePageEvidenceEnabled: false);
         }
     }
@@ -176,7 +121,7 @@ public static partial class McpMod
     {
         try
         {
-            // Optional settings UI patches should not block the HTTP bridge itself.
+            // Optional settings UI patches should not block the Player Environment transport.
             TryApplyHarmonyPatches();
 
             // Connect to main thread process frame for action execution
@@ -184,10 +129,7 @@ public static partial class McpMod
             tree.Connect(SceneTree.SignalName.ProcessFrame, Callable.From(ProcessMainThreadQueue));
 
             RuntimeConfig config = LoadRuntimeConfig();
-            GatewayAuthorityRuntime.Configure(
-                config.PermissionMode,
-                config.QualificationStorePath);
-            HumanEnvironment.Runtime.HumanEnvironmentRuntime.ConfigureNativePageEvidence(
+            PlayerEnvironment.PlayerEnvironmentService.ConfigureNativePageEvidence(
                 config.NativePageEvidenceEnabled);
             int port = config.Port;
 
@@ -205,9 +147,7 @@ public static partial class McpMod
 
             GD.Print($"[STS2 MCP] v{Version} server started on http://localhost:{port}/");
             GD.Print(
-                $"[STS2 MCP] Permission mode: {EnvironmentPermissionManager.ModeName(config.PermissionMode)}");
-            GD.Print(
-                $"[STS2 MCP] Human Environment native-page evidence: {(config.NativePageEvidenceEnabled ? "enabled" : "disabled")}");
+                $"[STS2 MCP] Player Environment native-page evidence: {(config.NativePageEvidenceEnabled ? "enabled" : "disabled")}");
             GD.Print("[STS2 MCP] Legacy v1 HTTP namespace: retired");
         }
         catch (Exception ex)
@@ -312,17 +252,18 @@ public static partial class McpMod
                 SendError(
                     response,
                     410,
-                    "Legacy v1 is retired. Use the Human Environment contract at /api/he.");
+                    "Legacy v1 is retired. Use the Player Environment contract at /api/player-environment.");
                 return;
             }
 
             if (path.StartsWith("/api/v2", StringComparison.Ordinal)
-                || path.StartsWith("/api/v3", StringComparison.Ordinal))
+                || path.StartsWith("/api/v3", StringComparison.Ordinal)
+                || path.StartsWith("/api/he", StringComparison.Ordinal))
             {
                 SendError(
                     response,
                     410,
-                    "Bridge v2 and Connector v3 transports are retired in this artifact. Use /api/he; rollback requires a prior artifact.");
+                    "Bridge v2, Connector v3 and the transitional HE route are retired in this artifact. Use /api/player-environment; rollback requires a prior artifact.");
                 return;
             }
 
@@ -330,85 +271,85 @@ public static partial class McpMod
             {
                 SendJson(response, new { message = $"Hello from STS2 MCP v{Version}", status = "ok" });
             }
-            else if (path == "/api/he/capabilities")
+            else if (path == "/api/player-environment/capabilities")
             {
                 if (request.HttpMethod == "GET")
-                    HandleGetHumanEnvironmentCapabilities(response);
+                    HandleGetCapabilities(response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
-            else if (path == "/api/he/observation")
+            else if (path == "/api/player-environment/snapshot")
             {
                 if (request.HttpMethod == "GET")
-                    HandleGetHumanEnvironmentObservation(request, response);
+                    HandleGetPlayerEnvironmentSnapshot(request, response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
-            else if (path.StartsWith("/api/he/reads/", StringComparison.Ordinal))
+            else if (path.StartsWith("/api/player-environment/reads/", StringComparison.Ordinal))
             {
                 if (request.HttpMethod == "GET")
-                    HandleGetHumanEnvironmentRead(
-                        path["/api/he/reads/".Length..],
+                    HandleGetPlayerEnvironmentRead(
+                        path["/api/player-environment/reads/".Length..],
                         request,
                         response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
-            else if (path == "/api/he/clients/register")
+            else if (path == "/api/player-environment/clients/register")
             {
                 if (request.HttpMethod == "POST")
-                    HandlePostHumanEnvironmentClientRegistration(request, response);
+                    HandlePostPlayerEnvironmentClientRegistration(request, response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
-            else if (path == "/api/he/controller")
+            else if (path == "/api/player-environment/controller")
             {
                 if (request.HttpMethod == "GET")
-                    HandleGetHumanEnvironmentControl(response);
+                    HandleGetPlayerEnvironmentControl(response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
-            else if (path.StartsWith("/api/he/controller/", StringComparison.Ordinal))
+            else if (path.StartsWith("/api/player-environment/controller/", StringComparison.Ordinal))
             {
-                string operation = path["/api/he/controller/".Length..];
+                string operation = path["/api/player-environment/controller/".Length..];
                 if (request.HttpMethod == "POST" && operation is "acquire" or "renew" or "release")
-                    HandlePostHumanEnvironmentController(operation, request, response);
+                    HandlePostPlayerEnvironmentController(operation, request, response);
                 else if (request.HttpMethod == "POST")
                     SendError(response, 404, "Unknown controller operation");
                 else
                     SendError(response, 405, "Method not allowed");
             }
-            else if (path == "/api/he/actions")
+            else if (path == "/api/player-environment/actions")
             {
                 if (request.HttpMethod == "POST")
-                    HandlePostHumanEnvironmentAction(request, response);
+                    HandlePostPlayerEnvironmentAction(request, response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
-            else if (path.StartsWith("/api/he/actions/", StringComparison.Ordinal))
+            else if (path.StartsWith("/api/player-environment/actions/", StringComparison.Ordinal))
             {
                 if (request.HttpMethod == "GET")
-                    HandleGetHumanEnvironmentAction(path["/api/he/actions/".Length..], response);
+                    HandleGetPlayerEnvironmentAction(path["/api/player-environment/actions/".Length..], response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
-            else if (path == "/api/he/evidence/native-pages/sessions")
+            else if (path == "/api/player-environment/evidence/native-pages/sessions")
             {
                 if (request.HttpMethod == "POST")
-                    HandlePostHumanEnvironmentNativePageEvidenceOpen(request, response);
+                    HandlePostPlayerEnvironmentNativePageEvidenceOpen(request, response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
             else if (path.StartsWith(
-                         "/api/he/evidence/native-pages/sessions/",
+                         "/api/player-environment/evidence/native-pages/sessions/",
                          StringComparison.Ordinal))
             {
                 string operation = path[
-                    "/api/he/evidence/native-pages/sessions/".Length..];
+                    "/api/player-environment/evidence/native-pages/sessions/".Length..];
                 if (request.HttpMethod == "POST"
                     && operation.EndsWith("/return", StringComparison.Ordinal))
                 {
-                    HandlePostHumanEnvironmentNativePageEvidenceReturn(
+                    HandlePostPlayerEnvironmentNativePageEvidenceReturn(
                         operation[..^"/return".Length],
                         request,
                         response);
@@ -416,7 +357,7 @@ public static partial class McpMod
                 else if (request.HttpMethod == "GET"
                          && !operation.Contains('/'))
                 {
-                    HandleGetHumanEnvironmentNativePageEvidence(
+                    HandleGetPlayerEnvironmentNativePageEvidence(
                         operation,
                         request,
                         response);

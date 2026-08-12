@@ -22,8 +22,7 @@ namespace STS2_MCP.LiveHost;
 /// </summary>
 internal sealed class CombatHandCardSelectionSurfaceReader : ILiveSurfaceReader
 {
-    internal const string ConfirmCompletionWitness =
-        "combat_hand_confirm_control_consumed_or_owner_closed";
+    internal const string ConfirmDeliveryEvidence = "native_combat_hand_confirm_clicked";
 
     private const string SurfaceKind = "combat_hand_card_selection";
     private const string ReflectionEvidence =
@@ -64,7 +63,7 @@ internal sealed class CombatHandCardSelectionSurfaceReader : ILiveSurfaceReader
             return BindingUnavailable(
                 game,
                 context,
-                "The combat-hand selector is visible without a qualified combat context.",
+                "The combat-hand selector is visible without a current combat context.",
                 new[] { "combat_context", "legal_actions" });
         }
 
@@ -99,7 +98,7 @@ internal sealed class CombatHandCardSelectionSurfaceReader : ILiveSurfaceReader
                 new[] { "prompt", "legal_actions" });
         }
 
-        if (!SelectedCardsHaveVisibleWitness(hand, exact.Mode, exact.SelectedCards))
+        if (!SelectedCardsMatchVisibleSelection(hand, exact.Mode, exact.SelectedCards))
         {
             return BindingUnavailable(
                 game,
@@ -202,7 +201,7 @@ internal sealed class CombatHandCardSelectionSurfaceReader : ILiveSurfaceReader
             {
                 "NPlayerHand.IsInCardSelection+CurrentMode+ActiveHolders",
                 "NPlayerHand.%SelectionHeader+%SelectModeConfirmButton",
-                "NSelectedHandCardContainer or NUpgradePreview selected-card witness",
+                "NSelectedHandCardContainer or NUpgradePreview selected-card representation",
                 "NCardHolder._isClickable exact-version binding",
                 ReflectionEvidence
             },
@@ -266,9 +265,7 @@ internal sealed class CombatHandCardSelectionSurfaceReader : ILiveSurfaceReader
         }
 
         holder.EmitSignal(NCardHolder.SignalName.Pressed, holder);
-        return NativeInputResult.Started(
-            () => !IsCurrentSelection(expectedHand) || IsSelected(expectedHand, expectedCard),
-            "selected_membership_changed_or_auto_completed");
+        return NativeInputResult.Delivered("native_combat_hand_card_pressed");
     }
 
     private static NativeInputResult StartDeselect(NPlayerHand expectedHand, CardModel expectedCard)
@@ -289,9 +286,7 @@ internal sealed class CombatHandCardSelectionSurfaceReader : ILiveSurfaceReader
         }
 
         holder.EmitSignal(NCardHolder.SignalName.Pressed, holder);
-        return NativeInputResult.Started(
-            () => !IsCurrentSelection(expectedHand) || !IsSelected(expectedHand, expectedCard),
-            "selected_membership_removed_or_selection_closed");
+        return NativeInputResult.Delivered("native_selected_hand_card_pressed");
     }
 
     private static NativeInputResult StartConfirm(NPlayerHand expectedHand)
@@ -303,19 +298,8 @@ internal sealed class CombatHandCardSelectionSurfaceReader : ILiveSurfaceReader
             return NativeInputResult.Rejected("confirm_not_available", "The hand-selection confirm control is no longer enabled.");
 
         confirm.ForceClick();
-        return NativeInputResult.Started(
-            () => ConfirmCompletionObserved(
-                IsCurrentSelection(expectedHand),
-                confirm.IsEnabled,
-                McpMod.IsNodeVisible(confirm)),
-            ConfirmCompletionWitness);
+        return NativeInputResult.Delivered(ConfirmDeliveryEvidence);
     }
-
-    internal static bool ConfirmCompletionObserved(
-        bool ownerIsCurrent,
-        bool confirmIsEnabled,
-        bool confirmIsVisible) =>
-        !ownerIsCurrent || !confirmIsEnabled || !confirmIsVisible;
 
     private static NativeInputResult StartClosePeek(NPlayerHand expectedHand)
     {
@@ -325,9 +309,7 @@ internal sealed class CombatHandCardSelectionSurfaceReader : ILiveSurfaceReader
             return NativeInputResult.Rejected("peek_close_not_available", "The peek control is no longer enabled.");
 
         expectedHand.PeekButton.ForceClick();
-        return NativeInputResult.Started(
-            () => !IsCurrentSelection(expectedHand) || !expectedHand.PeekButton.IsPeeking,
-            "combat_hand_peek_closed");
+        return NativeInputResult.Delivered("native_combat_hand_peek_button_clicked");
     }
 
     internal static NativeInputResult StartSelect(
@@ -399,7 +381,7 @@ internal sealed class CombatHandCardSelectionSurfaceReader : ILiveSurfaceReader
         return binding != null;
     }
 
-    private static bool SelectedCardsHaveVisibleWitness(
+    private static bool SelectedCardsMatchVisibleSelection(
         NPlayerHand hand,
         NPlayerHand.Mode mode,
         IReadOnlyList<CardModel> selected)
@@ -483,8 +465,8 @@ internal sealed class CombatHandCardSelectionSurfaceReader : ILiveSurfaceReader
             new[] { "NPlayerHand exact-version selection binding" },
             missing,
             "combat_hand_card_selection_binding_unavailable",
-            "gateway.surface.combat_hand_card_selection.binding_unavailable",
-            "Combat hand-selection source or completion semantics are not exact.");
+            "host.surface.combat_hand_card_selection.binding_unavailable",
+            "The current combat hand-selection controls or selected-card representation are not exact.");
 
     private sealed record Binding(
         CardSelectorPrefs Preferences,

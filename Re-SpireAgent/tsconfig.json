@@ -15,35 +15,5 @@
     "types": ["node"]
   },
   "include": ["src/**/*.ts"],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "test",
-    "src/domain/actions/buildAllowedActions.ts",
-    "src/domain/actions/legacyAction.ts",
-    "src/integrations/sts2mcp/bridgeV2Client.ts",
-    "src/integrations/sts2mcp/bridgeV2Protocol.ts",
-    "src/integrations/sts2mcp/connectorV3Projection.ts",
-    "src/integrations/sts2mcp/connectorV3Protocol.ts",
-    "src/integrations/sts2mcp/hybridAdapter.ts",
-    "src/integrations/sts2mcp/legacyRawState.ts",
-    "src/integrations/sts2mcp/gatewayCardBundleProtocol.ts",
-    "src/integrations/sts2mcp/gatewayCombatHandProtocol.ts",
-    "src/integrations/sts2mcp/gatewayCombatPileProtocol.ts",
-    "src/integrations/sts2mcp/gatewayDeckEnchantProtocol.ts",
-    "src/integrations/sts2mcp/gatewayDeckRemovalProtocol.ts",
-    "src/integrations/sts2mcp/gatewayDeckUpgradeProtocol.ts",
-    "src/integrations/sts2mcp/gatewayEventDialogueProtocol.ts",
-    "src/integrations/sts2mcp/gatewayGeneratedChoiceProtocol.ts",
-    "src/integrations/sts2mcp/gatewayJourneyProtocol.ts",
-    "src/integrations/sts2mcp/gatewayMenuProtocol.ts",
-    "src/integrations/sts2mcp/gatewayRewardProtocol.ts",
-    "src/integrations/sts2mcp/gatewayRunRoomProtocol.ts",
-    "src/integrations/sts2mcp/gatewayTransformProtocol.ts",
-    "src/normalization/bridgeV2CardProjection.ts",
-    "src/normalization/bridgeV2InspectionProjection.ts",
-    "src/normalization/normalizeBridgeV2CurrentState.ts",
-    "src/normalization/normalizeConnectorV3CurrentState.ts",
-    "src/normalization/normalizeCurrentState.ts"
-  ]
+  "exclude": ["node_modules", "dist", "test"]
 }

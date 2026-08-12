@@ -24,14 +24,10 @@ namespace STS2_MCP.LiveHost;
 
 internal sealed class CharacterSelectSurfaceReader : ILiveSurfaceReader
 {
-    internal const string SelectCharacterCompletionWitness =
-        "exact_character_button_selected";
-    internal const string AscensionChangeCompletionWitness =
-        "exact_ascension_level_changed";
-    internal const string EmbarkCompletionWitness =
-        "singleplayer_run_active_with_selected_character";
-    internal const string BackCompletionWitness =
-        "character_select_submenu_owner_changed";
+    internal const string SelectCharacterDeliveryEvidence = "native_character_button_selected";
+    internal const string AscensionChangeDeliveryEvidence = "native_ascension_arrow_clicked";
+    internal const string EmbarkDeliveryEvidence = "native_embark_button_clicked";
+    internal const string BackDeliveryEvidence = "native_character_select_back_clicked";
 
     public string Kind => "character_select";
 
@@ -218,10 +214,7 @@ internal sealed class CharacterSelectSurfaceReader : ILiveSurfaceReader
         }
 
         expectedButton.Select();
-        return NativeInputResult.Started(
-            () => IsCurrentSingleplayerScreen(expectedScreen, expectedLobby)
-                  && expectedButton.IsSelected,
-            SelectCharacterCompletionWitness);
+        return NativeInputResult.Delivered(SelectCharacterDeliveryEvidence);
     }
 
     internal static NativeInputResult StartSelect(
@@ -247,7 +240,6 @@ internal sealed class CharacterSelectSurfaceReader : ILiveSurfaceReader
         NButton expectedArrow,
         int delta)
     {
-        int before = expectedPanel.Ascension;
         if (!IsCurrentSingleplayerScreen(expectedScreen, expectedLobby)
             || !McpMod.IsLiveNode(expectedPanel)
             || !McpMod.IsNodeVisible(expectedPanel)
@@ -261,10 +253,7 @@ internal sealed class CharacterSelectSurfaceReader : ILiveSurfaceReader
         }
 
         expectedArrow.ForceClick();
-        return NativeInputResult.Started(
-            () => IsCurrentSingleplayerScreen(expectedScreen, expectedLobby)
-                  && expectedPanel.Ascension == before + delta,
-            AscensionChangeCompletionWitness);
+        return NativeInputResult.Delivered(AscensionChangeDeliveryEvidence);
     }
 
     internal static NativeInputResult StartAscensionChange(
@@ -313,18 +302,8 @@ internal sealed class CharacterSelectSurfaceReader : ILiveSurfaceReader
                 "The advertised character-select commit is no longer current and enabled.");
         }
 
-        bool random = expectedSelected.IsRandom;
-        string selectedCharacterId = expectedSelected.Character.Id.Entry;
         expectedEmbark.ForceClick();
-        return NativeInputResult.Started(
-            () => RunManager.Instance.IsInProgress
-                  && RunManager.Instance.DebugOnlyGetState() is { } run
-                  && (random || string.Equals(
-                      LocalContext.GetMe(run)?.Character.Id.Entry,
-                      selectedCharacterId,
-                      StringComparison.Ordinal)),
-            EmbarkCompletionWitness,
-            allowIntermediateStateChanges: true);
+        return NativeInputResult.Delivered(EmbarkDeliveryEvidence);
     }
 
     internal static NativeInputResult StartEmbark(
@@ -372,10 +351,7 @@ internal sealed class CharacterSelectSurfaceReader : ILiveSurfaceReader
         }
 
         expectedBack.ForceClick();
-        return NativeInputResult.Started(
-            () => !IsCurrentSingleplayerScreen(expectedScreen, expectedLobby),
-            BackCompletionWitness,
-            allowIntermediateStateChanges: true);
+        return NativeInputResult.Delivered(BackDeliveryEvidence);
     }
 
     internal static NativeInputResult StartBack(

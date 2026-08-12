@@ -9,9 +9,9 @@ one developer's installed DLL as repository truth.
 | Name | Meaning |
 |---|---|
 | SpireAgent | This public monorepo and overall project |
-| `Re-SpireAgent/` | External Agent runtime and strict Human Environment consumer |
-| Human Environment C | In-game player-visible observation, read and input-delivery owner |
-| `STS2MCP/` | Compatibility-sensitive source directory and Mod ID for the Gateway, REST and optional MCP adapter |
+| `Re-SpireAgent/` | External Agent runtime and strict Player Environment consumer |
+| Player Environment C | In-game player-visible observation, read and input-delivery owner |
+| `STS2MCP/` | Compatibility-sensitive source directory and Mod ID for the Live Host, REST and optional MCP adapter |
 
 The `STS2MCP` name does not make MCP mandatory. Re uses REST directly. A Mod ID
 or directory rename is a separate compatibility migration.
@@ -26,7 +26,7 @@ cd SpireAgent
 git status --short --branch
 ```
 
-Contributors testing the Human Environment clean-baseline branch before it reaches the default
+Contributors testing the Player Environment clean-baseline branch before it reaches the default
 branch may explicitly track the shared branch:
 
 ```bash
@@ -50,7 +50,7 @@ Required:
 
 Optional MCP development also needs Python 3.11 or newer and `uv`.
 
-The repository does not contain proprietary game assemblies. Gateway tests and
+The repository does not contain proprietary game assemblies. Host tests and
 builds reference the exact local Steam installation.
 
 Install Re dependencies from the repository root:
@@ -86,17 +86,19 @@ npm run doctor
 
 `doctor` is read-only. It reports prerequisites, Git branch/HEAD/worktree,
 source protocol, source-to-build provenance, built/installed/loaded SHA and
-MVID, game identity, Modset, runtime authority and ordered next steps. It reads
+MVID, game identity, Modset, input-delivery readiness and ordered next steps. It reads
 only `STS2_GAME_DIR` from `.env.local`; it never prints provider configuration.
+It may report retired setting names so an upgraded checkout can remove stale
+V2/V3/HE overrides, but it never reports their values.
 
 Typical action-required results include:
 
 - `source_build_digest_mismatch`: source changed after the last Release build;
 - `build_provenance_missing`: an old/manual artifact cannot be tied to source;
 - `source_loaded_protocol_mismatch`: the running game still has an older DLL;
-- `duplicate_gateway_manifests_detected`: more than one Mod manifest is scanned.
+- `duplicate_host_manifests_detected`: more than one Mod manifest is scanned.
 
-Do not bypass these checks by enabling fallback permissions.
+Do not bypass these checks with manual copies or protocol fallbacks.
 
 ## 5. Verified Build And Install
 
@@ -108,12 +110,12 @@ npm run deploy
 
 The command performs, in order:
 
-1. Gateway, Re, Python/MCP and repository contract checks;
+1. Host, Re, Python/MCP and repository contract checks;
 2. exact-game Release build and Re production build;
 3. a build provenance record containing source revision/digest, protocol,
    artifact SHA and MVID;
 4. duplicate-Mod diagnosis;
-5. timestamped backup of the previous Gateway under ignored
+5. timestamped backup of the previous Host under ignored
    `STS2MCP/.local/deployments/`;
 6. safe install and built/installed identity verification.
 
@@ -128,7 +130,6 @@ Advanced contributors can run individual stages with:
 
 ```bash
 npm run connector -- test
-npm run connector -- audit
 npm run connector -- build
 npm run connector -- diagnose-installation
 npm run connector -- install
@@ -146,10 +147,10 @@ npm run verify:loaded
 ```
 
 This requires exact agreement among current C#/Re protocol, current source
-digest, built DLL, installed DLL and Gateway-reported loaded SHA/MVID. It also
+digest, built DLL, installed DLL and Host-reported loaded SHA/MVID/source revision. It also
 reports exact game, Modset and runtime identity. A successful check proves only
-loaded identity and environment readiness; it is not mutation canary, Organic
-evidence or persistent qualification.
+loaded identity and environment readiness; it is not a mutation canary or Live
+journey evidence.
 
 For read-only diagnostics:
 
@@ -158,9 +159,10 @@ npm run connector -- show-status
 npm run connector -- collect-evidence
 ```
 
-Current routes are `/api/he/*`. Re consumes Human Environment snapshots and exact current UI
-affordances without a V2/V3 capabilities or state sidecar. `/api/v3/*` is an
-explicit rollback/comparison API, never a silent fallback.
+Current routes are `/api/player-environment/*`. Re consumes Player Environment snapshots and exact current UI
+affordances without a V2/V3 capabilities or state sidecar. `/api/v1`, `/api/v2`,
+`/api/v3` and `/api/he` return `410`; rollback means loading a prior complete
+artifact after shutdown, never mixing protocols in one process.
 
 ## 7. Run Re-SpireAgent
 
@@ -169,7 +171,7 @@ cd Re-SpireAgent
 npm run agent:run
 ```
 
-The wrapper verifies exact identity and HE execution availability before
+The wrapper verifies exact identity and Player Environment input availability before
 invoking the provider. Re consumes snapshots, complete finite opaque bound actions,
 delivery receipts and successors. It may query the same pending request, but
 unknown delivery terminates the run and is never resubmitted.
@@ -180,7 +182,7 @@ The optional MCP transport is started separately:
 uv run --directory STS2MCP/mcp python server.py
 ```
 
-MCP owns no game legality, completion or additional permission.
+MCP owns no game legality, completion or additional authority.
 
 ## 8. Update Or Add Another Machine
 
@@ -192,11 +194,11 @@ On each machine:
 4. rerun `npm run bootstrap`, `npm run doctor` and `npm run deploy`;
 5. cold-start the game and run `npm run verify:loaded`;
 6. recreate `.env.local` locally;
-7. treat a changed game, Modset, Patch, Gateway SHA/MVID or runtime as a new
+7. treat a changed game, Modset, Host SHA/MVID or runtime as a new
    evidence scope.
 
 Do not move `node_modules/`, `dist/`, `bin/`, `obj/`, `out/`, game binaries,
-installed DLLs, `.local/`, qualification stores or `data/runs/` through Git.
+installed DLLs, `.local/` or `data/runs/` through Git.
 
 ## 9. Rollback
 
@@ -206,15 +208,15 @@ Every changed install reports `rollback_backup`. With the game closed:
 npm run connector -- restore-known-environment --backup <reported-directory>
 ```
 
-This restores only the backed-up Gateway artifact and its local provenance. It
-does not restore a Steam game version, Modset, save, permission or qualification.
+This restores only the backed-up Host artifact and its local provenance. It
+does not restore a Steam game version, Modset or save.
 Cold-start and verify again after rollback.
 
 ## 10. Troubleshooting
 
 | Symptom | Safe response |
 |---|---|
-| Gateway endpoint unavailable | Confirm the game is running, the Mod is enabled and port `15526` is free. |
+| Host endpoint unavailable | Confirm the game is running, the Mod is enabled and port `15526` is free. |
 | Source/build/install drift | Close the game and rerun `npm run deploy`; do not manually relabel the old DLL. |
 | Installed differs from loaded | Fully quit the game, confirm the process exited and cold-start again. |
 | Duplicate `STS2_MCP` manifests | Close the game, run `diagnose-installation`, then use `repair-installation` only for recognized backup directories. |
@@ -223,5 +225,5 @@ Cold-start and verify again after rollback.
 | Missing provider key | Check the local file name and permissions without printing the value. |
 
 Current support is defined by [Status](STATUS.md),
-[Connector coverage](../../STS2MCP/docs/human-environment/COVERAGE.md) and immutable
+[Connector coverage](../../STS2MCP/docs/player-environment/COVERAGE.md) and immutable
 exact-runtime evidence records, not by a successful build alone.

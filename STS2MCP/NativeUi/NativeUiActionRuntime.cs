@@ -11,96 +11,11 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Runs;
 using STS2_MCP.LiveHost;
 using STS2_MCP.LiveHost.Contracts;
-using STS2_MCP.Authority;
-using STS2_MCP.NativeUi;
-
-
 namespace STS2_MCP.NativeUi;
 
 internal static class NativeUiActionRuntime
 {
     private static NativeEntityRegistry Entities => NativeUiRuntime.Entities;
-    internal static IEnumerable<VisibleCard> SurfaceCards(ILiveSurface surface) =>
-        surface switch
-        {
-            DeckEnchantSelectionSurface value => value.Cards,
-            DeckRemovalSelectionSurface value => value.Cards,
-            EventDeckRemovalSelectionSurface value => value.Cards,
-            DeckUpgradeSelectionSurface value => value.Cards.Concat(value.PreviewCards),
-            DeckTransformSelectionSurface value => value.Cards,
-            WoodCarvingsReplacementSelectionSurface value => value.Cards,
-            CombatPileCardSelectionSurface value => value.Cards,
-            CombatHandCardSelectionSurface value => value.Cards,
-            EventCardAcquisitionSurface value => value.Cards,
-            CardRewardSelectionSurface value => value.Cards,
-            GeneratedCardChoiceSurface value => value.Cards,
-            _ => Array.Empty<VisibleCard>()
-        };
-
-    internal static bool TryDescribeDirectAuthorityCommands(
-        ILiveSurface surface,
-        out IReadOnlyList<NativeUiActionDescriptor> commands)
-    {
-        commands = surface switch
-        {
-            CombatTurnSurface value => DescribeCombatCommands(value),
-            ShopRoomSurface value => DescribeShopRoomCommands(value),
-            MapNavigationSurface value => DescribeMapCommands(value),
-            DeckEnchantSelectionSurface value => DescribeDeckEnchantCommands(value),
-            EventDialogueSurface value => DescribeEventDialogueCommands(value),
-            EventOptionSurface value => DescribeEventOptionCommands(value),
-            TreasureRoomSurface value => DescribeTreasureRoomCommands(value),
-            RewardClaimSurface value => DescribeRewardClaimCommands(value),
-            CardRewardSelectionSurface value => DescribeCardRewardCommands(value),
-            ShopInventorySurface value => DescribeShopInventoryCommands(value),
-            MainMenuSurface value => DescribeMainMenuCommands(value),
-            SingleplayerMenuSurface value => DescribeSingleplayerMenuCommands(value),
-            CharacterSelectSurface value => DescribeCharacterSelectCommands(value),
-            GameOverSurface value => DescribeGameOverCommands(value),
-            RestSiteSurface value => DescribeRestSiteCommands(value),
-            GeneratedCardChoiceSurface value => DescribeGeneratedCardChoiceCommands(value),
-            EventCardAcquisitionSurface value => DescribeEventCardAcquisitionCommands(value),
-            CombatHandCardSelectionSurface value => DescribeCombatHandCommands(value),
-            DeckUpgradeSelectionSurface value => DescribeDeckUpgradeCommands(value),
-            DeckRemovalSelectionSurface value when value.Kind is
-                "deck_removal_selection" or
-                "relic_deck_removal_selection" or
-                "reward_deck_removal_selection" => DescribeDeckRemovalCommands(value),
-            EventDeckRemovalSelectionSurface value => EventDeckRemovalSelection.DescribeCommands(value),
-            CardBundleSelectionSurface value => DescribeCardBundleCommands(value),
-            DeckTransformSelectionSurface value => DescribeDeckTransformCommands(value),
-            WoodCarvingsReplacementSelectionSurface value => DescribeWoodCarvingsCommands(value),
-            CombatPileCardSelectionSurface value => DescribeCombatPileCommands(value),
-            _ => Array.Empty<NativeUiActionDescriptor>()
-        };
-        return surface is
-            CombatTurnSurface or
-            ShopRoomSurface or
-            MapNavigationSurface or
-            DeckEnchantSelectionSurface or
-            EventDialogueSurface or
-            EventOptionSurface or
-            TreasureRoomSurface or
-            RewardClaimSurface or
-            CardRewardSelectionSurface or
-            ShopInventorySurface or
-            MainMenuSurface or
-            SingleplayerMenuSurface or
-            CharacterSelectSurface or
-            GameOverSurface or
-            RestSiteSurface or
-            GeneratedCardChoiceSurface or
-            EventCardAcquisitionSurface or
-            CombatHandCardSelectionSurface or
-            DeckUpgradeSelectionSurface or
-            DeckRemovalSelectionSurface or
-            EventDeckRemovalSelectionSurface or
-            CardBundleSelectionSurface or
-            DeckTransformSelectionSurface or
-            WoodCarvingsReplacementSelectionSurface or
-            CombatPileCardSelectionSurface;
-    }
-
     internal static IReadOnlyList<NativeUiBoundAction> BuildBindings(
         LiveObservation draft)
     {
@@ -130,35 +45,14 @@ internal static class NativeUiActionRuntime
             return BuildSingleplayerMenuBindings(draft, singleplayerMenu);
         if (draft.Surface is CharacterSelectSurface characterSelect)
             return BuildCharacterSelectBindings(draft, characterSelect);
-        if (draft.Surface is GeneratedCardChoiceSurface generatedCardChoice)
-            return BuildGeneratedCardChoiceBindings(draft, generatedCardChoice);
-        if (draft.Surface is EventCardAcquisitionSurface eventCardAcquisition)
-            return BuildEventCardAcquisitionBindings(draft, eventCardAcquisition);
         if (draft.Surface is GameOverSurface gameOver)
             return BuildGameOverBindings(draft, gameOver);
-        if (draft.Surface is RestSiteSurface restSite)
-            return BuildRestSiteBindings(draft, restSite);
         if (draft.Surface is CombatHandCardSelectionSurface combatHand)
             return BuildCombatHandBindings(draft, combatHand);
-        if (draft.Surface is DeckUpgradeSelectionSurface deckUpgrade)
-            return BuildDeckUpgradeBindings(draft, deckUpgrade);
-        if (draft.Surface is DeckRemovalSelectionSurface removal
-            && removal.Kind is
-                "deck_removal_selection" or
-                "relic_deck_removal_selection" or
-                "reward_deck_removal_selection")
-            return BuildDeckRemovalBindings(draft, removal);
-        if (draft.Surface is EventDeckRemovalSelectionSurface eventRemoval)
-            return BuildEventRemovalBindings(draft, eventRemoval);
         if (draft.Surface is CardBundleSelectionSurface cardBundle)
             return BuildCardBundleBindings(draft, cardBundle);
         if (draft.Surface is DeckTransformSelectionSurface deckTransform)
             return BuildDeckTransformBindings(draft, deckTransform);
-        if (draft.Surface is WoodCarvingsReplacementSelectionSurface woodCarvings)
-            return BuildWoodCarvingsBindings(draft, woodCarvings);
-        if (draft.Surface is CombatPileCardSelectionSurface combatPile)
-            return BuildCombatPileBindings(draft, combatPile);
-
         return Array.Empty<NativeUiBoundAction>();
     }
 
@@ -377,17 +271,17 @@ internal static class NativeUiActionRuntime
                 "toggle_card",
                 "selection",
                 $"{(selected ? "Deselect" : "Select")} {card.Name ?? card.DefinitionId}",
-                $"{surface.Source.BindingEvidence}|NCardGrid.HolderPressed",
+                $"{DeckEnchantSurfaceReader.NativeBindingEvidence}|NCardGrid.HolderPressed",
                 new[] { screen, new ActionEntityBinding("card", cardId) }));
         }
         if (surface.CanPreview)
-            commands.Add(NativeDescriptor("preview_enchantment", "preview_selection", "preview", "Preview selected cards with the enchantment", $"{surface.Source.BindingEvidence}|NDeckEnchantSelectScreen.main_confirm", new[] { screen }));
+            commands.Add(NativeDescriptor("preview_enchantment", "preview_selection", "preview", "Preview selected cards with the enchantment", $"{DeckEnchantSurfaceReader.NativeBindingEvidence}|NDeckEnchantSelectScreen.main_confirm", new[] { screen }));
         if (surface.CanCloseSelection)
-            commands.Add(NativeDescriptor("close_enchantment", "close_selection", "cancel", "Close enchant selection", $"{surface.Source.BindingEvidence}|NDeckEnchantSelectScreen.close", new[] { screen }));
+            commands.Add(NativeDescriptor("close_enchantment", "close_selection", "cancel", "Close enchant selection", $"{DeckEnchantSurfaceReader.NativeBindingEvidence}|NDeckEnchantSelectScreen.close", new[] { screen }));
         if (surface.CanConfirm)
-            commands.Add(NativeDescriptor("confirm_enchantment", "confirm_selection", "commit", "Apply the displayed enchantment", $"{surface.Source.BindingEvidence}|NDeckEnchantSelectScreen.preview_confirm", new[] { screen }.Concat(surface.SelectedCardEntityIds.Select(id => new ActionEntityBinding("card", id))).ToArray()));
+            commands.Add(NativeDescriptor("confirm_enchantment", "confirm_selection", "commit", "Apply the displayed enchantment", $"{DeckEnchantSurfaceReader.NativeBindingEvidence}|NDeckEnchantSelectScreen.preview_confirm", new[] { screen }.Concat(surface.SelectedCardEntityIds.Select(id => new ActionEntityBinding("card", id))).ToArray()));
         if (surface.CanCancelPreview)
-            commands.Add(NativeDescriptor("cancel_enchantment_preview", "cancel_preview", "cancel", "Return to enchantment selection", $"{surface.Source.BindingEvidence}|NDeckEnchantSelectScreen.preview_cancel", new[] { screen }));
+            commands.Add(NativeDescriptor("cancel_enchantment_preview", "cancel_preview", "cancel", "Return to enchantment selection", $"{DeckEnchantSurfaceReader.NativeBindingEvidence}|NDeckEnchantSelectScreen.preview_cancel", new[] { screen }));
         return commands;
     }
 
@@ -452,91 +346,6 @@ internal static class NativeUiActionRuntime
                     new ActionEntityBinding("option", option.EntityId)
                 }))
             .ToArray();
-
-    private static IReadOnlyList<NativeUiBoundAction> BuildRestSiteBindings(
-        LiveObservation draft,
-        RestSiteSurface surface) =>
-        DescribeRestSiteCommands(surface)
-            .Select(action => BindActionToCurrentObservation(draft, action))
-            .Where(binding => binding != null)
-            .Cast<NativeUiBoundAction>()
-            .ToArray();
-
-    internal static IReadOnlyList<NativeUiActionDescriptor> DescribeRestSiteCommands(
-        RestSiteSurface surface)
-    {
-        var actions = new List<NativeUiActionDescriptor>();
-        ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
-        foreach (VisibleRestOption option in surface.Options.Where(value => value.Enabled))
-        {
-            actions.Add(NativeDescriptor(
-                $"rest:option:{surface.ScreenEntityId}:{option.EntityId}",
-                "choose_rest_option",
-                "selection",
-                option.Name ?? option.OptionId,
-                "RestSiteRoom.Options+NRestSiteButton.ForceClick+source-specific-outcome",
-                new[]
-                {
-                    screen,
-                    new ActionEntityBinding("rest_option", option.EntityId)
-                }));
-        }
-        if (surface.CanProceed)
-        {
-            actions.Add(NativeDescriptor(
-                $"rest:proceed:{surface.ScreenEntityId}",
-                "proceed_rest_site",
-                "navigation",
-                "Proceed to map",
-                "NRestSiteRoom.ProceedButton+NMapScreen.Open",
-                new[] { screen }));
-        }
-        return actions;
-    }
-
-    private static IReadOnlyList<NativeUiBoundAction> BuildEventCardAcquisitionBindings(
-        LiveObservation draft,
-        EventCardAcquisitionSurface surface) =>
-        DescribeEventCardAcquisitionCommands(surface)
-            .Select(action => BindActionToCurrentObservation(draft, action))
-            .Where(binding => binding != null)
-            .Cast<NativeUiBoundAction>()
-            .ToArray();
-
-    internal static IReadOnlyList<NativeUiActionDescriptor> DescribeEventCardAcquisitionCommands(
-        EventCardAcquisitionSurface surface)
-    {
-        var actions = new List<NativeUiActionDescriptor>();
-        ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
-        IReadOnlyDictionary<string, VisibleCard> cards = surface.Cards.ToDictionary(
-            card => card.EntityId,
-            StringComparer.Ordinal);
-        foreach (string cardId in surface.SelectableCardEntityIds)
-        {
-            if (!cards.TryGetValue(cardId, out VisibleCard? card))
-                continue;
-            actions.Add(NativeDescriptor(
-                $"event-acquisition:select:{surface.ScreenEntityId}:{cardId}",
-                "select_event_card_acquisition",
-                "selection",
-                $"Choose {card.Name ?? card.DefinitionId} to add to the run deck",
-                "NSimpleCardSelectScreen.NCardGrid.HolderPressed+exact-event-source",
-                new[] { screen, new ActionEntityBinding("card", cardId) }));
-        }
-        foreach (string cardId in surface.DeselectableCardEntityIds)
-        {
-            if (!cards.TryGetValue(cardId, out VisibleCard? card))
-                continue;
-            actions.Add(NativeDescriptor(
-                $"event-acquisition:deselect:{surface.ScreenEntityId}:{cardId}",
-                "deselect_event_card_acquisition",
-                "selection",
-                $"Deselect {card.Name ?? card.DefinitionId}",
-                "NSimpleCardSelectScreen.NCardGrid.HolderPressed+exact-event-source",
-                new[] { screen, new ActionEntityBinding("card", cardId) }));
-        }
-        return actions;
-    }
 
     private static IReadOnlyList<NativeUiBoundAction> BuildGameOverBindings(
         LiveObservation draft,
@@ -768,7 +577,7 @@ internal static class NativeUiActionRuntime
                 "purchase_shop_card",
                 "purchase",
                 $"Buy {offer.Card!.Name ?? offer.Card.DefinitionId} for {offer.Price} gold",
-                "MerchantCardEntry.OnTryPurchaseWrapper+exact-card-deck-gold-entry-witness",
+                "MerchantCardEntry.current_visible_enabled_offer+OnTryPurchaseWrapper",
                 new[]
                 {
                     screen,
@@ -783,7 +592,7 @@ internal static class NativeUiActionRuntime
                 "purchase_shop_relic",
                 "purchase",
                 $"Buy {offer.Relic!.Name ?? offer.Relic.DefinitionId} for {offer.Price} gold",
-                "MerchantRelicEntry.OnTryPurchaseWrapper+exact-relic-gold-entry-witness",
+                "MerchantRelicEntry.current_visible_enabled_offer+OnTryPurchaseWrapper",
                 new[]
                 {
                     screen,
@@ -798,7 +607,7 @@ internal static class NativeUiActionRuntime
                 "purchase_shop_potion",
                 "purchase",
                 $"Buy {offer.Name ?? offer.DefinitionId} for {offer.Price} gold",
-                "MerchantPotionEntry.OnTryPurchaseWrapper+exact-potion-slot-gold-entry-witness",
+                "MerchantPotionEntry.current_visible_enabled_offer+OnTryPurchaseWrapper",
                 new[]
                 {
                     screen,
@@ -853,7 +662,7 @@ internal static class NativeUiActionRuntime
                 "continue_run",
                 "navigation",
                 "Continue the saved run",
-                "NMainMenu.ContinueButton+active-run-witness",
+                "NMainMenu.current_visible_enabled_ContinueButton",
                 new[] { screen }));
         }
         if (IsActionableMenuOption(surface.Options, "singleplayer"))
@@ -863,7 +672,7 @@ internal static class NativeUiActionRuntime
                 "open_singleplayer",
                 "navigation",
                 "Open Single Player",
-                "NMainMenu.SingleplayerButton+submenu-owner-witness",
+                "NMainMenu.current_visible_enabled_SingleplayerButton",
                 new[] { screen }));
         }
         return actions;
@@ -890,7 +699,7 @@ internal static class NativeUiActionRuntime
                 "open_standard_run_setup",
                 "navigation",
                 "Open Standard run setup",
-                "NSingleplayerSubmenu.StandardButton+character-select-owner-witness",
+                "NSingleplayerSubmenu.current_visible_enabled_StandardButton",
                 new[] { screen }));
         }
         if (IsActionableMenuOption(surface.Options, "back"))
@@ -900,7 +709,7 @@ internal static class NativeUiActionRuntime
                 "back_from_singleplayer_menu",
                 "navigation",
                 "Back to main menu",
-                "NSingleplayerSubmenu.BackButton+root-owner-witness",
+                "NSingleplayerSubmenu.current_visible_enabled_BackButton",
                 new[] { screen }));
         }
         return actions;
@@ -928,7 +737,7 @@ internal static class NativeUiActionRuntime
                 "select_character",
                 "selection",
                 $"Select {character.Name}",
-                "NCharacterSelectButton.Select+exact-selected-button-witness",
+                "NCharacterSelectButton.current_visible_enabled_Select",
                 new[]
                 {
                     screen,
@@ -942,7 +751,7 @@ internal static class NativeUiActionRuntime
                 "decrease_ascension",
                 "configuration",
                 "Decrease Ascension",
-                "NAscensionPanel.LeftArrow+exact-level-witness",
+                "NAscensionPanel.current_visible_enabled_LeftArrow",
                 new[] { screen }));
         }
         if (surface.CanIncreaseAscension)
@@ -952,7 +761,7 @@ internal static class NativeUiActionRuntime
                 "increase_ascension",
                 "configuration",
                 "Increase Ascension",
-                "NAscensionPanel.RightArrow+exact-level-witness",
+                "NAscensionPanel.current_visible_enabled_RightArrow",
                 new[] { screen }));
         }
         VisibleCharacterChoice? selected = surface.Characters.SingleOrDefault(value => value.IsSelected);
@@ -963,7 +772,7 @@ internal static class NativeUiActionRuntime
                 "embark_standard_run",
                 "commit",
                 "Embark",
-                "NCharacterSelectScreen.ConfirmButton+RunManager-active-run-witness",
+                "NCharacterSelectScreen.current_visible_enabled_ConfirmButton",
                 new[]
                 {
                     screen,
@@ -977,7 +786,7 @@ internal static class NativeUiActionRuntime
                 "back_from_character_select",
                 "navigation",
                 "Back",
-                "NCharacterSelectScreen.BackButton+submenu-owner-change-witness",
+                "NCharacterSelectScreen.current_visible_enabled_BackButton",
                 new[] { screen }));
         }
         return actions;
@@ -990,56 +799,6 @@ internal static class NativeUiActionRuntime
             string.Equals(option.SemanticId, semanticId, StringComparison.Ordinal)
             && option.Enabled
             && string.Equals(option.ActionSupport, "actionable", StringComparison.Ordinal));
-
-    private static IReadOnlyList<NativeUiBoundAction> BuildGeneratedCardChoiceBindings(
-        LiveObservation draft,
-        GeneratedCardChoiceSurface surface)
-        => DescribeGeneratedCardChoiceCommands(surface)
-            .Select(action => BindActionToCurrentObservation(draft, action))
-            .Where(binding => binding != null)
-            .Cast<NativeUiBoundAction>()
-            .ToArray();
-
-    internal static IReadOnlyList<NativeUiActionDescriptor> DescribeGeneratedCardChoiceCommands(
-        GeneratedCardChoiceSurface surface)
-    {
-        if (surface.IsPeeking
-            || string.IsNullOrWhiteSpace(surface.SelectOperation)
-            || string.IsNullOrWhiteSpace(surface.SelectCompletionEvidence))
-        {
-            return Array.Empty<NativeUiActionDescriptor>();
-        }
-
-        ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
-        HashSet<string> selectable = surface.SelectableCardEntityIds.ToHashSet(StringComparer.Ordinal);
-        var actions = surface.Cards
-            .Where(card => selectable.Contains(card.EntityId))
-            .Select(card => NativeDescriptor(
-                $"{surface.SelectOperation}:{surface.ScreenEntityId}:{card.EntityId}",
-                surface.SelectOperation,
-                "selection",
-                $"Choose {card.Name ?? card.DefinitionId}",
-                surface.SelectCompletionEvidence,
-                new[]
-                {
-                    screen,
-                    new ActionEntityBinding("card", card.EntityId)
-                }))
-            .ToList();
-        if (surface.SkipAvailable
-            && !string.IsNullOrWhiteSpace(surface.SkipOperation)
-            && !string.IsNullOrWhiteSpace(surface.SkipCompletionEvidence))
-        {
-            actions.Add(NativeDescriptor(
-                $"{surface.SkipOperation}:{surface.ScreenEntityId}",
-                surface.SkipOperation,
-                "alternative",
-                "Skip",
-                surface.SkipCompletionEvidence,
-                new[] { screen }));
-        }
-        return actions;
-    }
 
     private static IReadOnlyList<NativeUiBoundAction> BuildCombatHandBindings(
         LiveObservation draft,
@@ -1123,254 +882,6 @@ internal static class NativeUiActionRuntime
                 "Return to card selection",
                 "NPeekButton.OnRelease+SetPeeking(false)",
                 Array.Empty<ActionEntityBinding>()));
-        }
-        return actions;
-    }
-
-    private static IReadOnlyList<NativeUiBoundAction> BuildDeckUpgradeBindings(
-        LiveObservation draft,
-        DeckUpgradeSelectionSurface surface)
-    {
-        var result = new List<NativeUiBoundAction>();
-        foreach (NativeUiActionDescriptor action in DescribeDeckUpgradeCommands(surface))
-        {
-            if (BindActionToCurrentObservation(draft, action) is not { } binding)
-                continue;
-            NativeUiActionCandidate candidate = binding.Candidate;
-            if (action.Kind == "toggle_deck_upgrade_card")
-            {
-                string? cardId = action.EntityBindings?
-                    .FirstOrDefault(entity => entity.Role == "card")?.EntityId;
-                if (cardId == null)
-                    continue;
-                string command = surface.DeselectableCardEntityIds.Contains(
-                    cardId,
-                    StringComparer.Ordinal)
-                    ? "deselect_entity"
-                    : "select_entity";
-                candidate = candidate with
-                {
-                    Command = command,
-                    CandidateId = BuildCandidateId(command, candidate.Operation, candidate.Operands)
-                };
-            }
-            else if (action.Kind == "confirm_deck_upgrade")
-            {
-                var operands = new Dictionary<string, string>(StringComparer.Ordinal)
-                {
-                    ["screen_id"] = surface.ScreenEntityId,
-                    ["control_id"] = action.Kind
-                };
-                candidate = candidate with
-                {
-                    Operands = operands,
-                    CandidateId = BuildCandidateId(candidate.Command, candidate.Operation, operands)
-                };
-            }
-            result.Add(binding with { Candidate = candidate });
-        }
-        return result;
-    }
-
-    internal static IReadOnlyList<NativeUiActionDescriptor> DescribeDeckUpgradeCommands(
-        DeckUpgradeSelectionSurface surface)
-    {
-        var cards = surface.Cards.ToDictionary(card => card.EntityId, StringComparer.Ordinal);
-        var actions = new List<NativeUiActionDescriptor>();
-        ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
-        foreach (string cardId in surface.SelectableCardEntityIds)
-        {
-            if (!cards.TryGetValue(cardId, out VisibleCard? card))
-                continue;
-            actions.Add(NativeDescriptor(
-                $"select_deck_upgrade_card:{surface.ScreenEntityId}:{cardId}",
-                "toggle_deck_upgrade_card",
-                "selection",
-                $"Select {card.Name ?? card.DefinitionId} for upgrade",
-                "NDeckUpgradeSelectScreen.OnCardClicked+exact-unselected-card",
-                new[] { screen, new ActionEntityBinding("card", cardId) }));
-        }
-        foreach (string cardId in surface.DeselectableCardEntityIds)
-        {
-            if (!cards.TryGetValue(cardId, out VisibleCard? card))
-                continue;
-            actions.Add(NativeDescriptor(
-                $"deselect_deck_upgrade_card:{surface.ScreenEntityId}:{cardId}",
-                "toggle_deck_upgrade_card",
-                "selection",
-                $"Deselect {card.Name ?? card.DefinitionId}",
-                "NDeckUpgradeSelectScreen.OnCardClicked+exact-selected-card",
-                new[] { screen, new ActionEntityBinding("card", cardId) }));
-        }
-        if (surface.CanCancelSelection)
-        {
-            actions.Add(NativeDescriptor(
-                $"cancel_deck_upgrade_selection:{surface.ScreenEntityId}",
-                "cancel_deck_upgrade_selection",
-                "cancel",
-                "Cancel deck upgrade selection",
-                "NDeckUpgradeSelectScreen.CloseSelection+exact-selection-owner",
-                new[] { screen }));
-        }
-        if (surface.CanCancelPreview)
-        {
-            actions.Add(NativeDescriptor(
-                $"cancel_deck_upgrade_preview:{surface.ScreenEntityId}",
-                "cancel_deck_upgrade_preview",
-                "cancel",
-                "Return to upgrade selection",
-                "NDeckUpgradeSelectScreen.CancelSelection+exact-preview-owner",
-                new[] { screen }));
-        }
-        if (surface.CanConfirm)
-        {
-            actions.Add(NativeDescriptor(
-                $"confirm_deck_upgrade:{surface.ScreenEntityId}",
-                "confirm_deck_upgrade",
-                "commit",
-                "Confirm the visible card upgrade",
-                "NDeckUpgradeSelectScreen.ConfirmSelection+exact-selected-membership",
-                new[] { screen }.Concat(
-                    surface.SelectedCardEntityIds.Select(id => new ActionEntityBinding("card", id)))
-                    .ToArray()));
-        }
-        return actions;
-    }
-
-    private static IReadOnlyList<NativeUiBoundAction> BuildDeckRemovalBindings(
-        LiveObservation draft,
-        DeckRemovalSelectionSurface surface)
-    {
-        var result = new List<NativeUiBoundAction>();
-        foreach (NativeUiActionDescriptor action in DescribeDeckRemovalCommands(surface))
-        {
-            if (BindActionToCurrentObservation(draft, action) is not { } binding)
-                continue;
-            NativeUiActionCandidate candidate = binding.Candidate;
-            if (action.Kind == "toggle_deck_removal_card")
-            {
-                string? cardId = action.EntityBindings?
-                    .FirstOrDefault(entity => entity.Role == "card")?.EntityId;
-                if (cardId == null)
-                    continue;
-                string command = surface.DeselectableCardEntityIds.Contains(
-                    cardId,
-                    StringComparer.Ordinal)
-                    ? "deselect_entity"
-                    : "select_entity";
-                candidate = candidate with
-                {
-                    Command = command,
-                    CandidateId = BuildCandidateId(command, candidate.Operation, candidate.Operands)
-                };
-            }
-            else if (action.Kind is "preview_deck_removal" or "confirm_deck_removal")
-            {
-                var operands = new Dictionary<string, string>(StringComparer.Ordinal)
-                {
-                    ["screen_id"] = surface.ScreenEntityId,
-                    ["control_id"] = action.Kind
-                };
-                candidate = candidate with
-                {
-                    Operands = operands,
-                    CandidateId = BuildCandidateId(candidate.Command, candidate.Operation, operands)
-                };
-            }
-            result.Add(binding with { Candidate = candidate });
-        }
-        return result;
-    }
-
-    internal static IReadOnlyList<NativeUiActionDescriptor> DescribeDeckRemovalCommands(
-        DeckRemovalSelectionSurface surface)
-    {
-        if (surface.Kind is not (
-            "deck_removal_selection" or
-            "relic_deck_removal_selection" or
-            "reward_deck_removal_selection"))
-            return Array.Empty<NativeUiActionDescriptor>();
-        string sourceLabel = surface.Kind switch
-        {
-            "deck_removal_selection" => "merchant",
-            "relic_deck_removal_selection" => "precise_scissors",
-            _ => "card_removal_reward"
-        };
-        string sourceEvidence = surface.Kind switch
-        {
-            "deck_removal_selection" => "MerchantCardRemovalEntry",
-            "relic_deck_removal_selection" => "PreciseScissors.AfterObtained task-local binding",
-            _ => "CardRemovalReward.OnSelect task-local binding"
-        };
-        var cards = surface.Cards.ToDictionary(card => card.EntityId, StringComparer.Ordinal);
-        var actions = new List<NativeUiActionDescriptor>();
-        ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
-        foreach (string cardId in surface.SelectableCardEntityIds)
-        {
-            if (!cards.TryGetValue(cardId, out VisibleCard? card))
-                continue;
-            actions.Add(NativeDescriptor(
-                $"select_{sourceLabel}_removal_card:{surface.ScreenEntityId}:{cardId}",
-                "toggle_deck_removal_card",
-                "selection",
-                $"Select {card.Name ?? card.DefinitionId} to remove",
-                $"{sourceEvidence}+NCardGrid.HolderPressed+exact-unselected-card",
-                new[] { screen, new ActionEntityBinding("card", cardId) }));
-        }
-        foreach (string cardId in surface.DeselectableCardEntityIds)
-        {
-            if (!cards.TryGetValue(cardId, out VisibleCard? card))
-                continue;
-            actions.Add(NativeDescriptor(
-                $"deselect_{sourceLabel}_removal_card:{surface.ScreenEntityId}:{cardId}",
-                "toggle_deck_removal_card",
-                "selection",
-                $"Deselect {card.Name ?? card.DefinitionId}",
-                $"{sourceEvidence}+NCardGrid.HolderPressed+exact-selected-card",
-                new[] { screen, new ActionEntityBinding("card", cardId) }));
-        }
-        ActionEntityBinding[] selected = new[] { screen }.Concat(
-            surface.SelectedCardEntityIds.Select(id => new ActionEntityBinding("card", id)))
-            .ToArray();
-        if (surface.CanPreview)
-        {
-            actions.Add(NativeDescriptor(
-                $"preview_{sourceLabel}_removal:{surface.ScreenEntityId}",
-                "preview_deck_removal",
-                "preview",
-                "Preview removal of the selected card",
-                "NDeckCardSelectScreen._confirmButton+exact-selected-membership",
-                selected));
-        }
-        if (surface.CanCancelSelection && surface.Kind != "relic_deck_removal_selection")
-        {
-            actions.Add(NativeDescriptor(
-                $"cancel_{sourceLabel}_removal_selection:{surface.ScreenEntityId}",
-                "cancel_deck_removal_selection",
-                "cancel",
-                "Cancel card removal",
-                $"NDeckCardSelectScreen._closeButton+exact-{sourceLabel}-source",
-                new[] { screen }));
-        }
-        if (surface.CanCancelPreview)
-        {
-            actions.Add(NativeDescriptor(
-                $"cancel_{sourceLabel}_removal_preview:{surface.ScreenEntityId}",
-                "cancel_deck_removal_preview",
-                "cancel",
-                "Return to removal selection",
-                $"NDeckCardSelectScreen._previewCancelButton+exact-{sourceLabel}-source",
-                new[] { screen }));
-        }
-        if (surface.CanConfirm)
-        {
-            actions.Add(NativeDescriptor(
-                $"confirm_{sourceLabel}_removal:{surface.ScreenEntityId}",
-                "confirm_deck_removal",
-                "commit",
-                "Confirm removal of the selected card",
-                $"{sourceEvidence}+source-specific-exact-card-completion",
-                selected));
         }
         return actions;
     }
@@ -1538,7 +1049,7 @@ internal static class NativeUiActionRuntime
                 "toggle_deck_transform_card",
                 "selection",
                 $"Select {card.Name ?? card.DefinitionId} for random transformation",
-                $"{surface.Source.BindingEvidence}|exact-unselected-card+NCardGrid.HolderPressed",
+                "NDeckTransformSelectScreen+exact-unselected-card+NCardGrid.HolderPressed",
                 new[] { screen, new ActionEntityBinding("card", cardId) }));
         }
         foreach (string cardId in surface.DeselectableCardEntityIds)
@@ -1550,200 +1061,23 @@ internal static class NativeUiActionRuntime
                 "toggle_deck_transform_card",
                 "selection",
                 $"Deselect {card.Name ?? card.DefinitionId}",
-                $"{surface.Source.BindingEvidence}|exact-selected-card+NCardGrid.HolderPressed",
+                "NDeckTransformSelectScreen+exact-selected-card+NCardGrid.HolderPressed",
                 new[] { screen, new ActionEntityBinding("card", cardId) }));
         }
         ActionEntityBinding[] selected = new[] { screen }.Concat(
             surface.SelectedCardEntityIds.Select(id => new ActionEntityBinding("card", id)))
             .ToArray();
         if (surface.CanPreview)
-            actions.Add(NativeDescriptor("preview_deck_transform", "preview_deck_transform", "preview", "Preview the selected random transformation", $"{surface.Source.BindingEvidence}|NDeckTransformSelectScreen.ConfirmSelection", selected));
+            actions.Add(NativeDescriptor("preview_deck_transform", "preview_deck_transform", "preview", "Preview the selected random transformation", "NDeckTransformSelectScreen.ConfirmSelection", selected));
         if (surface.CanCancelSelection)
-            actions.Add(NativeDescriptor("cancel_deck_transform_selection", "cancel_deck_transform_selection", "cancel", "Cancel random card transformation", $"{surface.Source.BindingEvidence}|NDeckTransformSelectScreen.CloseSelection", new[] { screen }));
+            actions.Add(NativeDescriptor("cancel_deck_transform_selection", "cancel_deck_transform_selection", "cancel", "Cancel random card transformation", "NDeckTransformSelectScreen.CloseSelection", new[] { screen }));
         if (surface.CanToggleUpgradeView)
-            actions.Add(NativeDescriptor("toggle_deck_transform_upgrade_view", "toggle_deck_transform_upgrade_view", "presentation", surface.ShowingUpgradePreviews ? "Show current card versions" : "Show upgraded card previews", $"{surface.Source.BindingEvidence}|NDeckTransformSelectScreen.ToggleShowUpgrades", new[] { screen }));
+            actions.Add(NativeDescriptor("toggle_deck_transform_upgrade_view", "toggle_deck_transform_upgrade_view", "presentation", surface.ShowingUpgradePreviews ? "Show current card versions" : "Show upgraded card previews", "NDeckTransformSelectScreen.ToggleShowUpgrades", new[] { screen }));
         if (surface.CanCancelPreview)
-            actions.Add(NativeDescriptor("cancel_deck_transform_preview", "cancel_deck_transform_preview", "cancel", "Return to random transformation selection", $"{surface.Source.BindingEvidence}|NDeckTransformSelectScreen.CancelSelection", selected));
+            actions.Add(NativeDescriptor("cancel_deck_transform_preview", "cancel_deck_transform_preview", "cancel", "Return to random transformation selection", "NDeckTransformSelectScreen.CancelSelection", selected));
         if (surface.CanConfirm)
-            actions.Add(NativeDescriptor("confirm_deck_transform", "confirm_deck_transform", "commit", "Confirm the random transformation", $"{surface.Source.BindingEvidence}|CardCmd.TransformToRandom+exact-instance-witness", selected));
+            actions.Add(NativeDescriptor("confirm_deck_transform", "confirm_deck_transform", "commit", "Confirm the random transformation", "NDeckTransformSelectScreen.PreviewConfirm", selected));
         return actions;
-    }
-
-    private static IReadOnlyList<NativeUiBoundAction> BuildWoodCarvingsBindings(
-        LiveObservation draft,
-        WoodCarvingsReplacementSelectionSurface surface)
-    {
-        var result = new List<NativeUiBoundAction>();
-        foreach (NativeUiActionDescriptor action in DescribeWoodCarvingsCommands(surface))
-        {
-            if (BindActionToCurrentObservation(draft, action) is not { } binding)
-                continue;
-            NativeUiActionCandidate candidate = binding.Candidate;
-            if (action.Kind is
-                "confirm_wood_carvings_replacement" or
-                "cancel_wood_carvings_replacement_preview")
-            {
-                var operands = new Dictionary<string, string>(StringComparer.Ordinal)
-                {
-                    ["screen_id"] = surface.ScreenEntityId,
-                    ["control_id"] = action.Kind
-                };
-                candidate = candidate with
-                {
-                    Operands = operands,
-                    CandidateId = BuildCandidateId(candidate.Command, candidate.Operation, operands)
-                };
-            }
-            result.Add(binding with { Candidate = candidate });
-        }
-        return result;
-    }
-
-    internal static IReadOnlyList<NativeUiActionDescriptor> DescribeWoodCarvingsCommands(
-        WoodCarvingsReplacementSelectionSurface surface)
-    {
-        var actions = new List<NativeUiActionDescriptor>();
-        ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
-        Dictionary<string, VisibleCard> cards = surface.Cards.ToDictionary(card => card.EntityId, StringComparer.Ordinal);
-        foreach (string cardId in surface.SelectableCardEntityIds)
-        {
-            if (!cards.TryGetValue(cardId, out VisibleCard? card))
-                continue;
-            actions.Add(NativeDescriptor(
-                $"select_wood_carvings_replacement_card:{surface.ScreenEntityId}:{cardId}",
-                "select_wood_carvings_replacement_card",
-                "selection",
-                $"Replace {card.Name ?? card.DefinitionId} with {surface.ReplacementDefinitionId}",
-                "WoodCarvings exact branch+NCardGrid.HolderPressed",
-                new[] { screen, new ActionEntityBinding("card", cardId) }));
-        }
-        ActionEntityBinding[] selected = new[] { screen }.Concat(
-            surface.SelectedCardEntityIds.Select(id => new ActionEntityBinding("card", id)))
-            .ToArray();
-        if (surface.CanConfirm)
-            actions.Add(NativeDescriptor("confirm_wood_carvings_replacement", "confirm_wood_carvings_replacement", "commit", $"Confirm replacement with {surface.ReplacementDefinitionId}", "WoodCarvings exact branch+CardCmd.TransformTo+deterministic-witness", selected));
-        if (surface.CanCancelPreview)
-            actions.Add(NativeDescriptor("cancel_wood_carvings_replacement_preview", "cancel_wood_carvings_replacement_preview", "cancel", "Return to Wood Carvings card selection", "WoodCarvings exact branch+NDeckCardSelectScreen._previewCancelButton", selected));
-        return actions;
-    }
-
-    private static IReadOnlyList<NativeUiBoundAction> BuildCombatPileBindings(
-        LiveObservation draft,
-        CombatPileCardSelectionSurface surface)
-    {
-        var result = new List<NativeUiBoundAction>();
-        foreach (NativeUiActionDescriptor action in DescribeCombatPileCommands(surface))
-        {
-            if (BindActionToCurrentObservation(draft, action) is not { } binding)
-                continue;
-            NativeUiActionCandidate candidate = binding.Candidate;
-            string? cardId = action.EntityBindings?
-                .FirstOrDefault(entity => entity.Role == "card")?.EntityId;
-            if (action.Kind == "toggle_combat_pile_card" && cardId != null)
-            {
-                string command = surface.DeselectableCardEntityIds.Contains(cardId, StringComparer.Ordinal)
-                    ? "deselect_entity"
-                    : "select_entity";
-                candidate = candidate with
-                {
-                    Command = command,
-                    CandidateId = BuildCandidateId(command, candidate.Operation, candidate.Operands)
-                };
-            }
-            else if (action.Kind == "confirm_combat_pile_selection")
-            {
-                var operands = new Dictionary<string, string>(StringComparer.Ordinal)
-                {
-                    ["screen_id"] = surface.ScreenEntityId,
-                    ["source_id"] = surface.SourceEntityId,
-                    ["control_id"] = action.Kind
-                };
-                candidate = candidate with
-                {
-                    Operands = operands,
-                    CandidateId = BuildCandidateId(candidate.Command, candidate.Operation, operands)
-                };
-            }
-            result.Add(binding with { Candidate = candidate });
-        }
-        return result;
-    }
-
-    internal static IReadOnlyList<NativeUiActionDescriptor> DescribeCombatPileCommands(
-        CombatPileCardSelectionSurface surface)
-    {
-        var actions = new List<NativeUiActionDescriptor>();
-        ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
-        ActionEntityBinding source = new("source", surface.SourceEntityId);
-        Dictionary<string, VisibleCard> cards = surface.Cards.ToDictionary(card => card.EntityId, StringComparer.Ordinal);
-        foreach (string cardId in surface.SelectableCardEntityIds.Concat(surface.DeselectableCardEntityIds))
-        {
-            if (!cards.TryGetValue(cardId, out VisibleCard? card))
-                continue;
-            bool selected = surface.DeselectableCardEntityIds.Contains(cardId, StringComparer.Ordinal);
-            actions.Add(NativeDescriptor(
-                $"{(selected ? "deselect" : "select")}_combat_pile_card:{surface.ScreenEntityId}:{cardId}",
-                "toggle_combat_pile_card",
-                "selection",
-                $"{(selected ? "Deselect" : "Select")} {card.Name ?? card.DefinitionId}",
-                $"{surface.SourceKind}+{surface.MutationKind}+exact-card-membership",
-                new[] { screen, source, new ActionEntityBinding("card", cardId) }));
-        }
-        if (surface.CanConfirm)
-        {
-            ActionEntityBinding[] selected = new[] { screen, source }.Concat(
-                surface.SelectedCardEntityIds.Select(id => new ActionEntityBinding("card", id)))
-                .ToArray();
-            actions.Add(NativeDescriptor("confirm_combat_pile_selection", "confirm_combat_pile_selection", "commit", "Confirm selected cards", $"{surface.SourceKind}+{surface.MutationKind}+purpose-specific-witness", selected));
-        }
-        return actions;
-    }
-
-    private static IReadOnlyList<NativeUiBoundAction> BuildEventRemovalBindings(
-        LiveObservation draft,
-        EventDeckRemovalSelectionSurface surface)
-    {
-        var result = new List<NativeUiBoundAction>();
-        foreach (NativeUiActionDescriptor action in EventDeckRemovalSelection.DescribeCommands(surface))
-        {
-            if (BindActionToCurrentObservation(draft, action) is not { } binding)
-                continue;
-            NativeUiActionCandidate candidate = binding.Candidate;
-            if (action.Kind == "toggle_event_deck_removal_card")
-            {
-                string? cardId = action.EntityBindings?
-                    .FirstOrDefault(entity => entity.Role == "card")?.EntityId;
-                if (cardId == null)
-                    continue;
-                string command = surface.DeselectableCardEntityIds.Contains(
-                    cardId,
-                    StringComparer.Ordinal)
-                    ? "deselect_entity"
-                    : "select_entity";
-                candidate = candidate with
-                {
-                    Command = command,
-                    CandidateId = BuildCandidateId(command, candidate.Operation, candidate.Operands)
-                };
-            }
-            else if (action.Kind is
-                     "cancel_event_deck_removal_preview" or
-                     "confirm_event_deck_removal")
-            {
-                var operands = new Dictionary<string, string>(StringComparer.Ordinal)
-                {
-                    ["screen_id"] = surface.ScreenEntityId,
-                    ["control_id"] = action.Kind
-                };
-                candidate = candidate with
-                {
-                    Operands = operands,
-                    CandidateId = BuildCandidateId(candidate.Command, candidate.Operation, operands)
-                };
-            }
-            result.Add(binding with { Candidate = candidate });
-        }
-        return result;
     }
 
     private static NativeUiActionDescriptor NativeDescriptor(
@@ -1765,43 +1099,12 @@ internal static class NativeUiActionRuntime
         LiveObservation draft,
         NativeUiActionDescriptor action)
     {
-        if (string.Equals(
-                draft.CandidateAdmission,
-                "human_ui",
-                StringComparison.Ordinal))
-        {
-            return new NativeUiBoundAction(
-                BuildCandidate(
-                    action,
-                    scope: null,
-                    "human_environment_native_binding"),
-                null,
-                null);
-        }
-
-        ActionPermissionScope? scope = EnvironmentPermissionScopes.FindActionScope(
-            draft.Game.Compatibility,
-            draft.Surface.Kind,
-            action.Kind,
-            action.EvidenceCode);
-        BoundOperationContract? contract =
-            BoundOperationContract.Build(
-                draft.Surface.Kind,
-                action.Key,
-                action.Kind,
-                action.EvidenceCode,
-                action.EntityBindings);
-        if (scope == null || contract == null || !contract.Matches(scope))
-            return null;
         return new NativeUiBoundAction(
-            BuildCandidate(action, scope, "native_ui_binding"),
-            PermissionBinding(scope),
-            contract);
+            BuildCandidate(action, "player_environment_native_binding"));
     }
 
     private static NativeUiActionCandidate BuildCandidate(
         NativeUiActionDescriptor action,
-        ActionPermissionScope? scope,
         string bindingKind)
     {
         string command = PublicCommand(action.Kind);
@@ -1820,10 +1123,7 @@ internal static class NativeUiActionRuntime
             operands,
             new Dictionary<string, NativeUiOperandDomain>(),
             action.EntityBindings ?? Array.Empty<ActionEntityBinding>(),
-            bindingKind,
-            scope == null
-                ? "human_operable"
-                : scope.Tier == "canary" ? "trial" : "supported");
+            bindingKind);
     }
 
     private static string BuildCandidateId(
@@ -1892,7 +1192,7 @@ internal static class NativeUiActionRuntime
         NativeUiBoundAction binding)
     {
         if (binding.Candidate.BindingKind is
-            "native_ui_binding" or "human_environment_native_binding")
+            "native_ui_binding" or "player_environment_native_binding")
         {
             return draft.Surface.Kind switch
             {
@@ -1903,7 +1203,6 @@ internal static class NativeUiActionRuntime
                     request,
                     binding),
                 "map_navigation" => StartMapCommand(draft, request),
-                "rest_site" => StartRestCommand(draft, request),
                 "event_option" => StartEventOptionCommand(
                     draft,
                     request,
@@ -1928,25 +1227,9 @@ internal static class NativeUiActionRuntime
                 "main_menu" => StartMainMenuCommand(draft, request, binding),
                 "singleplayer_menu" => StartSingleplayerMenuCommand(draft, request, binding),
                 "character_select" => StartCharacterSelectCommand(draft, request, binding),
-                "generated_card_choice" => StartGeneratedCardChoiceCommand(draft, request, binding),
-                "event_card_acquisition" => StartEventCardAcquisitionCommand(draft, request, binding),
                 "combat_hand_card_selection" => StartCombatHandCommand(draft, request, binding),
-                "deck_upgrade_selection" => StartDeckUpgradeCommand(draft, request, binding),
-                "deck_removal_selection" or
-                "relic_deck_removal_selection" or
-                "reward_deck_removal_selection" => StartDeckRemovalCommand(
-                    draft,
-                    request,
-                    binding),
-                "event_deck_removal_selection" => EventDeckRemovalSelection.Start(
-                    Entities,
-                    draft,
-                    request,
-                    binding),
                 "card_bundle_selection" => StartCardBundleCommand(draft, request, binding),
                 "deck_transform_selection" => StartDeckTransformCommand(draft, request, binding),
-                "wood_carvings_replacement_selection" => StartWoodCarvingsCommand(draft, request, binding),
-                "combat_pile_card_selection" => StartCombatPileCommand(draft, request, binding),
                 "game_over" => StartGameOverCommand(draft, request, binding),
                 _ => NativeInputResult.Rejected(
                     "native_command_owner_unsupported",
@@ -2042,84 +1325,6 @@ internal static class NativeUiActionRuntime
         && request.Operands.TryGetValue(name, out string? actual)
         && string.Equals(actual, expected, StringComparison.Ordinal);
 
-    private static NativeInputResult StartGeneratedCardChoiceCommand(
-        LiveObservation draft,
-        NativeUiInput request,
-        NativeUiBoundAction binding)
-    {
-        if (draft.Surface is not GeneratedCardChoiceSurface surface
-            || !HasExactOperand(request, "screen_id", surface.ScreenEntityId))
-        {
-            return NativeInputResult.Rejected(
-                "generated_choice_owner_changed",
-                "The exact generated-card choice owner is no longer current.");
-        }
-        IReadOnlyDictionary<string, string> operands =
-            request.Operands ?? new Dictionary<string, string>();
-        if (binding.Candidate.Command == "select_entity"
-            && operands.TryGetValue("card_id", out string? cardId))
-        {
-            return GeneratedCardChoiceSurfaceReader.StartSelect(
-                Entities,
-                surface.ScreenEntityId,
-                cardId);
-        }
-        if (binding.Candidate.Operation.StartsWith("skip_", StringComparison.Ordinal))
-        {
-            return GeneratedCardChoiceSurfaceReader.StartSkip(
-                Entities,
-                surface.ScreenEntityId);
-        }
-        return NativeInputResult.Rejected(
-            "generated_choice_command_unsupported",
-            "The requested generated-card command is not supported for this exact source.");
-    }
-
-    private static NativeInputResult StartEventCardAcquisitionCommand(
-        LiveObservation draft,
-        NativeUiInput request,
-        NativeUiBoundAction binding)
-    {
-        if (draft.Surface is not EventCardAcquisitionSurface surface
-            || !HasExactOperand(request, "screen_id", surface.ScreenEntityId))
-        {
-            return NativeInputResult.Rejected(
-                "event_acquisition_owner_changed",
-                "The exact audited event card-acquisition owner is no longer current.");
-        }
-        IReadOnlyDictionary<string, string> operands =
-            request.Operands ?? new Dictionary<string, string>();
-        if (!operands.TryGetValue("card_id", out string? cardId))
-        {
-            return NativeInputResult.Rejected(
-                "event_acquisition_binding_changed",
-                "The exact event card operand is missing.");
-        }
-        if (binding.Candidate.Operation == "select_event_card_acquisition"
-            && request.Command == "select_entity"
-            && surface.SelectableCardEntityIds.Contains(cardId, StringComparer.Ordinal))
-        {
-            return EventCardAcquisitionSurfaceReader.StartDirectToggle(
-                Entities,
-                surface.ScreenEntityId,
-                cardId,
-                expectedSelected: false);
-        }
-        if (binding.Candidate.Operation == "deselect_event_card_acquisition"
-            && request.Command == "deselect_entity"
-            && surface.DeselectableCardEntityIds.Contains(cardId, StringComparer.Ordinal))
-        {
-            return EventCardAcquisitionSurfaceReader.StartDirectToggle(
-                Entities,
-                surface.ScreenEntityId,
-                cardId,
-                expectedSelected: true);
-        }
-        return NativeInputResult.Rejected(
-            "event_acquisition_command_unsupported",
-            "The command does not match the exact current event card selection state.");
-    }
-
     private static NativeInputResult StartCombatHandCommand(
         LiveObservation draft,
         NativeUiInput request,
@@ -2171,170 +1376,6 @@ internal static class NativeUiActionRuntime
         return NativeInputResult.Rejected(
             "combat_hand_command_unsupported",
             "The command does not match the exact current combat-hand interaction.");
-    }
-
-    private static NativeInputResult StartDeckUpgradeCommand(
-        LiveObservation draft,
-        NativeUiInput request,
-        NativeUiBoundAction binding)
-    {
-        if (draft.Surface is not DeckUpgradeSelectionSurface surface
-            || !HasExactOperand(request, "screen_id", surface.ScreenEntityId))
-        {
-            return NativeInputResult.Rejected(
-                "deck_upgrade_owner_changed",
-                "The exact deck-upgrade owner is no longer current.");
-        }
-        IReadOnlyDictionary<string, string> operands =
-            request.Operands ?? new Dictionary<string, string>();
-        if (binding.Candidate.Operation == "toggle_deck_upgrade_card"
-            && operands.TryGetValue("card_id", out string? cardId))
-        {
-            if (request.Command == "select_entity"
-                && surface.SelectableCardEntityIds.Contains(cardId, StringComparer.Ordinal))
-            {
-                return DeckUpgradeSelectionSurfaceReader.StartToggle(
-                    Entities,
-                    surface.ScreenEntityId,
-                    cardId,
-                    expectedSelected: false);
-            }
-            if (request.Command == "deselect_entity"
-                && surface.DeselectableCardEntityIds.Contains(cardId, StringComparer.Ordinal))
-            {
-                return DeckUpgradeSelectionSurfaceReader.StartToggle(
-                    Entities,
-                    surface.ScreenEntityId,
-                    cardId,
-                    expectedSelected: true);
-            }
-        }
-        if (binding.Candidate.Operation == "cancel_deck_upgrade_selection"
-            && surface.Stage == "selecting"
-            && surface.CanCancelSelection
-            && request.Command == "cancel_interaction"
-            && HasExactOperand(request, "control_id", binding.Candidate.Operation))
-        {
-            return DeckUpgradeSelectionSurfaceReader.StartClose(
-                Entities,
-                surface.ScreenEntityId);
-        }
-        if (binding.Candidate.Operation == "cancel_deck_upgrade_preview"
-            && surface.Stage == "preview"
-            && surface.CanCancelPreview
-            && request.Command == "cancel_interaction"
-            && HasExactOperand(request, "control_id", binding.Candidate.Operation))
-        {
-            return DeckUpgradeSelectionSurfaceReader.StartPreviewCancel(
-                Entities,
-                surface.ScreenEntityId);
-        }
-        if (binding.Candidate.Operation == "confirm_deck_upgrade"
-            && surface.Stage == "preview"
-            && surface.CanConfirm
-            && request.Command == "confirm_interaction"
-            && HasExactOperand(request, "control_id", binding.Candidate.Operation))
-        {
-            return DeckUpgradeSelectionSurfaceReader.StartConfirm(
-                Entities,
-                surface.ScreenEntityId,
-                surface.SelectedCardEntityIds);
-        }
-        return NativeInputResult.Rejected(
-            "deck_upgrade_command_unsupported",
-            "The command does not match the exact current deck-upgrade stage and membership.");
-    }
-
-    private static NativeInputResult StartDeckRemovalCommand(
-        LiveObservation draft,
-        NativeUiInput request,
-        NativeUiBoundAction binding)
-    {
-        if (draft.Surface is not DeckRemovalSelectionSurface surface
-            || surface.Kind is not (
-                "deck_removal_selection" or
-                "relic_deck_removal_selection" or
-                "reward_deck_removal_selection")
-            || !HasExactOperand(request, "screen_id", surface.ScreenEntityId))
-        {
-            return NativeInputResult.Rejected(
-                "deck_removal_owner_changed",
-                "The exact source-bound deck-removal owner is no longer current.");
-        }
-        IReadOnlyDictionary<string, string> operands =
-            request.Operands ?? new Dictionary<string, string>();
-        if (binding.Candidate.Operation == "toggle_deck_removal_card"
-            && operands.TryGetValue("card_id", out string? cardId))
-        {
-            if (request.Command == "select_entity"
-                && surface.SelectableCardEntityIds.Contains(cardId, StringComparer.Ordinal))
-            {
-                return DeckRemovalSelectionSurfaceReader.StartDirectToggle(
-                    Entities,
-                    surface.Kind,
-                    surface.ScreenEntityId,
-                    cardId,
-                    expectedSelected: false);
-            }
-            if (request.Command == "deselect_entity"
-                && surface.DeselectableCardEntityIds.Contains(cardId, StringComparer.Ordinal))
-            {
-                return DeckRemovalSelectionSurfaceReader.StartDirectToggle(
-                    Entities,
-                    surface.Kind,
-                    surface.ScreenEntityId,
-                    cardId,
-                    expectedSelected: true);
-            }
-        }
-        if (binding.Candidate.Operation == "preview_deck_removal"
-            && surface.Stage == "selecting"
-            && surface.CanPreview
-            && request.Command == "confirm_interaction"
-            && HasExactOperand(request, "control_id", binding.Candidate.Operation))
-        {
-            return DeckRemovalSelectionSurfaceReader.StartDirectPreview(
-                Entities,
-                surface.Kind,
-                surface.ScreenEntityId);
-        }
-        if (binding.Candidate.Operation == "cancel_deck_removal_selection"
-            && surface.Stage == "selecting"
-            && surface.CanCancelSelection
-            && request.Command == "cancel_interaction"
-            && HasExactOperand(request, "control_id", binding.Candidate.Operation))
-        {
-            return DeckRemovalSelectionSurfaceReader.StartDirectClose(
-                Entities,
-                surface.Kind,
-                surface.ScreenEntityId);
-        }
-        if (binding.Candidate.Operation == "cancel_deck_removal_preview"
-            && surface.Stage == "preview"
-            && surface.CanCancelPreview
-            && request.Command == "cancel_interaction"
-            && HasExactOperand(request, "control_id", binding.Candidate.Operation))
-        {
-            return DeckRemovalSelectionSurfaceReader.StartDirectPreviewCancel(
-                Entities,
-                surface.Kind,
-                surface.ScreenEntityId);
-        }
-        if (binding.Candidate.Operation == "confirm_deck_removal"
-            && surface.Stage == "preview"
-            && surface.CanConfirm
-            && request.Command == "confirm_interaction"
-            && HasExactOperand(request, "control_id", binding.Candidate.Operation))
-        {
-            return DeckRemovalSelectionSurfaceReader.StartDirectConfirm(
-                Entities,
-                surface.Kind,
-                surface.ScreenEntityId,
-                surface.SelectedCardEntityIds);
-        }
-        return NativeInputResult.Rejected(
-            "deck_removal_command_unsupported",
-            "The command does not match the exact current source-bound removal stage and membership.");
     }
 
     private static NativeInputResult StartCardBundleCommand(
@@ -2390,7 +1431,7 @@ internal static class NativeUiActionRuntime
         }
         return NativeInputResult.Rejected(
             "card_bundle_command_unsupported",
-            "The command does not match the exact current card-bundle stage and source.");
+            "The command does not match the exact current card-bundle stage and control.");
     }
 
     private static NativeInputResult StartDeckTransformCommand(
@@ -2403,7 +1444,7 @@ internal static class NativeUiActionRuntime
         {
             return NativeInputResult.Rejected(
                 "deck_transform_owner_changed",
-                "The exact source-bound random-transform owner is no longer current.");
+                "The exact random-transform screen is no longer current.");
         }
         IReadOnlyDictionary<string, string> operands =
             request.Operands ?? new Dictionary<string, string>();
@@ -2413,14 +1454,14 @@ internal static class NativeUiActionRuntime
             if (request.Command == "select_entity"
                 && surface.SelectableCardEntityIds.Contains(cardId, StringComparer.Ordinal))
             {
-                return DeckTransformSelectionSurfaceReader.StartDirectToggle(
-                    Entities, surface.ScreenEntityId, cardId, false, surface.Source);
+                return NativeDeckTransformSelection.StartDirectToggle(
+                    Entities, surface.ScreenEntityId, cardId, false);
             }
             if (request.Command == "deselect_entity"
                 && surface.DeselectableCardEntityIds.Contains(cardId, StringComparer.Ordinal))
             {
-                return DeckTransformSelectionSurfaceReader.StartDirectToggle(
-                    Entities, surface.ScreenEntityId, cardId, true, surface.Source);
+                return NativeDeckTransformSelection.StartDirectToggle(
+                    Entities, surface.ScreenEntityId, cardId, true);
             }
         }
         if (!HasExactOperand(request, "control_id", binding.Candidate.Operation))
@@ -2432,116 +1473,19 @@ internal static class NativeUiActionRuntime
         return binding.Candidate.Operation switch
         {
             "preview_deck_transform" when surface.Stage == "selecting" && surface.CanPreview =>
-                DeckTransformSelectionSurfaceReader.StartDirectPreview(Entities, surface.ScreenEntityId, surface.Source),
+                NativeDeckTransformSelection.StartDirectPreview(Entities, surface.ScreenEntityId),
             "cancel_deck_transform_selection" when surface.Stage == "selecting" && surface.CanCancelSelection =>
-                DeckTransformSelectionSurfaceReader.StartDirectCancelSelection(Entities, surface.ScreenEntityId, surface.Source),
+                NativeDeckTransformSelection.StartDirectCancelSelection(Entities, surface.ScreenEntityId),
             "toggle_deck_transform_upgrade_view" when surface.Stage == "selecting" && surface.CanToggleUpgradeView =>
-                DeckTransformSelectionSurfaceReader.StartDirectToggleUpgradeView(Entities, surface.ScreenEntityId, surface.ShowingUpgradePreviews, surface.Source),
+                NativeDeckTransformSelection.StartDirectToggleUpgradeView(Entities, surface.ScreenEntityId, surface.ShowingUpgradePreviews),
             "cancel_deck_transform_preview" when surface.Stage == "preview" && surface.CanCancelPreview =>
-                DeckTransformSelectionSurfaceReader.StartDirectCancelPreview(Entities, surface.ScreenEntityId, surface.Source),
+                NativeDeckTransformSelection.StartDirectCancelPreview(Entities, surface.ScreenEntityId),
             "confirm_deck_transform" when surface.Stage == "preview" && surface.CanConfirm =>
-                DeckTransformSelectionSurfaceReader.StartDirectConfirm(Entities, surface.ScreenEntityId, surface.SelectedCardEntityIds, surface.Source),
+                NativeDeckTransformSelection.StartDirectConfirm(Entities, surface.ScreenEntityId, surface.SelectedCardEntityIds),
             _ => NativeInputResult.Rejected(
                 "deck_transform_command_unsupported",
                 "The command does not match the exact current random-transform stage and membership.")
         };
-    }
-
-    private static NativeInputResult StartWoodCarvingsCommand(
-        LiveObservation draft,
-        NativeUiInput request,
-        NativeUiBoundAction binding)
-    {
-        if (draft.Surface is not WoodCarvingsReplacementSelectionSurface surface
-            || !HasExactOperand(request, "screen_id", surface.ScreenEntityId))
-        {
-            return NativeInputResult.Rejected(
-                "wood_carvings_owner_changed",
-                "The exact Wood Carvings replacement owner is no longer current.");
-        }
-        IReadOnlyDictionary<string, string> operands =
-            request.Operands ?? new Dictionary<string, string>();
-        if (binding.Candidate.Operation == "select_wood_carvings_replacement_card"
-            && surface.Stage == "selecting"
-            && request.Command == "select_entity"
-            && operands.TryGetValue("card_id", out string? cardId)
-            && surface.SelectableCardEntityIds.Contains(cardId, StringComparer.Ordinal))
-        {
-            return WoodCarvingsReplacementSurfaceReader.StartDirectSelect(
-                Entities,
-                surface.ScreenEntityId,
-                cardId,
-                surface.Branch,
-                surface.ReplacementDefinitionId);
-        }
-        if (!HasExactOperand(request, "control_id", binding.Candidate.Operation))
-        {
-            return NativeInputResult.Rejected(
-                "wood_carvings_control_changed",
-                "The exact Wood Carvings control operand is missing.");
-        }
-        return binding.Candidate.Operation switch
-        {
-            "confirm_wood_carvings_replacement" when surface.Stage == "preview" && surface.CanConfirm =>
-                WoodCarvingsReplacementSurfaceReader.StartDirectConfirm(
-                    Entities,
-                    surface.ScreenEntityId,
-                    surface.SelectedCardEntityIds,
-                    surface.Branch,
-                    surface.ReplacementDefinitionId),
-            "cancel_wood_carvings_replacement_preview" when surface.Stage == "preview" && surface.CanCancelPreview =>
-                WoodCarvingsReplacementSurfaceReader.StartDirectCancelPreview(
-                    Entities,
-                    surface.ScreenEntityId,
-                    surface.Branch,
-                    surface.ReplacementDefinitionId),
-            _ => NativeInputResult.Rejected(
-                "wood_carvings_command_unsupported",
-                "The command does not match the exact current Wood Carvings stage and branch.")
-        };
-    }
-
-    private static NativeInputResult StartCombatPileCommand(
-        LiveObservation draft,
-        NativeUiInput request,
-        NativeUiBoundAction binding)
-    {
-        if (draft.Surface is not CombatPileCardSelectionSurface surface
-            || !HasExactOperand(request, "screen_id", surface.ScreenEntityId))
-        {
-            return NativeInputResult.Rejected(
-                "combat_pile_owner_changed",
-                "The exact source-bound combat-pile owner is no longer current.");
-        }
-        IReadOnlyDictionary<string, string> operands =
-            request.Operands ?? new Dictionary<string, string>();
-        if (binding.Candidate.Operation == "toggle_combat_pile_card"
-            && operands.TryGetValue("card_id", out string? cardId))
-        {
-            if (request.Command == "select_entity"
-                && surface.SelectableCardEntityIds.Contains(cardId, StringComparer.Ordinal))
-            {
-                return CombatPileCardSelectionSurfaceReader.StartDirectToggle(
-                    Entities, surface, cardId, false);
-            }
-            if (request.Command == "deselect_entity"
-                && surface.DeselectableCardEntityIds.Contains(cardId, StringComparer.Ordinal))
-            {
-                return CombatPileCardSelectionSurfaceReader.StartDirectToggle(
-                    Entities, surface, cardId, true);
-            }
-        }
-        if (binding.Candidate.Operation == "confirm_combat_pile_selection"
-            && surface.CanConfirm
-            && request.Command == "confirm_interaction"
-            && HasExactOperand(request, "source_id", surface.SourceEntityId)
-            && HasExactOperand(request, "control_id", binding.Candidate.Operation))
-        {
-            return CombatPileCardSelectionSurfaceReader.StartDirectConfirm(Entities, surface);
-        }
-        return NativeInputResult.Rejected(
-            "combat_pile_command_unsupported",
-            "The command does not match the exact current combat-pile source and membership.");
     }
 
     private static NativeInputResult StartGameOverCommand(
@@ -2625,46 +1569,6 @@ internal static class NativeUiActionRuntime
         return NativeInputResult.Rejected(
             "map_command_unsupported",
             "The requested map command is not supported for this exact interaction.");
-    }
-
-    private static NativeInputResult StartRestCommand(
-        LiveObservation draft,
-        NativeUiInput request)
-    {
-        if (draft.Surface is not RestSiteSurface surface)
-        {
-            return NativeInputResult.Rejected(
-                "owner_changed",
-                "The rest-site owner is no longer current.");
-        }
-        IReadOnlyDictionary<string, string> operands =
-            request.Operands ?? new Dictionary<string, string>();
-        if (!operands.TryGetValue("screen_id", out string? screenId)
-            || !string.Equals(screenId, surface.ScreenEntityId, StringComparison.Ordinal))
-        {
-            return NativeInputResult.Rejected(
-                "rest_owner_changed",
-                "The exact rest-site screen is no longer current.");
-        }
-
-        if (request.Command == "choose"
-            && operands.TryGetValue("rest_option_id", out string? optionId))
-        {
-            return RestSiteSurfaceReader.StartOption(
-                Entities,
-                screenId,
-                optionId);
-        }
-        if (request.Command == "activate_control"
-            && operands.TryGetValue("control_id", out string? controlId)
-            && string.Equals(controlId, "proceed_rest_site", StringComparison.Ordinal))
-        {
-            return RestSiteSurfaceReader.StartProceed(Entities, screenId);
-        }
-
-        return NativeInputResult.Rejected(
-            "rest_command_unsupported",
-            "The requested rest-site command is not supported for this exact interaction.");
     }
 
     private static NativeInputResult StartEventOptionCommand(
@@ -3120,39 +2024,6 @@ internal static class NativeUiActionRuntime
         };
     }
 
-    internal static string DetermineExecutionSupport(
-        LiveObservation draft,
-        IReadOnlyList<NativeUiBoundAction> bindings)
-    {
-        return ClassifyExecutionSupport(
-            draft.Game.Compatibility.ActionExecutionAllowed,
-            draft.Readiness,
-            draft.Surface.Kind,
-            bindings.Count,
-            bindings.Any(binding => binding.Candidate.AuthorityState == "trial"),
-            draft.Surface is UnsupportedSurface);
-    }
-
-    internal static string ClassifyExecutionSupport(
-        bool actionExecutionAllowed,
-        string readiness,
-        string surfaceKind,
-        int bindingCount,
-        bool hasTrialBinding,
-        bool visibleUnsupported = false)
-    {
-        if (!actionExecutionAllowed || surfaceKind == "unsupported" || visibleUnsupported)
-            return "unsupported";
-        // A known native interaction can be settling without any command being
-        // legal now. Empty candidates during that phase are not an unsupported
-        // family and must not terminate a supervising consumer.
-        if (readiness != "ready")
-            return "supported";
-        if (bindingCount == 0)
-            return "unsupported";
-        return hasTrialBinding ? "trial" : "supported";
-    }
-
     private static string PublicCommand(string operation)
     {
         if (operation is "play_card" or "use_potion" or "end_turn")
@@ -3187,19 +2058,5 @@ internal static class NativeUiActionRuntime
         "offer" or "service" => "offer_id",
         _ => role.EndsWith("_id", StringComparison.Ordinal) ? role : $"{role}_id"
     };
-
-    private static OperationPermissionBinding PermissionBinding(
-        ActionPermissionScope scope) =>
-        new(
-            scope.SurfaceKind,
-            scope.Operation,
-            scope.Tier,
-            scope.GrantId,
-            scope.GrantVersion,
-            scope.RuntimeEpoch,
-            scope.EnvironmentDigest,
-            scope.PatchDigest,
-            scope.OperationFingerprint,
-            scope.AdmissionBasis);
 
 }

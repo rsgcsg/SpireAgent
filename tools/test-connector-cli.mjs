@@ -4,21 +4,21 @@ import os from "node:os";
 import path from "node:path";
 import {
   agentRunPreflightErrors,
-  configureHumanEnvironmentEvidenceProfile,
-  defaultMigrationCycleArgs,
+  configurePlayerEnvironmentEvidenceProfile,
   evaluateBuildProvenance,
   evaluateEnvironmentReadiness,
   evaluateLoadedArtifact,
-  gatewaySourceIdentity,
+  playerEnvironmentSourceIdentity,
   inspectModInstallation,
-  isTransientAgentObservation,
+  inspectAgentLocalConfig,
+  isTransientAgentSnapshot,
   loadAgentGameDirFromLocalEnv,
-  migrationCycleDelegateArgs,
   processListHasGame,
   recommendDoctorSteps,
   resolveExecutable,
   resolveGameDir,
   resolveModsDir,
+  sourceProtocols,
   windowsTaskListHasGame,
   workspaceSourceIdentity
 } from "./connector.mjs";
@@ -29,10 +29,14 @@ const sourceIdentity = workspaceSourceIdentity();
 assert.match(sourceIdentity.revision, /^[0-9a-f]{40}$/u);
 assert.match(sourceIdentity.sourceDigest, /^[0-9a-f]{64}$/u);
 assert.ok(["clean", "dirty"].includes(sourceIdentity.worktreeStatus));
-const gatewayIdentity = gatewaySourceIdentity();
-assert.match(gatewayIdentity.revision, /^[0-9a-f]{40}$/u);
-assert.match(gatewayIdentity.sourceDigest, /^[0-9a-f]{64}$/u);
-assert.ok(gatewayIdentity.fileCount > 0);
+const environmentIdentity = playerEnvironmentSourceIdentity();
+assert.match(environmentIdentity.revision, /^[0-9a-f]{40}$/u);
+assert.match(environmentIdentity.sourceDigest, /^[0-9a-f]{64}$/u);
+assert.ok(environmentIdentity.fileCount > 0);
+assert.deepEqual(sourceProtocols(), {
+  csharp: "1.0-rc.1",
+  re: "1.0-rc.1"
+});
 
 assert.equal(
   resolveGameDir({ STS2_GAME_DIR: "./fixture-game" }, "linux", "/home/test"),
@@ -69,6 +73,10 @@ const fixtureEnvDir = mkdtempSync(path.join(os.tmpdir(), "spireagent-connector-e
 try {
   const envFile = path.join(fixtureEnvDir, ".env.local");
   writeFileSync(envFile, "DEEPSEEK_API_KEY=not-loaded\nSTS2_GAME_DIR=C:\\Games\\Slay the Spire 2\n");
+  assert.deepEqual(inspectAgentLocalConfig(envFile), {
+    exists: true,
+    retired_keys: []
+  });
   const localEnv = {};
   assert.equal(loadAgentGameDirFromLocalEnv(localEnv, envFile), true);
   assert.equal(localEnv.STS2_GAME_DIR, "C:\\Games\\Slay the Spire 2");
@@ -77,117 +85,105 @@ try {
   const explicitEnv = { STS2_GAME_DIR: "D:\\Explicit" };
   assert.equal(loadAgentGameDirFromLocalEnv(explicitEnv, envFile), false);
   assert.equal(explicitEnv.STS2_GAME_DIR, "D:\\Explicit");
+
+  writeFileSync(envFile, "DEEPSEEK_API_KEY=not-loaded\nSPIREAGENT_HE_MODE=he_pure\nSTS2_MCP_PROTOCOL=he\n");
+  assert.deepEqual(inspectAgentLocalConfig(envFile), {
+    exists: true,
+    retired_keys: ["SPIREAGENT_HE_MODE", "STS2_MCP_PROTOCOL"]
+  });
 } finally {
   rmSync(fixtureEnvDir, { recursive: true, force: true });
 }
 
-const humanProfileDir = mkdtempSync(path.join(os.tmpdir(), "spireagent-human-profile-"));
+const evidenceProfileDir = mkdtempSync(path.join(os.tmpdir(), "spireagent-evidence-profile-"));
 try {
-  const configPath = path.join(humanProfileDir, "STS2_MCP.conf");
+  const configPath = path.join(evidenceProfileDir, "STS2_MCP.conf");
   writeFileSync(configPath, JSON.stringify({
     port: 15526,
     permission_mode: "migration_exploration",
     qualification_store: "fixture-ledger.json"
   }));
-  const configured = configureHumanEnvironmentEvidenceProfile(configPath, true);
+  const configured = configurePlayerEnvironmentEvidenceProfile(configPath, true);
   const config = JSON.parse(readFileSync(configPath, "utf8"));
-  assert.equal(config.human_environment_native_page_evidence_enabled, true);
-  assert.equal(config.permission_mode, "migration_exploration");
-  assert.equal(config.qualification_store, "fixture-ledger.json");
+  assert.equal(config.player_environment_native_page_evidence_enabled, true);
+  assert.equal(config.permission_mode, undefined);
+  assert.equal(config.qualification_store, undefined);
   assert.equal(configured.requires_cold_load, true);
   assert.equal(configured.creates_action_authority, false);
-  configureHumanEnvironmentEvidenceProfile(configPath, false);
+  configurePlayerEnvironmentEvidenceProfile(configPath, false);
   assert.equal(
-    JSON.parse(readFileSync(configPath, "utf8")).human_environment_native_page_evidence_enabled,
+    JSON.parse(readFileSync(configPath, "utf8")).player_environment_native_page_evidence_enabled,
     false
   );
   assert.throws(
-    () => configureHumanEnvironmentEvidenceProfile(configPath, "true"),
+    () => configurePlayerEnvironmentEvidenceProfile(configPath, "true"),
     /requires --enabled true or --enabled false/u
   );
 } finally {
-  rmSync(humanProfileDir, { recursive: true, force: true });
+  rmSync(evidenceProfileDir, { recursive: true, force: true });
 }
-
-const migrationArgs = defaultMigrationCycleArgs({
-  gameDir: "/fixture-game",
-  endpoint: "http://127.0.0.1:19999"
-});
-assert.deepEqual(migrationArgs.slice(0, 2), ["--endpoint", "http://127.0.0.1:19999"]);
-assert.equal(migrationArgs.at(-1), "true");
-assert.ok(migrationArgs.includes(path.join(
-  resolveModsDir(path.resolve("/fixture-game")),
-  "STS2_MCP.qualifications.json"
-)));
-const delegatedMigrationArgs = migrationCycleDelegateArgs({
-  gameDir: "/fixture-game",
-  endpoint: "http://127.0.0.1:19999",
-  passthrough: ["--apply", "false"]
-});
-assert.ok(delegatedMigrationArgs.includes("--registry"));
-assert.deepEqual(delegatedMigrationArgs.slice(-2), ["--apply", "false"]);
 
 assert.deepEqual(agentRunPreflightErrors({
   errors: [],
   observation_ready: true,
   mutation_ready: false,
-  modset_status: "exact_bridge_only",
-  mod_installation: { exact_permission_blocker: false }
+  modset_status: "exact_player_environment_only",
+  mod_installation: { duplicate_installation_blocker: false }
 }), []);
 assert.deepEqual(agentRunPreflightErrors({
   errors: [],
   observation_ready: false,
   mutation_ready: false,
-  modset_status: "exact_bridge_only",
-  mod_installation: { exact_permission_blocker: false }
+  modset_status: "exact_player_environment_only",
+  mod_installation: { duplicate_installation_blocker: false }
 }, { requireObservation: false }), []);
 assert.deepEqual(agentRunPreflightErrors({
   errors: ["installed_loaded_mvid_mismatch"],
   observation_ready: false,
   mutation_ready: false,
   modset_status: "hazardous_mod_state_detected",
-  mod_installation: { exact_permission_blocker: true }
+  mod_installation: { duplicate_installation_blocker: true }
 }, { requireMutation: true }), [
   "installed_loaded_mvid_mismatch",
-  "duplicate_gateway_manifests_detected",
-  "human_observation_disabled",
-  "human_input_delivery_disabled"
+  "duplicate_host_manifests_detected",
+  "player_snapshot_disabled",
+  "player_input_delivery_disabled"
 ]);
-assert.equal(isTransientAgentObservation({
+assert.equal(isTransientAgentSnapshot({
   status: "settling",
   surface: { kind: "no_action" }
 }), true);
-assert.equal(isTransientAgentObservation({
+assert.equal(isTransientAgentSnapshot({
   status: "visible_unsupported",
   surface: { kind: "unknown_visible_panel" }
 }), false);
-assert.equal(isTransientAgentObservation({
+assert.equal(isTransientAgentSnapshot({
   status: "interactive",
   surface: { kind: "main_menu" },
   bound_actions: { status: "complete", actions: [{}] }
 }), false);
 
-const humanReady = evaluateEnvironmentReadiness({
-  protocol_version: "1.0-preview.6",
+const playerEnvironmentReady = evaluateEnvironmentReadiness({
+  protocol_version: "1.0-rc.1",
   execution_available: true,
   game: {
     compatibility: { observation_allowed: true },
     modset: { status: "additional_mods_loaded" }
   }
-});
-assert.equal(humanReady.environment_ready, true);
-assert.equal(humanReady.mutation_ready, true);
-const humanOffline = evaluateEnvironmentReadiness(null, "1.0-preview.6");
-assert.deepEqual(humanOffline.blockers, [
-  "gateway_unreachable",
-  "human_observation_disabled",
-  "human_input_delivery_disabled"
+}, "1.0-rc.1");
+assert.equal(playerEnvironmentReady.environment_ready, true);
+assert.equal(playerEnvironmentReady.mutation_ready, true);
+const playerEnvironmentOffline = evaluateEnvironmentReadiness(null, "1.0-rc.1");
+assert.deepEqual(playerEnvironmentOffline.blockers, [
+  "host_unreachable",
+  "player_snapshot_disabled",
+  "player_input_delivery_disabled"
 ]);
 assert.deepEqual(agentRunPreflightErrors({
-  ...humanReady,
-  loaded_protocol: "1.0-preview.6",
+  ...playerEnvironmentReady,
+  loaded_protocol: "1.0-rc.1",
   errors: [],
-  mod_installation: { exact_permission_blocker: false }
+  mod_installation: { duplicate_installation_blocker: false }
 }, { requireMutation: true }), []);
 
 const mismatch = evaluateLoadedArtifact({
@@ -197,10 +193,12 @@ const mismatch = evaluateLoadedArtifact({
   installedSha: "b".repeat(64),
   builtMvid: "mvid-a",
   installedMvid: "mvid-b",
+  builtSourceRevision: "a".repeat(40),
   capabilities: {
     protocol_version: "1.0-preview.5",
     host: {
       implementation: {
+        source_revision: "b".repeat(40),
         artifact_sha256: "c".repeat(64),
         module_version_id: "mvid-c"
       }
@@ -214,17 +212,19 @@ assert.deepEqual(mismatch.errors, [
   "built_installed_mvid_mismatch",
   "installed_loaded_sha_mismatch",
   "installed_loaded_mvid_mismatch",
-  "source_loaded_protocol_mismatch"
+  "source_loaded_protocol_mismatch",
+  "built_loaded_source_revision_mismatch"
 ]);
 
 const buildMetadata = {
-  gateway_source_digest: "source-digest",
+  source_revision: "a".repeat(40),
+  player_environment_source_digest: "source-digest",
   source_protocol: "3.0-preview.fixture",
   artifact_sha256: "a".repeat(64),
   artifact_mvid: "mvid-a"
 };
 assert.deepEqual(evaluateBuildProvenance({
-  currentSource: { sourceDigest: "source-digest" },
+  currentSource: { revision: "a".repeat(40), sourceDigest: "source-digest" },
   sourceProtocol: "3.0-preview.fixture",
   builtSha: "a".repeat(64),
   builtMvid: "mvid-a",
@@ -234,7 +234,7 @@ assert.deepEqual(evaluateBuildProvenance({
   installedMetadata: buildMetadata
 }), { ok: true, errors: [] });
 assert.deepEqual(evaluateBuildProvenance({
-  currentSource: { sourceDigest: "new-source" },
+  currentSource: { revision: "b".repeat(40), sourceDigest: "new-source" },
   sourceProtocol: "3.0-preview.next",
   builtSha: "b".repeat(64),
   builtMvid: "mvid-b",
@@ -243,6 +243,7 @@ assert.deepEqual(evaluateBuildProvenance({
   installedMvid: "mvid-a",
   installedMetadata: buildMetadata
 }).errors, [
+  "source_build_revision_mismatch",
   "source_build_digest_mismatch",
   "source_build_protocol_mismatch",
   "build_provenance_sha_mismatch",
@@ -263,11 +264,29 @@ assert.deepEqual(recommendDoctorSteps({
   status: {
     ok: false,
     errors: ["source_build_digest_mismatch", "source_loaded_protocol_mismatch"],
-    mod_installation: { exact_permission_blocker: false }
+    mod_installation: { duplicate_installation_blocker: false }
   }
 }), [
   "Fully close STS2, then run npm run deploy from the repository root.",
-  "After a verified deploy, cold-restart STS2 so the installed Gateway is actually loaded."
+  "After a verified deploy, cold-restart STS2 so the installed Player Environment Host is actually loaded."
+]);
+assert.deepEqual(recommendDoctorSteps({
+  prerequisites: doctorPrerequisites,
+  gameDirExists: true,
+  agentDependenciesInstalled: true,
+  agentLocalConfig: {
+    exists: true,
+    retired_keys: ["SPIREAGENT_HE_MODE", "STS2_MCP_PROTOCOL"]
+  },
+  status: {
+    ok: true,
+    errors: [],
+    environment_ready: true,
+    mutation_ready: true,
+    mod_installation: { duplicate_installation_blocker: false }
+  }
+}), [
+  "Remove retired Re-SpireAgent/.env.local settings: SPIREAGENT_HE_MODE, STS2_MCP_PROTOCOL."
 ]);
 assert.deepEqual(recommendDoctorSteps({
   prerequisites: doctorPrerequisites,
@@ -278,7 +297,7 @@ assert.deepEqual(recommendDoctorSteps({
     errors: [],
     environment_ready: true,
     mutation_ready: true,
-    mod_installation: { exact_permission_blocker: false }
+    mod_installation: { duplicate_installation_blocker: false }
   }
 }), ["Run cd Re-SpireAgent && npm run agent:run."]);
 assert.deepEqual(recommendDoctorSteps({
@@ -290,10 +309,10 @@ assert.deepEqual(recommendDoctorSteps({
     errors: [],
     environment_ready: false,
     mutation_ready: false,
-    blockers: ["human_observation_disabled"],
-    mod_installation: { exact_permission_blocker: false }
+    blockers: ["player_snapshot_disabled"],
+    mod_installation: { duplicate_installation_blocker: false }
   }
-}), ["Resolve loaded environment blockers: human_observation_disabled."]);
+}), ["Resolve loaded environment blockers: player_snapshot_disabled."]);
 
 const fixtureMods = mkdtempSync(path.join(os.tmpdir(), "spireagent-connector-cli-"));
 try {
@@ -309,8 +328,8 @@ try {
   }));
   writeFileSync(path.join(backupDir, "not-a-manifest.json"), "{}");
   const installation = inspectModInstallation(fixtureMods);
-  assert.equal(installation.status, "duplicate_gateway_manifests_detected");
-  assert.equal(installation.exact_permission_blocker, true);
+  assert.equal(installation.status, "duplicate_host_manifests_detected");
+  assert.equal(installation.duplicate_installation_blocker, true);
   assert.deepEqual(
     installation.duplicate_manifests.map((manifest) => manifest.relative_path),
     [path.join("backups", "old", "STS2_MCP.json")]

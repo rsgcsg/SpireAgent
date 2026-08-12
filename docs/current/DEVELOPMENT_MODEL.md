@@ -1,22 +1,21 @@
 # Development Model
 
-This document defines how humans and coding agents share the public repository
-without confusing source, deployment and runtime truth.
+This document keeps a multi-developer public repository from confusing source,
+deployment and runtime truth.
 
 ## Branch Roles
 
 | Branch | Role |
 |---|---|
-| `main` | Public default and reviewed distribution source |
-| `develop` | Integration target for coherent changes before promotion |
-| `human_equivalent_connector` | Current shared HE migration and exact-runtime validation branch |
-| `connectorV3` | Superseded V3 history and explicit rollback comparison |
-| topic branch | Preferred location for one developer or Agent's PR-sized change |
+| `main` | public default and reviewed distribution source |
+| `develop` | integration target before promotion |
+| `human_equivalent_connector` | current Player Environment C1 migration and runtime-seal branch |
+| `connectorV3` | superseded implementation history |
+| topic branch | preferred scope for one reviewable change |
 
-The default branch is what a fresh clone receives. A feature branch must never
-be described as a public release merely because it is newer. The HE branch must
-be reviewed into `develop` and then `main`; neither HE nor `connectorV3` is a
-permanent third release channel.
+A feature branch is not a public release merely because it is newer. Shared
+branches use fast-forward-only pulls and must never be force-pushed while other
+people are testing them.
 
 Before work:
 
@@ -27,106 +26,84 @@ git rev-parse HEAD
 git rev-parse '@{upstream}'
 ```
 
-Do not pull over unexplained local edits. Shared branches use fast-forward-only
-pulls; never force-push a branch other people are actively testing.
+Do not pull over unexplained local edits.
 
-## One Change, One Owner, One Handoff
+## One Change, One Owner
 
-Each change identifies the component that owns the behavior:
+- **LiveHost:** player-visible extraction and current owner/readiness.
+- **NativeUi:** private native controls, exact operands and delivery callback.
+- **Identity/Control:** artifact/runtime identity, one writer and idempotency.
+- **PlayerEnvironment:** Snapshot, Read, BoundAction, stale submission, Receipt
+  and successor.
+- **Re:** strict decode, model projection, provider invocation, progress
+  supervision and local run recording.
+- **REST/MCP:** transport only.
+- **D/P:** non-authorizing evaluation and deployment/rollback.
 
-- Gateway/C: player-visible UI observation, active owner/entity/control
-  binding, affordance admission, execute-time validation, native input delivery
-  and delivery uncertainty;
-- Re: strict decode, decision projection, provider invocation, receipt polling,
-  successor supervision and run recording;
-- REST/MCP: transport only;
-- D tooling: optional non-authorizing source/business annotations, audit and evidence;
-- docs/operator shell: reproducible setup, diagnosis and rollback.
+A vertical interaction change includes visible extraction, exact binding,
+public projection, execute-time revalidation, Receipt, tests, coverage and its
+evidence boundary. It must not introduce a source whitelist in Re or a second
+executor.
 
-A Connector family change should be vertically complete rather than scattered
-across unrelated commits: source/owner, operands, publication, execution,
-Outcome, Re consumption, tests, protocol/coverage and evidence boundary.
-
-Every handoff and PR states:
+Every handoff states:
 
 ```text
 branch and exact HEAD
 working-tree status
-scope and authority owner
+scope and owning layer
 files changed
 tests actually run
-source protocol/schema impact
+protocol/schema impact
 built and installed SHA/MVID, if performed
 loaded SHA/MVID/runtime, if observed
-Live surfaces actually exercised
+Live interactions actually exercised
 non-claims and rollback
 next exact task
 ```
 
-Never use “works”, “deployed” or “qualified” without naming the evidence level.
+## Evidence Levels
 
-## Truth And Evidence
-
-Truth is ordered by scope, not optimism:
-
-1. current source and canonical contracts;
-2. automated tests/fixtures;
+1. current source and canonical contract;
+2. automated tests and deterministic fixtures;
 3. Release build provenance;
 4. installed artifact identity;
 5. loaded process identity;
-6. exact-runtime canary or bounded journey;
-7. independently reviewed Organic evidence;
-8. persistent qualification bound to its exact environment.
+6. exact-runtime mutation or bounded journey;
+7. reviewed same-artifact conformance evidence.
 
-One level does not imply the next. Runtime identity belongs in a dated evidence
-record or local CLI output, not as mutable global truth in `STATUS.md`. The
-repository status may cite an immutable run, but current per-machine truth is
-always obtained with `npm run doctor` and `npm run verify:loaded`.
+One level never implies the next. Per-machine identity comes from
+`npm run doctor` and `npm run verify:loaded`; dated evidence may cite immutable
+runs, but mutable local state does not belong in current architecture docs.
 
 ## Required Workflow
 
-1. Read `AGENTS.md`, `docs/current/DOCUMENT_MAP.md`, `STATUS.md` and the owning
-   component guide.
-2. Confirm the target branch/upstream and protect existing work.
+1. Read `AGENTS.md`, `DOCUMENT_MAP.md`, `STATUS.md` and the component guide.
+2. Confirm branch/upstream and protect existing work.
 3. Prove the defect or contract gap before changing production behavior.
-4. Keep each authority decision in its owning layer; do not add silent fallback.
-5. Run targeted tests, then the complete relevant checks.
-6. Update current protocol/coverage/status in the same change.
-7. Run `npm run check:docs` and `git diff --check`.
-8. For a local deploy, use `npm run deploy`; do not hand-copy the DLL.
+4. Keep every authority decision in its owning layer; add no silent fallback.
+5. Run targeted tests, then complete relevant checks.
+6. Update protocol, coverage and current status in the same change.
+7. Run `npm run check` and `git diff --check`.
+8. Use `npm run deploy` while STS2 is closed; never hand-copy the DLL.
 9. Record loaded/Live evidence only after a cold start reports the exact tuple.
 
-CI cannot compile the Gateway without proprietary STS2 assemblies. A green PR
-therefore proves Re and repository contracts only. The PR author remains
-responsible for exact local C# tests/build evidence when Gateway code changes.
+CI cannot compile the Host without proprietary STS2 assemblies. Green public
+CI therefore proves Re and repository contracts only; a Host change requires
+explicit local C# test/build evidence.
 
-## Current Delivery Direction
+## Current Direction
 
-Short term:
+Short term: finish one rc1 source/build/install/load tuple, exercise ordinary
+Player Environment-only journeys, stale Read/Action refusal, source-free
+selectors and optional native-page recovery, then decide C1 freeze.
 
-- cold-load and exercise the current Human Environment artifact in both
-  `he_assisted` and `he_pure` without transferring V3 evidence;
-- close exact-runtime UI coverage defects as bounded native mechanics, not new
-  business source gates;
-- complete player-visible Inspection, linked detail and reveal opportunities;
-- keep fresh-clone deployment and rollback reproducible across machines.
-
-Medium term:
-
-- establish a reviewed ordinary-vanilla support envelope with typed stops;
-- keep exact target binding, single-writer delivery and unknown-no-retry while
-  validating the current neutral `LiveHost`/`NativeUi` ownership;
-- promote the coherent Human Environment branch through normal review after
-  new-artifact Live evidence.
-
-Later, separately gated work includes Workshop packaging, Companion, public
-Agent SDK, Headless and learning. None may move game legality, Commit or
-completion out of the Gateway.
+After C1, strategy work moves to A. Headless, Training, Search, learning and
+transient PlayerCue remain separate programs unless exact evidence reopens a C
+fact/read/action/delivery defect.
 
 ## Repository Hygiene
 
 Never commit API keys, `.env.local`, proprietary assemblies, built/installed
-DLLs, local deployment metadata, mutable qualifications, full run directories
-or secret provider output. Generated outputs are rebuilt locally. Reviewed
-evidence documents contain only the minimum non-secret facts needed to support
-their claims.
+DLLs, local deployment metadata, full run directories or provider output.
+Generated outputs are rebuilt locally. Reviewed evidence contains only the
+minimum non-secret facts needed for its claim.

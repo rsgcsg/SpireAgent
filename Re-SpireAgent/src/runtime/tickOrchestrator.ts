@@ -35,6 +35,7 @@ export interface TickResult {
 
 const MAX_REPEATED_NON_ACTIONABLE_STATE = 8;
 const MAX_REPEATED_STARTUP_UNKNOWN_STATE = 40;
+const MAX_REPEATED_SETTLING_STATE = 40;
 
 export class TickOrchestrator<TAction extends { kind: string } = ExecutableGameAction> {
   private readonly executedTransitionOccurrences = new Map<string, number>();
@@ -105,7 +106,9 @@ export class TickOrchestrator<TAction extends { kind: string } = ExecutableGameA
                 code: "repeated_non_actionable_state" as const,
                 occurrence,
                 stateHash: pre.stateHash,
-                ...(bridgeStateToken(pre) ? { stateToken: bridgeStateToken(pre) } : {}),
+                ...(environmentSnapshotId(pre)
+                  ? { stateToken: environmentSnapshotId(pre) }
+                  : {}),
                 contextKind: pre.currentState.context.kind,
                 surfaceKind: pre.currentState.surface.kind
               }
@@ -126,13 +129,13 @@ export class TickOrchestrator<TAction extends { kind: string } = ExecutableGameA
           outcome: "not_executed_non_actionable_state",
           error: completedRun
             ? "Stopped after the completed run returned to the top-level menu; a bounded agent:run never starts a second game"
-            : `Stopped at ${pre.currentState.context.kind} run-start boundary; pass --allow-run-entry to permit Gateway-advertised run entry`,
+            : `Stopped at ${pre.currentState.context.kind} run-start boundary; pass --allow-run-entry to permit Player Environment-advertised run entry`,
           shouldStopRun: true,
           stopReason: "run_boundary"
         });
       }
       if (options.allowRunEntry
-          && pre.currentState.actionAuthority !== "current_human_ui") {
+          && pre.currentState.actionAuthority !== "player_environment") {
         return this.recordWithoutDecision({
           decisionId,
           tick,
@@ -420,7 +423,7 @@ export class TickOrchestrator<TAction extends { kind: string } = ExecutableGameA
   }
 
   private observeNonActionableState(pre: StateEnvelope): number {
-    const stateToken = bridgeStateToken(pre) ?? pre.stateHash;
+    const stateToken = environmentSnapshotId(pre) ?? pre.stateHash;
     const key = `${stateToken}|${pre.currentState.context.kind}|${pre.currentState.surface.kind}|${pre.currentState.stability}`;
     this.nonActionableStateOccurrences = this.lastNonActionableStateKey === key
       ? this.nonActionableStateOccurrences + 1
@@ -439,8 +442,8 @@ export function isStartupUnknownState(
   state: StateEnvelope["currentState"]
 ): boolean {
   return state.context.kind === "unknown"
-    && state.surface.kind === "human_ui"
-    && state.surface.uiKind === "unsupported"
+    && state.surface.kind === "player_environment"
+    && state.surface.interactionKind === "unsupported"
     && state.stability !== "actionable";
 }
 
@@ -448,14 +451,21 @@ export function nonActionableStallLimit(
   state: StateEnvelope["currentState"],
   observedKnownState: boolean
 ): number {
-  return isStartupUnknownState(state) && !observedKnownState
-    ? MAX_REPEATED_STARTUP_UNKNOWN_STATE
+  if (isStartupUnknownState(state) && !observedKnownState) {
+    return MAX_REPEATED_STARTUP_UNKNOWN_STATE;
+  }
+  // Native animation and async room handoffs can legitimately hold a coherent
+  // no-input state for several seconds. Keep this bounded without declaring a
+  // normal 250 ms polling cadence permanently stalled after only two seconds.
+  return state.stability === "settling"
+    ? MAX_REPEATED_SETTLING_STATE
     : MAX_REPEATED_NON_ACTIONABLE_STATE;
 }
 
-function bridgeStateToken(envelope: StateEnvelope): string | undefined {
-  const surface = envelope.currentState.surface as { bridgeStateId?: unknown };
-  return typeof surface.bridgeStateId === "string" ? surface.bridgeStateId : undefined;
+function environmentSnapshotId(envelope: StateEnvelope): string | undefined {
+  return envelope.currentState.surface.kind === "player_environment"
+    ? envelope.currentState.surface.snapshotId
+    : undefined;
 }
 
 function invalidStateReason(envelope: StateEnvelope): string {

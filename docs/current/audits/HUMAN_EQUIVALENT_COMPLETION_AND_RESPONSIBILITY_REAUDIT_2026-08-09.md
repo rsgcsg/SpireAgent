@@ -17,7 +17,7 @@ authority boundaries, but it is not full Human information parity.
 
 ```text
 Native visible UI
--> /api/he observation and finite affordances
+-> /api/player-environment observation and finite affordances
 -> exact state/frame/owner/entity/control validation
 -> one native UI input delivery
 -> applied/not_applied/unknown receipt
@@ -75,7 +75,7 @@ MVID `fd3177e5-bc0c-4acd-8097-ea237957a152`, and runtime
 unknown-source/source-contract failures motivate HE, but do not prove HE load,
 delivery, selectors, assisted/pure journeys or qualification.
 
-At audit time the game was closed and `/api/he/capabilities` was unreachable.
+At audit time the game was closed and `/api/player-environment/capabilities` was unreachable.
 Therefore loaded HE identity, HE Live execution, Organic evidence and durable
 qualification are all non-claims.
 

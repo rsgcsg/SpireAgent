@@ -98,13 +98,13 @@ internal sealed class MapNavigationSurfaceReader : ILiveSurfaceReader
         {
             return BindingUnavailable(
                 game,
-                "The exact map drawing-mode source binding is unavailable.");
+                "The exact current map drawing-mode binding is unavailable.");
         }
         if (!TryGetDirectionalNavigation(out bool usingDirectionalNavigation))
         {
             return BindingUnavailable(
                 game,
-                "The exact map input-mode source binding is unavailable.");
+                "The exact current map input-mode binding is unavailable.");
         }
         NMapDrawingInput? drawingInput = null;
         if (drawingMode != DrawingMode.None)
@@ -181,7 +181,7 @@ internal sealed class MapNavigationSurfaceReader : ILiveSurfaceReader
                 "NMapScreen.IsOpen+IsTravelEnabled+IsTraveling",
                 "NMapScreen._isInputDisabled exact-version binding",
                 "NMapDrawings.GetLocalDrawingMode",
-                "NControllerManager.IsUsingDirectionalNavigation source binding",
+                "NControllerManager.IsUsingDirectionalNavigation exact current binding",
                 "NMapPoint.Point+State+IsEnabled+IsTravelable",
                 "RunState.CurrentMapCoord+VisitedMapCoords",
                 "MapPoint.PointType+Children"
@@ -382,12 +382,7 @@ internal sealed class MapNavigationSurfaceReader : ILiveSurfaceReader
         }
 
         expectedInput.StopDrawing();
-        return NativeInputResult.Started(
-            () => !ReferenceEquals(NMapScreen.Instance, expectedScreen)
-                  || !expectedScreen.IsOpen
-                  || TryGetLocalDrawingMode(expectedScreen.Drawings, out DrawingMode mode)
-                     && mode == DrawingMode.None,
-            "map_annotation_mode_closed");
+        return NativeInputResult.Delivered("native_map_annotation_stop_submitted");
     }
 
     private static NativeInputResult StartTravel(
@@ -421,13 +416,7 @@ internal sealed class MapNavigationSurfaceReader : ILiveSurfaceReader
         }
 
         expectedScreen.OnMapPointSelectedLocally(expectedNode);
-        return NativeInputResult.Started(
-            () => !ReferenceEquals(NMapScreen.Instance, expectedScreen)
-                  || !expectedScreen.IsOpen
-                  || expectedRunState.CurrentMapCoord is { } current
-                     && current.Equals(expectedCoord),
-            "map_closed_or_current_map_coordinate_reached",
-            allowIntermediateStateChanges: true);
+        return NativeInputResult.Delivered("native_map_point_selected");
     }
 
     private static bool TryGetLocalDrawingMode(
@@ -512,12 +501,12 @@ internal sealed class MapNavigationSurfaceReader : ILiveSurfaceReader
         {
             Diagnostics = new[]
             {
-                GatewayDiagnostics.Create(
-                    "gateway.surface.map_navigation.ui_run_state_contradiction",
+                HostDiagnostics.Create(
+                    "host.surface.map_navigation.ui_run_state_contradiction",
                     "error",
                     "surface",
                     "actions_suppressed",
-                    "refresh_or_update_bridge",
+                    "refresh_or_update_host_adapter",
                     reason)
             }
         };
@@ -544,12 +533,12 @@ internal sealed class MapNavigationSurfaceReader : ILiveSurfaceReader
         {
             Diagnostics = new[]
             {
-                GatewayDiagnostics.Create(
-                    "gateway.surface.map_navigation.binding_unavailable",
+                HostDiagnostics.Create(
+                    "host.surface.map_navigation.binding_unavailable",
                     "error",
                     "surface",
                     "actions_suppressed",
-                    "update_bridge",
+                    "update_host_adapter",
                     reason)
             }
         };

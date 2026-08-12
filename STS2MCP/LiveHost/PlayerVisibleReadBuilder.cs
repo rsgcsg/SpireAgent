@@ -54,7 +54,7 @@ internal static class PlayerVisibleReadBuilder
                 ShopCatalogKind => BuildShopCatalog(context, entities),
                 _ => PlayerReadBuildResult.Failure(
                     "inspection_kind_not_implemented",
-                    $"Inspection kind '{kind}' is not implemented by this bridge revision.")
+                    $"Player read kind '{kind}' is not implemented by this Host revision.")
             };
         }
         catch (Exception ex)
@@ -103,7 +103,7 @@ internal static class PlayerVisibleReadBuilder
         {
             return PlayerReadBuildResult.Failure(
                 "inspection_scope_mismatch",
-                "Combat pile inspection is available only for a current qualified combat context.");
+                "Combat pile inspection is available only for the current combat context.");
         }
 
         RunState? runState = RunManager.Instance.DebugOnlyGetState();

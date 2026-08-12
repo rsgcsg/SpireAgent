@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.js";
+import { buildPlayerEnvironmentAllowedActions } from "../src/domain/actions/buildPlayerEnvironmentAllowedActions.js";
 import { DeepSeekDecisionProvider } from "../src/llm/deepseekProvider.js";
 import { parseDecisionText, validateDecisionForActions } from "../src/llm/decisionSchema.js";
-import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
+import { normalizePlayerEnvironmentCurrentState } from "../src/normalization/normalizePlayerEnvironmentCurrentState.js";
 import { GLOBAL_PROMPT_VERSION, GLOBAL_SYSTEM_PROMPT } from "../src/prompting/globalPrompt.js";
 import { buildDecisionPrompt } from "../src/prompting/promptBuilder.js";
 import { CONTEXT_GUIDES, SURFACE_GUIDES } from "../src/prompting/stateGuides.js";
-import { fixture, TEST_ADAPTER } from "./helpers.js";
+import { TEST_ADAPTER, wrapSnapshot } from "./helpers.js";
 
 // Maintenance note for future workers:
 // Prompt and guide versions are intentional evidence/baseline identifiers. When
@@ -15,8 +15,8 @@ import { fixture, TEST_ADAPTER } from "./helpers.js";
 // pinning incidental prose unless the exact wording is itself contractual.
 describe("prompt contract", () => {
   it("projects decision facts once while retaining the exact allowed actions", async () => {
-    const envelope = normalizeCurrentState(await fixture("combat"), TEST_ADAPTER);
-    const actions = buildAllowedActions(envelope.currentState, envelope.stateHash);
+    const envelope = normalizePlayerEnvironmentCurrentState(wrapSnapshot(), TEST_ADAPTER);
+    const actions = buildPlayerEnvironmentAllowedActions(envelope.currentState, envelope.stateHash);
     const prompt = buildDecisionPrompt(envelope.currentState, actions);
     const payload = JSON.parse(prompt.userPrompt) as Record<string, any>;
 
@@ -26,15 +26,14 @@ describe("prompt contract", () => {
     expect(prompt.stateGuideVersion).toBe(5);
     expect(payload.contextKind).toBeUndefined();
     expect(payload.surfaceKind).toBeUndefined();
-    expect(payload.actionAuthority).toBe("local_reconstruction");
+    expect(payload.actionAuthority).toBe("player_environment");
     expect(payload.currentState.context.kind).toBe("combat");
-    expect(payload.currentState.surface.kind).toBe("combat_turn");
+    expect(payload.currentState.surface.kind).toBe("player_environment");
     expect(payload.currentState.normalizedSchemaVersion).toBeUndefined();
     expect(payload.currentState.sourceStateType).toBeUndefined();
     expect(payload.currentState.actionAuthority).toBeUndefined();
-    expect(payload.currentState.surface.legalActions).toBeUndefined();
-    expect(payload.currentState.bridgeLegacyWarnings).toBeUndefined();
-    expect(payload.currentState.bridgeInspectionCatalog).toBeUndefined();
+    expect(payload.currentState.surface.boundActions).toBeUndefined();
+    expect(payload.informationBoundary.completeness.status).toBe("complete");
     expect(payload.outputSchema).toBeUndefined();
     expect(payload.allowedActions).toHaveLength(actions.length);
     expect(payload.allowedActions[0].action).toBeUndefined();
@@ -59,20 +58,16 @@ describe("prompt contract", () => {
     expect(Object.values(SURFACE_GUIDES)).not.toHaveLength(0);
     expect(Object.values(CONTEXT_GUIDES).every((entry) => entry.version === 5)).toBe(true);
     expect(Object.values(SURFACE_GUIDES).every((entry) => entry.version >= 5)).toBe(true);
-    expect(SURFACE_GUIDES.combat_pile_card_selection.version).toBe(8);
-    expect(SURFACE_GUIDES.generated_card_choice.version).toBe(6);
-    expect(SURFACE_GUIDES.no_action.text).toContain("Do not produce a decision");
-    expect(SURFACE_GUIDES.unsupported.text).toContain("Do not produce a decision");
+    expect(Object.keys(SURFACE_GUIDES)).toEqual(["player_environment", "unsupported"]);
+    expect(SURFACE_GUIDES.player_environment.text).toContain("opaque bound action");
+    expect(SURFACE_GUIDES.unsupported.text).toContain("Do not invoke the model");
   });
 
-  it("versions combat-pile guidance independently and keeps source semantics data-driven", () => {
-    const guide = SURFACE_GUIDES.combat_pile_card_selection;
-
-    expect(guide.version).toBe(8);
-    expect(guide.text).toContain("source-bound");
-    expect(guide.text).toContain("Source names are provenance");
-    expect(guide.text).toContain("identical selector shapes do not imply identical business outcomes");
-    expect(guide.text).not.toContain("current Headbutt contract");
+  it("keeps source and native operands out of the current surface guide", () => {
+    const guide = SURFACE_GUIDES.player_environment;
+    expect(guide.text).toContain("player-visible C evidence");
+    expect(guide.text).toContain("Never invent");
+    expect(guide.text).not.toContain("SourceContract");
   });
 });
 
@@ -107,8 +102,8 @@ describe("strict LLM decision schema", () => {
   });
 
   it("rejects an action id outside the in-memory whitelist", async () => {
-    const envelope = normalizeCurrentState(await fixture("card-reward"), TEST_ADAPTER);
-    const actions = buildAllowedActions(envelope.currentState, envelope.stateHash);
+    const envelope = normalizePlayerEnvironmentCurrentState(wrapSnapshot(), TEST_ADAPTER);
+    const actions = buildPlayerEnvironmentAllowedActions(envelope.currentState, envelope.stateHash);
     expect(validateDecisionForActions({
       requestKind: "primary",
       startedAt: "2026-01-01T00:00:00.000Z",

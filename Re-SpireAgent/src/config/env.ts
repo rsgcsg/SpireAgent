@@ -6,14 +6,11 @@ import { config as loadDotEnv } from "dotenv";
 export const RE_PROJECT_ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 
 export interface RuntimeConfig {
-  mcp: {
-    mode: "he_assisted" | "he_pure";
+  connector: {
     baseUrl: string;
     timeoutMs: number;
     startupWaitMs: number;
     startupPollMs: number;
-    commandPollMs: number;
-    commandTimeoutMs: number;
   };
   deepseek: {
     apiKey: string;
@@ -44,16 +41,14 @@ export function loadEnvironment(projectRoot = RE_PROJECT_ROOT): void {
 }
 
 export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectRoot = RE_PROJECT_ROOT): RuntimeConfig {
+  if (env.STS2_MCP_PROTOCOL !== undefined || env.SPIREAGENT_HE_MODE !== undefined) {
+    throw new Error(
+      "STS2_MCP_PROTOCOL and SPIREAGENT_HE_MODE are retired; Player Environment is the only production connector"
+    );
+  }
   const thinkingMode = env.DEEPSEEK_THINKING_MODE ?? "disabled";
   if (thinkingMode !== "enabled" && thinkingMode !== "disabled") {
     throw new Error("DEEPSEEK_THINKING_MODE must be enabled or disabled");
-  }
-  if (env.STS2_MCP_PROTOCOL !== undefined && env.STS2_MCP_PROTOCOL !== "he") {
-    throw new Error("Re-SpireAgent uses Human Environment C; STS2_MCP_PROTOCOL may only be he");
-  }
-  const humanMode = env.SPIREAGENT_HE_MODE ?? "he_pure";
-  if (humanMode !== "he_assisted" && humanMode !== "he_pure") {
-    throw new Error("SPIREAGENT_HE_MODE must be he_assisted or he_pure");
   }
   const evidenceProvenance = env.AGENT_EVIDENCE_PROVENANCE ?? "unrecorded";
   if (!isEvidenceProvenance(evidenceProvenance)) {
@@ -71,29 +66,18 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectR
   }
 
   return {
-    mcp: {
-      mode: humanMode,
+    connector: {
       baseUrl: stripTrailingSlash(env.STS2_API_URL ?? "http://localhost:15526"),
-      timeoutMs: positiveInteger(env.STS2_MCP_TIMEOUT_MS, 5_000, "STS2_MCP_TIMEOUT_MS"),
+      timeoutMs: positiveInteger(env.STS2_CONNECTOR_TIMEOUT_MS, 5_000, "STS2_CONNECTOR_TIMEOUT_MS"),
       startupWaitMs: nonNegativeInteger(
-        env.STS2_MCP_STARTUP_WAIT_MS,
+        env.STS2_CONNECTOR_STARTUP_WAIT_MS,
         60_000,
-        "STS2_MCP_STARTUP_WAIT_MS"
+        "STS2_CONNECTOR_STARTUP_WAIT_MS"
       ),
       startupPollMs: positiveInteger(
-        env.STS2_MCP_STARTUP_POLL_MS,
+        env.STS2_CONNECTOR_STARTUP_POLL_MS,
         500,
-        "STS2_MCP_STARTUP_POLL_MS"
-      ),
-      commandPollMs: positiveInteger(
-        env.STS2_HE_ACTION_POLL_MS,
-        75,
-        "STS2_HE_ACTION_POLL_MS"
-      ),
-      commandTimeoutMs: positiveInteger(
-        env.STS2_HE_ACTION_TIMEOUT_MS,
-        12_000,
-        "STS2_HE_ACTION_TIMEOUT_MS"
+        "STS2_CONNECTOR_STARTUP_POLL_MS"
       )
     },
     deepseek: {

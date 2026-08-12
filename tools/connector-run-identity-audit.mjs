@@ -60,17 +60,24 @@ function readSnapshot(runDirectory, reference) {
 }
 
 function recordedState(snapshot) {
+  if (snapshot?.player_snapshot) {
+    return {
+      ...snapshot.player_snapshot,
+      identity_kind: "player_environment_snapshot"
+    };
+  }
   if (snapshot?.human_snapshot) {
     return {
       ...snapshot.human_snapshot,
-      identity_kind: "human_environment_snapshot"
+      identity_kind: "historical_human_environment_snapshot"
     };
   }
   return snapshot?.bridge_v2_state ?? null;
 }
 
 function identityPair(state) {
-  if (state?.identity_kind === "human_environment_snapshot") {
+  if (state?.identity_kind === "player_environment_snapshot"
+      || state?.identity_kind === "historical_human_environment_snapshot") {
     if (typeof state.snapshot_id !== "string") return null;
     const actionKeys = (state.bound_actions?.actions ?? [])
       .map(boundActionKey)
@@ -84,7 +91,7 @@ function identityPair(state) {
         projection_status: state.bound_actions?.status ?? null,
         actions: actionKeys
       }),
-      evidenceSource: "human_environment_snapshot"
+      evidenceSource: state.identity_kind
     };
   }
 
@@ -151,7 +158,8 @@ function selectedAction(record) {
 function actionContinuity(record, postState) {
   const selected = selectedAction(record);
   const selectedKey = boundActionKey(selected);
-  const publishedActions = postState?.identity_kind === "human_environment_snapshot"
+  const publishedActions = postState?.identity_kind === "player_environment_snapshot"
+      || postState?.identity_kind === "historical_human_environment_snapshot"
     ? postState.bound_actions?.actions
     : postState?.legal_actions;
   if (!selectedKey || !Array.isArray(publishedActions)) return "not_evaluable";
@@ -257,7 +265,9 @@ export function auditRunIdentity({ run, runsDirectory = DEFAULT_RUNS_DIRECTORY }
       neither_identity_changed: compositeOnly,
       missing_identity: missing,
       formal_state_identity_findings: sourceCount("formal_state_identity"),
-      human_environment_snapshot_findings: sourceCount("human_environment_snapshot"),
+      player_environment_snapshot_findings: sourceCount("player_environment_snapshot"),
+      historical_human_environment_snapshot_findings:
+        sourceCount("historical_human_environment_snapshot"),
       historical_identity_shadow_findings: sourceCount("historical_identity_shadow"),
       mixed_identity_generation_findings: sourceCount("mixed_identity_generation"),
       selected_bound_action_still_published: findings.filter((finding) =>
@@ -274,7 +284,7 @@ export function auditRunIdentity({ run, runsDirectory = DEFAULT_RUNS_DIRECTORY }
     findings,
     limitations: [
       "identity changes identify hash-domain drift, not whether the underlying game change was strategically material",
-      "Human Environment audits compare snapshot identity and the complete finite bound-action projection; they do not recreate native legality",
+      "Player Environment audits compare snapshot identity and the complete finite bound-action projection; they do not recreate native legality",
       "Preview.74 and later use formal state identities; older recorded runs are read through the non-authorizing historical shadow only",
       "bound-action continuity compares only action kind and exact entity operands",
       "recorded evidence does not authorize identity migration or gameplay permission",

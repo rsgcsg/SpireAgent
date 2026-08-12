@@ -11,7 +11,7 @@ namespace STS2_MCP.LiveHost;
 
 internal static class LiveModsetIdentity
 {
-    internal const string GatewayModId = "STS2_MCP";
+    internal const string ConnectorModId = "STS2_MCP";
     private const string FingerprintScope =
         "manager_state+ordered_manifest_identity+load_state+source+workshop_id+loaded_assembly_name_version_mvid";
 
@@ -35,17 +35,16 @@ internal static class LiveModsetIdentity
                 "unavailable",
                 StableIdentityHash.Object(new { state = "unavailable", error = ex.GetType().Name }),
                 FingerprintScope,
-                ExactPermissionEligible: false,
                 Array.Empty<LoadedModIdentity>(),
-                $"Loaded Modset identity failed closed with {ex.GetType().Name}.");
+                $"Loaded Modset identity is unavailable because {ex.GetType().Name} was raised.");
         }
     }
 
     internal static ModsetIdentity Evaluate(
         string managerState,
         IReadOnlyList<LoadedModIdentity> mods,
-        string bridgeModuleVersionId,
-        string bridgeVersion)
+        string connectorModuleVersionId,
+        string connectorVersion)
     {
         string fingerprint = StableIdentityHash.Object(new
         {
@@ -58,25 +57,24 @@ internal static class LiveModsetIdentity
         bool hazardousDetectedState = mods.Any(mod =>
             string.Equals(mod.LoadState, "Failed", StringComparison.Ordinal)
             || string.Equals(mod.LoadState, "AddedAtRuntime", StringComparison.Ordinal));
-        LoadedModIdentity? bridge = loaded.FirstOrDefault(mod =>
-            string.Equals(mod.Id, GatewayModId, StringComparison.Ordinal));
-        bool exactBridgeAssembly = bridge?.Assemblies.Any(assembly =>
-            string.Equals(assembly.ModuleVersionId, bridgeModuleVersionId, StringComparison.OrdinalIgnoreCase)) == true;
-        bool exactBridgeVersion = string.Equals(bridge?.Version, bridgeVersion, StringComparison.Ordinal);
+        LoadedModIdentity? connector = loaded.FirstOrDefault(mod =>
+            string.Equals(mod.Id, ConnectorModId, StringComparison.Ordinal));
+        bool exactConnectorAssembly = connector?.Assemblies.Any(assembly =>
+            string.Equals(assembly.ModuleVersionId, connectorModuleVersionId, StringComparison.OrdinalIgnoreCase)) == true;
+        bool exactConnectorVersion = string.Equals(connector?.Version, connectorVersion, StringComparison.Ordinal);
         bool exact = string.Equals(managerState, "Initialized", StringComparison.Ordinal)
                      && loaded.Length == 1
-                     && bridge != null
-                     && exactBridgeAssembly
-                     && exactBridgeVersion
+                     && connector != null
+                     && exactConnectorAssembly
+                     && exactConnectorVersion
                      && !hazardousDetectedState;
 
         if (exact)
         {
             return new ModsetIdentity(
-                "exact_bridge_only",
+                "exact_player_environment_only",
                 fingerprint,
                 FingerprintScope,
-                ExactPermissionEligible: true,
                 mods,
                 "ModManager is initialized and the only loaded Mod is this exact STS2_MCP assembly.");
         }
@@ -86,19 +84,18 @@ internal static class LiveModsetIdentity
             : hazardousDetectedState
                 ? "hazardous_mod_state_detected"
                 : loaded.Length == 0
-                    ? "bridge_not_loaded"
+                        ? "connector_not_loaded"
                     : loaded.Length > 1
                         ? "additional_loaded_mods"
-                        : bridge == null
-                            ? "bridge_identity_missing"
-                            : "bridge_identity_mismatch";
+                        : connector == null
+                            ? "connector_identity_missing"
+                            : "connector_identity_mismatch";
         return new ModsetIdentity(
             status,
             fingerprint,
             FingerprintScope,
-            ExactPermissionEligible: false,
             mods,
-            "This Modset has no explicit Gateway action or Inspection permission. Observation remains diagnostic only.");
+            "The complete loaded Modset identity is recorded; current native UI mechanics remain the only actionability authority.");
     }
 
     private static LoadedModIdentity BuildMod(Mod mod)

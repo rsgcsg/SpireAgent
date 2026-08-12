@@ -1,6 +1,6 @@
 # Re-SpireAgent
 
-Re is the current LLM consumer for Human Environment C. It strictly decodes one
+Re is the current LLM consumer for Player Environment C. It strictly decodes one
 snapshot, imports its complete finite bound actions, asks the model to select
 one local choice, submits that exact opaque handle once and observes progress.
 
@@ -18,7 +18,7 @@ npm run doctor
 ```
 
 Keep provider keys in `.env.local` or the process environment. The only current
-protocol mode is `human_environment`.
+protocol mode is `player_environment`.
 
 ## Check And Run
 
@@ -35,10 +35,10 @@ cd Re-SpireAgent
 npm run agent:run
 ```
 
-The runtime accepts only `human_ui_action`. `applied` means native input
-delivery; Re then waits for a stable successor. `not_applied` requires a fresh
+The runtime accepts only `bound_action`. `delivered` means native input
+delivery; Re then waits for a stable successor. `not_delivered` requires a fresh
 snapshot and `unknown` stops without retry.
 
-Memoryless consumers may use `prefetchHumanEnvironmentDecisionBundle` to
+Memoryless consumers may use `prefetchPlayerEnvironmentDecisionBundle` to
 aggregate advertised reads from one coherent snapshot. This creates no facts or
-authority. See [integration](docs/HUMAN_ENVIRONMENT_INTEGRATION.md).
+authority. See [integration](docs/PLAYER_ENVIRONMENT_INTEGRATION.md).

@@ -13,7 +13,7 @@ afterEach(async () => {
 });
 
 describe("recorded prompt shadow comparison", () => {
-  it("compares full and deterministic shadow prompts without opening a Gateway or writing an artifact", async () => {
+  it("compares full and deterministic shadow prompts without opening a Player Environment Host or writing an artifact", async () => {
     const root = await mkdtemp(join(tmpdir(), "re-spire-prompt-compare-"));
     temporaryRoots.push(root);
     const runId = "run-001";
@@ -22,13 +22,16 @@ describe("recorded prompt shadow comparison", () => {
     await mkdir(prompts, { recursive: true });
     const payload = {
       contextKind: "combat",
-      surfaceKind: "combat_turn",
-      actionAuthority: "bridge_advertised",
+      surfaceKind: "player_environment",
+      actionAuthority: "player_environment",
       currentState: {
-        player: { runDeck: [{ id: "STRIKE" }] },
-        bridgeInspectionFacts: { runDeck: [{ id: "STRIKE" }] },
-        bridgeVisibility: { playerVisibleClosureStatus: "complete" },
-        surface: { kind: "combat_turn", legalActions: [{ id: "surface-end" }] }
+        player: { hp: 30 },
+        surface: {
+          kind: "player_environment",
+          reads: [{ readId: "read:run_deck", kind: "run_deck" }],
+          completeness: { status: "complete", missing: [], hiddenByPolicy: [] },
+          boundActions: [{ boundActionId: "surface-end" }]
+        }
       },
       allowedActions: [{ id: "action:end", kind: "end_turn", label: "End turn" }]
     };
@@ -43,11 +46,13 @@ describe("recorded prompt shadow comparison", () => {
     expect(result.full.finalOutcome).toBe("valid_json");
     expect(result.shadow.finalOutcome).toBe("valid_json");
     expect(result.comparison).toMatchObject({ bothFinalAttemptsValid: true, selectedActionAgreement: true });
-    // The production projection no longer repeats context/surface or the fixed
-    // output schema, so even this deliberately small fixture is now smaller.
-    expect(result.comparison.savedUserPromptBytes).toBeGreaterThan(0);
+    // Size is reported, not judged: a deliberately tiny fixture can be larger
+    // after adding the explicit information boundary.
+    expect(result.comparison.savedUserPromptBytes).toBe(
+      result.comparison.fullUserPromptBytes - result.comparison.shadowUserPromptBytes
+    );
     expect(result.shadow.projectionHash).toMatch(/^sha256:[a-f0-9]{64}$/);
-    expect(result.shadow.omittedEvidenceFields).toContain("bridgeInspectionFacts");
+    expect(result.shadow.omittedEvidenceFields).toContain("surface.boundActions");
     expect(await readFile(path, "utf8")).toBe(before);
   });
 
@@ -58,8 +63,8 @@ describe("recorded prompt shadow comparison", () => {
     await mkdir(prompts, { recursive: true });
     await writeFile(join(prompts, "decision-001.prompt.json"), JSON.stringify({
       systemPrompt: "Return JSON.",
-      userPrompt: JSON.stringify({ contextKind: "map", surfaceKind: "map_navigation", actionAuthority: "bridge_advertised", currentState: {}, allowedActions: [] }),
-      payload: { contextKind: "combat", surfaceKind: "combat_turn", actionAuthority: "bridge_advertised", currentState: {}, allowedActions: [] }
+      userPrompt: JSON.stringify({ contextKind: "map", surfaceKind: "player_environment", actionAuthority: "player_environment", currentState: {}, allowedActions: [] }),
+      payload: { contextKind: "combat", surfaceKind: "player_environment", actionAuthority: "player_environment", currentState: {}, allowedActions: [] }
     }), "utf8");
 
     await expect(compareRecordedPromptWithShadow({
@@ -76,9 +81,9 @@ describe("recorded prompt shadow comparison", () => {
     await mkdir(prompts, { recursive: true });
     const payload = {
       contextKind: "map",
-      surfaceKind: "map_navigation",
-      actionAuthority: "bridge_advertised",
-      currentState: { surface: { kind: "map_navigation", legalActions: [] } },
+      surfaceKind: "player_environment",
+      actionAuthority: "player_environment",
+      currentState: { surface: { kind: "player_environment", reads: [], boundActions: [] } },
       allowedActions: [{ id: "action:map", kind: "choose_map_node", label: "Choose node" }]
     };
     const path = join(prompts, "decision-001.prompt.json");

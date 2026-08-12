@@ -8,7 +8,7 @@ import type { JsonObject } from "../../shared/json.js";
 import type { NormalizedCurrentState } from "./surfaces.js";
 
 export interface StateEnvelope {
-  envelopeSchemaVersion: 1 | 2;
+  envelopeSchemaVersion: 2;
   capturedAt: string;
   source: AdapterDescriptor;
   rawState: JsonObject;

@@ -1,16 +1,16 @@
 # SpireAgent
 
 SpireAgent lets external consumers play the real Slay the Spire 2 UI through
-one fair-player Human Environment contract.
+one fair-player Player Environment contract.
 
-- [`STS2MCP/`](STS2MCP/) is the in-game Live Host and Human Environment.
+- [`STS2MCP/`](STS2MCP/) is the in-game Live Host and Player Environment.
 - [`Re-SpireAgent/`](Re-SpireAgent/) is the current LLM consumer.
 
-Human Environment is the only production connector. Source protocol is
-`1.0-preview.6`. Bridge v2 and Connector V3 are retired implementation history,
+Player Environment is the only production connector. Source protocol is
+`1.0-rc.1`. Bridge v2 and Connector V3 are retired implementation history,
 not fallback paths.
 
-> Source, tests, build, install, load, Live exercise and qualification are
+> Source, tests, build, install, load, Live exercise and a freeze verdict are
 > separate evidence levels. This repository does not publish a generally
 > compatible game binary or claim arbitrary game-version/Mod support.
 
@@ -54,8 +54,8 @@ the exact runtime identity. Unknown input delivery is never retried.
 real STS2 runtime
 -> LiveHost readers: visible facts and one current input owner
 -> NativeUi: exact current candidates, operands and native input delivery
--> Authority: environment admission, controller and idempotency
--> HumanEnvironment: Observe / Read / Interact, receipt and successor
+-> Identity/Control: exact provenance, single writer and idempotency
+-> PlayerEnvironment: Observe / Read / Interact, receipt and successor
 -> REST or optional thin MCP transport
 -> Re or another consumer-owned projection
 ```
@@ -64,7 +64,7 @@ STS2 owns rules, RNG, effects and Commit paths. C owns the fair-player world,
 state-bound reads and one Host-local execution authority. A consumer can choose
 only a current opaque bound action and cannot create legality.
 
-Start with the [new engineer guide](docs/current/HUMAN_ENVIRONMENT_NEW_ENGINEER_GUIDE.md),
+Start with the [new engineer guide](docs/current/PLAYER_ENVIRONMENT_NEW_ENGINEER_GUIDE.md),
 then use the [documentation map](docs/current/DOCUMENT_MAP.md).
 
 ## Contributing

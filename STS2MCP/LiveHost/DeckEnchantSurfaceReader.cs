@@ -13,25 +13,19 @@ using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
-using MegaCrit.Sts2.Core.Runs;
 using STS2_MCP.LiveHost.Contracts;
 
 namespace STS2_MCP.LiveHost;
 
 internal sealed class DeckEnchantSurfaceReader : ILiveSurfaceReader
 {
-    private const string ReflectionEvidence =
-        "sts2-v0.110.1:NDeckEnchantSelectScreen+deck_enchant_source_contracts_v1";
-    internal const string ToggleCompletionWitness =
-        "selected_card_membership_changed";
-    internal const string PreviewCompletionWitness =
-        "enchantment_preview_became_visible";
-    internal const string ConfirmCompletionWitness =
-        "enchantment_screen_closed_and_exact_cards_enchanted";
-    internal const string CancelPreviewCompletionWitness =
-        "preview_closed_and_selection_cleared";
-    internal const string CloseCompletionWitness =
-        "enchantment_screen_closed_without_selection";
+    internal const string NativeBindingEvidence =
+        "NDeckEnchantSelectScreen+current-visible-grid+exact-enchantment-binding";
+    internal const string ToggleDeliveryEvidence = "native_enchant_card_holder_pressed";
+    internal const string PreviewDeliveryEvidence = "native_enchant_preview_button_clicked";
+    internal const string ConfirmDeliveryEvidence = "native_enchant_confirm_button_clicked";
+    internal const string CancelPreviewDeliveryEvidence = "native_enchant_preview_cancel_clicked";
+    internal const string CloseDeliveryEvidence = "native_enchant_close_clicked";
 
     public string Kind => "deck_enchant_selection";
 
@@ -81,25 +75,6 @@ internal sealed class DeckEnchantSurfaceReader : ILiveSurfaceReader
         }
 
         Binding exactBinding = binding!;
-        if (!TryResolveSource(exactBinding, out DeckEnchantSource? source, out string? sourceError))
-        {
-            var unsupported = new UnsupportedSurface(
-                "deck_enchant_selection",
-                nameof(NDeckEnchantSelectScreen),
-                sourceError ?? "Deck enchant source contract is not recognized.");
-            return new LiveObservation(
-                StableIdentityHash.Object(new { game.Version, unsupported }),
-                "degraded",
-                LiveContextReader.Build(entities),
-                unsupported,
-                new StateCompleteness(
-                    "degraded",
-                    "empty_fail_closed",
-                    new[] { "public_scene_tree", ReflectionEvidence },
-                    new[] { "source_contract", "legal_actions" }),
-                game,
-                new[] { "deck_enchant_source_unresolved", sourceError ?? "unknown_source" });
-        }
 
         string stage = IsPreviewVisible(screen) ? "preview" : "selecting";
         string screenEntityId = entities.GetId(screen, "screen");
@@ -153,7 +128,6 @@ internal sealed class DeckEnchantSurfaceReader : ILiveSurfaceReader
             "deck_enchant_selection",
             stage,
             screenEntityId,
-            source!,
             ReadNodeText(screen, "%BottomLabel"),
             exactBinding.Preferences.MinSelect,
             exactBinding.Preferences.MaxSelect,
@@ -196,7 +170,7 @@ internal sealed class DeckEnchantSurfaceReader : ILiveSurfaceReader
                 "public_scene_tree",
                 "localized_visible_ui_text",
                 "card_models_rendered_by_grid",
-                ReflectionEvidence
+                NativeBindingEvidence
             },
             missing);
         string signature = StableIdentityHash.Object(new
@@ -234,12 +208,8 @@ internal sealed class DeckEnchantSurfaceReader : ILiveSurfaceReader
         if (!enchantment.CanEnchant(expectedCard))
             return NativeInputResult.Rejected("card_not_enchantable", "The game model no longer permits this enchantment on the card.");
 
-        bool wasSelected = IsCardSelected(expectedScreen, expectedCard);
         grid.EmitSignal(NCardGrid.SignalName.HolderPressed, holder);
-        return NativeInputResult.Started(
-            () => IsCurrentScreen(expectedScreen)
-                  && IsCardSelected(expectedScreen, expectedCard) != wasSelected,
-            ToggleCompletionWitness);
+        return NativeInputResult.Delivered(ToggleDeliveryEvidence);
     }
 
     private static NativeInputResult StartMainPreview(NDeckEnchantSelectScreen expectedScreen)
@@ -253,9 +223,7 @@ internal sealed class DeckEnchantSurfaceReader : ILiveSurfaceReader
             return NativeInputResult.Rejected("preview_not_available", "The preview button is no longer enabled.");
 
         confirm.ForceClick();
-        return NativeInputResult.Started(
-            () => IsCurrentScreen(expectedScreen) && IsPreviewVisible(expectedScreen),
-            PreviewCompletionWitness);
+        return NativeInputResult.Delivered(PreviewDeliveryEvidence);
     }
 
     private static NativeInputResult StartPreviewConfirm(
@@ -296,31 +264,7 @@ internal sealed class DeckEnchantSurfaceReader : ILiveSurfaceReader
             return NativeInputResult.Rejected("confirm_not_available", "The preview confirm button is no longer enabled.");
 
         confirm.ForceClick();
-        return NativeInputResult.Started(
-            () => !IsCurrentScreen(expectedScreen)
-                  && expectedCards.All(card => HasExpectedEnchantment(
-                      card,
-                      expectedEnchantmentId,
-                      expectedEnchantmentAmount)),
-            ConfirmCompletionWitness);
-    }
-
-    private static bool HasExpectedEnchantment(
-        CardModel card,
-        string expectedEnchantmentId,
-        int expectedEnchantmentAmount)
-    {
-        try
-        {
-            EnchantmentModel? applied = card.Enchantment;
-            return applied != null
-                   && string.Equals(applied.Id.Entry, expectedEnchantmentId, StringComparison.Ordinal)
-                   && applied.Amount == expectedEnchantmentAmount;
-        }
-        catch
-        {
-            return false;
-        }
+        return NativeInputResult.Delivered(ConfirmDeliveryEvidence);
     }
 
     private static NativeInputResult StartPreviewCancel(NDeckEnchantSelectScreen expectedScreen)
@@ -333,11 +277,7 @@ internal sealed class DeckEnchantSurfaceReader : ILiveSurfaceReader
             return NativeInputResult.Rejected("cancel_not_available", "The preview cancel button is no longer enabled.");
 
         cancel.ForceClick();
-        return NativeInputResult.Started(
-            () => IsCurrentScreen(expectedScreen)
-                  && !IsPreviewVisible(expectedScreen)
-                  && ReadSelectedCards(expectedScreen).Count == 0,
-            CancelPreviewCompletionWitness);
+        return NativeInputResult.Delivered(CancelPreviewDeliveryEvidence);
     }
 
     private static NativeInputResult StartClose(NDeckEnchantSelectScreen expectedScreen)
@@ -350,10 +290,7 @@ internal sealed class DeckEnchantSurfaceReader : ILiveSurfaceReader
             return NativeInputResult.Rejected("close_not_available", "The close button is no longer enabled.");
 
         close.ForceClick();
-        return NativeInputResult.Started(
-            () => !IsCurrentScreen(expectedScreen),
-            CloseCompletionWitness,
-            completionBoundary: "continuation_handoff_observed");
+        return NativeInputResult.Delivered(CloseDeliveryEvidence);
     }
 
     internal static NativeInputResult StartToggleCard(
@@ -478,40 +415,6 @@ internal sealed class DeckEnchantSurfaceReader : ILiveSurfaceReader
             binding = new Binding(prefs, selected, enchantment, amount);
 
         return binding != null;
-    }
-
-    internal static bool IsKifudaContinuation(
-        NDeckEnchantSelectScreen screen,
-        RelicModel expectedRelic)
-    {
-        if (!IsCurrentScreen(screen)
-            || !TryReadBinding(screen, out Binding? binding, out _)
-            || !TryResolveSource(binding!, out DeckEnchantSource? source, out _))
-        {
-            return false;
-        }
-
-        return source!.Kind == "kifuda_relic_pickup"
-               && string.Equals(expectedRelic.Id.Entry, source.DefinitionId, StringComparison.Ordinal)
-               && ReferenceEquals(expectedRelic.Owner.Relics
-                   .FirstOrDefault(relic => ReferenceEquals(relic, expectedRelic)), expectedRelic);
-    }
-
-    private static bool TryResolveSource(
-        Binding binding,
-        out DeckEnchantSource? source,
-        out string? error)
-    {
-        return DeckEnchantSourceContractRegistry.TryResolve(
-            RunManager.Instance.DebugOnlyGetState(),
-            binding.Enchantment,
-            binding.EnchantmentAmount,
-            binding.Preferences.MinSelect,
-            binding.Preferences.MaxSelect,
-            binding.Preferences.RequireManualConfirmation,
-            binding.Preferences.Cancelable,
-            out source,
-            out error);
     }
 
     private static object? ReadField(object source, string fieldName)

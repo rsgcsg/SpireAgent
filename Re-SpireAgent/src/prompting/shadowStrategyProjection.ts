@@ -36,7 +36,6 @@ export function buildStrategyProjection(input: ShadowStrategyProjectionInput): S
 
   removeGovernanceEvidence(projectedState, omittedEvidenceFields);
   const informationBoundary = projectInformationBoundary(input.currentState);
-  projectInspectionFacts(projectedState, omittedEvidenceFields, deduplicatedFactGroups);
   removeSurfaceActionSummary(projectedState, omittedEvidenceFields);
 
   const modelPayload: JsonObject = {
@@ -65,15 +64,7 @@ function removeGovernanceEvidence(state: JsonObject, omitted: string[]): void {
   for (const field of [
     "normalizedSchemaVersion",
     "sourceStateType",
-    "actionAuthority",
-    "bridgeSharedStateEvidence",
-    "bridgeDiagnostics",
-    "bridgeLegacyWarnings",
-    "bridgeInspectionPolicy",
-    "bridgeInspections",
-    "bridgeVisibility",
-    "bridgeInspectionCatalog",
-    "bridgeObservation"
+    "actionAuthority"
   ]) {
     if (field in state) {
       delete state[field];
@@ -85,47 +76,26 @@ function removeGovernanceEvidence(state: JsonObject, omitted: string[]): void {
 export const buildShadowStrategyProjection = buildStrategyProjection;
 
 function projectInformationBoundary(source: JsonObject): JsonObject | undefined {
-  const visibility = isJsonObject(source.bridgeVisibility) ? source.bridgeVisibility : undefined;
-  const observation = isJsonObject(source.bridgeObservation) ? source.bridgeObservation : undefined;
-  const inspectionFacts = isJsonObject(source.bridgeInspectionFacts) ? source.bridgeInspectionFacts : undefined;
-  if (!visibility && !observation && !inspectionFacts) return undefined;
-
-  const result: JsonObject = {};
-  if (visibility) {
-    copyIfJsonValue(visibility, result, "playerVisibleClosureStatus");
-    copyIfJsonValue(visibility, result, "missing");
-    copyIfJsonValue(visibility, result, "hiddenByPolicy");
-  }
-  if (observation && typeof observation.coherent === "boolean") {
-    result.coherentObservation = observation.coherent;
-  }
-  if (inspectionFacts) {
-    const observedFactGroups = Object.keys(inspectionFacts).sort();
-    if (observedFactGroups.length > 0) result.observedFactGroups = observedFactGroups;
-  }
+  const surface = isJsonObject(source.surface) ? source.surface : undefined;
+  if (!surface || surface.kind !== "player_environment") return undefined;
+  const completeness = isJsonObject(surface.completeness)
+    ? surface.completeness
+    : undefined;
+  const reads = Array.isArray(surface.reads) ? surface.reads : [];
+  const result: JsonObject = {
+    ...(completeness ? { completeness: cloneJson(completeness) } : {}),
+    availableReads: reads
+      .filter(isJsonObject)
+      .map((read) => ({
+        readId: typeof read.readId === "string" ? read.readId : "",
+        kind: typeof read.kind === "string" ? read.kind : "",
+        ...(typeof read.targetReferentId === "string"
+          ? { targetReferentId: read.targetReferentId }
+          : {})
+      }))
+      .filter((read) => read.readId.length > 0 && read.kind.length > 0)
+  };
   return Object.keys(result).length > 0 ? result : undefined;
-}
-
-function projectInspectionFacts(state: JsonObject, omitted: string[], deduplicated: string[]): void {
-  const facts = isJsonObject(state.bridgeInspectionFacts) ? state.bridgeInspectionFacts : undefined;
-  if (!facts) return;
-  const player = isJsonObject(state.player) ? state.player : undefined;
-  const projectedFacts = cloneJson(facts);
-  const duplicatedFactKeys: ReadonlyArray<readonly [string, string]> = [
-    ["runDeck", "runDeck"],
-    ["drawPile", "drawPile"],
-    ["discardPile", "discardPile"],
-    ["exhaustPile", "exhaustPile"]
-  ];
-  for (const [factKey, playerKey] of duplicatedFactKeys) {
-    if (sameField(player, projectedFacts, playerKey, factKey)) {
-      delete projectedFacts[factKey];
-      deduplicated.push(`player.${playerKey}=inspection.${factKey}`);
-    }
-  }
-  delete state.bridgeInspectionFacts;
-  omitted.push("bridgeInspectionFacts");
-  if (Object.keys(projectedFacts).length > 0) state.inspectionFacts = projectedFacts;
 }
 
 function removeSurfaceActionSummary(state: JsonObject, omitted: string[]): void {
@@ -139,19 +109,4 @@ function removeSurfaceActionSummary(state: JsonObject, omitted: string[]): void 
     delete surface.boundActions;
     omitted.push("surface.boundActions");
   }
-}
-
-function sameField(
-  left: JsonObject | undefined,
-  right: JsonObject,
-  leftKey: string,
-  rightKey: string
-): boolean {
-  if (!left || !(leftKey in left) || !(rightKey in right)) return false;
-  return JSON.stringify(left[leftKey]) === JSON.stringify(right[rightKey]);
-}
-
-function copyIfJsonValue(source: JsonObject, target: JsonObject, key: string): void {
-  const value = source[key];
-  if (value !== undefined) target[key] = cloneJson(value);
 }

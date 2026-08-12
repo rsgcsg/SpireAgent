@@ -17,12 +17,15 @@ describe("Prompt Information Audit", () => {
       userPromptBytes: 200,
       payload: {
         contextKind: "combat",
-        surfaceKind: "combat_turn",
+        surfaceKind: "player_environment",
         currentState: {
-          player: { runDeck: [{ id: "strike" }], drawPile: [] },
-          bridgeInspectionFacts: { runDeck: [{ id: "strike" }], drawPile: [] },
-          surface: { kind: "combat_turn", legalActions: [{ id: "surface:play" }] },
-          bridgeDiagnostics: [{ code: "known" }]
+          player: { hp: 70 },
+          surface: {
+            kind: "player_environment",
+            reads: [{ readId: "read:run_deck", kind: "run_deck" }],
+            completeness: { status: "complete", missing: [], hiddenByPolicy: [] },
+            boundActions: [{ boundActionId: "surface:play" }]
+          }
         },
         allowedActions: [{ id: "prompt:play" }]
       }
@@ -31,8 +34,8 @@ describe("Prompt Information Audit", () => {
       userPromptBytes: 100,
       payload: {
         contextKind: "rest",
-        surfaceKind: "rest_site",
-        currentState: { player: { hp: 20 }, surface: { kind: "rest_site", legalActions: [] } },
+        surfaceKind: "player_environment",
+        currentState: { player: { hp: 20 }, surface: { kind: "player_environment", reads: [], boundActions: [] } },
         allowedActions: []
       }
     });
@@ -45,27 +48,20 @@ describe("Prompt Information Audit", () => {
     expect(result.malformedArtifactCount).toBe(1);
     expect(result.userPromptBytes).toEqual({ min: 100, median: 100, p95: 100, max: 200 });
     expect(result.duplicateCandidates).toMatchObject({
-      playerAndInspectionRunDeck: 1,
-      playerAndInspectionDrawPile: 1,
       surfaceAndPayloadActionMenus: 1
     });
     expect(result.shadowProjection).toMatchObject({
       projectionVersion: 1,
       comparablePromptCount: 2,
       omittedEvidenceFieldCounts: {
-        bridgeDiagnostics: 1,
-        bridgeInspectionFacts: 1,
-        "surface.legalActions": 2
+        "surface.boundActions": 2
       },
-      deduplicatedFactGroupCounts: {
-        "player.runDeck=inspection.runDeck": 1,
-        "player.drawPile=inspection.drawPile": 1
-      }
+      deduplicatedFactGroupCounts: {}
     });
     expect(JSON.stringify(result)).not.toContain("prompt:play");
     expect(result.bySurface).toEqual(expect.arrayContaining([
-      expect.objectContaining({ contextKind: "combat", surfaceKind: "combat_turn", promptCount: 1 }),
-      expect.objectContaining({ contextKind: "rest", surfaceKind: "rest_site", promptCount: 1 })
+      expect.objectContaining({ contextKind: "combat", surfaceKind: "player_environment", promptCount: 1 }),
+      expect.objectContaining({ contextKind: "rest", surfaceKind: "player_environment", promptCount: 1 })
     ]));
   });
 
@@ -93,8 +89,8 @@ function minimalArtifact(userPromptBytes: number): Record<string, unknown> {
     userPromptBytes,
     payload: {
       contextKind: "map",
-      surfaceKind: "map_navigation",
-      currentState: { surface: { kind: "map_navigation", legalActions: [] } },
+      surfaceKind: "player_environment",
+      currentState: { surface: { kind: "player_environment", reads: [], boundActions: [] } },
       allowedActions: []
     }
   };

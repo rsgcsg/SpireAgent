@@ -4,35 +4,29 @@
 
 | Path | Ownership |
 |---|---|
-| `STS2MCP/LiveHost/` | real-game visible observation and current input owner |
-| `STS2MCP/NativeUi/` | exact native candidates, entity/control/operand binding and delivery |
-| `STS2MCP/Authority/` | environment admission, controller, idempotency and qualification |
-| `STS2MCP/HumanEnvironment/` | canonical Observe/Read/Interact protocol and runtime |
-| `STS2MCP/Transport/` | shared HTTP-only support |
-| `STS2MCP/mcp/` | optional thin MCP transport |
-| `Re-SpireAgent/` | current HE LLM consumer and runtime |
-| `contracts/` | checked cross-component contract inventory |
-| `tools/` | deployment, identity, boundary and documentation checks |
+| `STS2MCP/LiveHost/` | real-game visible facts and current input owner |
+| `STS2MCP/NativeUi/` | private native controls, entity/operand binding and delivery |
+| `STS2MCP/Authority/` | exact identity, controller and request idempotency |
+| `STS2MCP/PlayerEnvironment/` | public Snapshot/Read/BoundAction/Receipt runtime |
+| `STS2MCP/McpMod.cs` | in-game entrypoint and HTTP dispatch |
+| `STS2MCP/mcp/` | optional thin MCP-to-HTTP transport |
+| `Re-SpireAgent/` | current Player Environment LLM consumer |
+| `contracts/` | checked cross-component machine contract |
+| `tools/` | deployment, provenance, boundary and documentation checks |
 | `docs/current/` | repository-level current truth |
 
-`McpMod.cs`, `McpMod.Helpers.cs` and `McpMod.SettingsUI.cs` host the in-game
-entrypoint and configuration. They do not define a second protocol authority.
+The historical `STS2MCP` Mod ID does not make MCP mandatory. `McpMod.cs` is the
+Host entrypoint; protocol authority remains in `PlayerEnvironment/Protocol`.
 
 ## Retired History
 
-Bridge v2 and Connector V3 source paths are removed from the compiled Gateway.
-Their dated documents remain historical evidence under the existing archives
-and component history folders. Retired `/api/v2*` and `/api/v3*` requests return
-`410`; there is no compatibility execution path.
+Bridge v2, Connector V3, operation permission, qualification, SourceContract
+and migration-tool source are absent from the current production graph. Their
+Git history and dated documents retain provenance. `/api/v1`, `/api/v2`,
+`/api/v3` and `/api/he` return `410`; there is no compatibility executor.
 
 ## Generated And Local Only
 
 `node_modules`, `dist`, `bin`, `obj`, `out`, `.local`, installed DLLs,
 `Re-SpireAgent/data/runs`, runtime logs and `.env.local` are not source truth and
 must not be committed.
-
-## Evidence Rule
-
-Historical policy IDs or evidence references may retain old names when changing
-them would falsify provenance. A historical label never creates current runtime
-ownership or permission.

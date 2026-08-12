@@ -16,10 +16,8 @@ namespace STS2_MCP.LiveHost;
 internal sealed class CardRewardSurfaceReader : ILiveSurfaceReader
 {
     private const string SurfaceKind = "card_reward_selection";
-    internal const string SelectCardCompletionWitness =
-        "card_reward_selected_or_visible_options_replaced";
-    internal const string AlternativeCompletionWitness =
-        "card_reward_alternative_applied_or_visible_options_replaced";
+    internal const string SelectCardDeliveryEvidence = "native_card_reward_holder_pressed";
+    internal const string AlternativeDeliveryEvidence = "native_card_reward_alternative_clicked";
     private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
     private static readonly FieldInfo? ClickableField =
         typeof(NCardHolder).GetField("_isClickable", Flags);
@@ -149,12 +147,12 @@ internal sealed class CardRewardSurfaceReader : ILiveSurfaceReader
         {
             Diagnostics = new[]
             {
-                GatewayDiagnostics.Create(
-                    "gateway.surface.card_reward.binding_unavailable",
+                HostDiagnostics.Create(
+                    "host.surface.card_reward.binding_unavailable",
                     "error",
                     "surface",
                     "actions_suppressed",
-                    "update_bridge",
+                    "update_host_adapter",
                     reason)
             }
         };
@@ -164,9 +162,7 @@ internal sealed class CardRewardSurfaceReader : ILiveSurfaceReader
         NCardRewardSelectionScreen expectedScreen,
         Control expectedCardRow,
         NGridCardHolder expectedHolder,
-        CardModel expectedCard,
-        IReadOnlyList<NGridCardHolder> previousHolders,
-        IReadOnlyList<NCardRewardAlternativeButton> previousButtons)
+        CardModel expectedCard)
     {
         if (!IsCurrent(expectedScreen)
             || expectedScreen.GetNodeOrNull<Control>("UI/CardRow") is not { } currentRow
@@ -182,10 +178,7 @@ internal sealed class CardRewardSurfaceReader : ILiveSurfaceReader
         }
 
         expectedHolder.EmitSignal(NCardHolder.SignalName.Pressed, expectedHolder);
-        return NativeInputResult.Started(
-            () => !IsCurrent(expectedScreen)
-                  || OptionSetChanged(expectedScreen, previousHolders, previousButtons),
-            SelectCardCompletionWitness);
+        return NativeInputResult.Delivered(SelectCardDeliveryEvidence);
     }
 
     internal static NativeInputResult StartCardSelection(
@@ -197,8 +190,7 @@ internal sealed class CardRewardSurfaceReader : ILiveSurfaceReader
             || screen == null
             || !entities.TryResolve(expectedCardId, out CardModel? card)
             || card == null
-            || screen.GetNodeOrNull<Control>("UI/CardRow") is not { } cardRow
-            || screen.GetNodeOrNull<Control>("UI/RewardAlternatives") is not { } alternatives)
+            || screen.GetNodeOrNull<Control>("UI/CardRow") is not { } cardRow)
         {
             return NativeInputResult.Rejected(
                 "card_reward_binding_changed",
@@ -220,18 +212,14 @@ internal sealed class CardRewardSurfaceReader : ILiveSurfaceReader
             screen,
             cardRow,
             matches[0],
-            card,
-            holders,
-            VisibleAlternativeButtons(alternatives));
+            card);
     }
 
     private static NativeInputResult StartAlternative(
         NCardRewardSelectionScreen expectedScreen,
         Control expectedContainer,
         NCardRewardAlternativeButton expectedButton,
-        string expectedLabel,
-        IReadOnlyList<NGridCardHolder> previousHolders,
-        IReadOnlyList<NCardRewardAlternativeButton> previousButtons)
+        string expectedLabel)
     {
         if (!IsCurrent(expectedScreen)
             || expectedScreen.GetNodeOrNull<Control>("UI/RewardAlternatives") is not { } currentContainer
@@ -248,10 +236,7 @@ internal sealed class CardRewardSurfaceReader : ILiveSurfaceReader
         }
 
         expectedButton.ForceClick();
-        return NativeInputResult.Started(
-            () => !IsCurrent(expectedScreen)
-                  || OptionSetChanged(expectedScreen, previousHolders, previousButtons),
-            AlternativeCompletionWitness);
+        return NativeInputResult.Delivered(AlternativeDeliveryEvidence);
     }
 
     internal static NativeInputResult StartAlternative(
@@ -266,7 +251,6 @@ internal sealed class CardRewardSurfaceReader : ILiveSurfaceReader
                 expectedAlternativeId,
                 out NCardRewardAlternativeButton? button)
             || button == null
-            || screen.GetNodeOrNull<Control>("UI/CardRow") is not { } cardRow
             || screen.GetNodeOrNull<Control>("UI/RewardAlternatives") is not { } alternatives)
         {
             return NativeInputResult.Rejected(
@@ -286,26 +270,7 @@ internal sealed class CardRewardSurfaceReader : ILiveSurfaceReader
             screen,
             alternatives,
             button,
-            expectedLabel,
-            VisibleCardHolders(cardRow),
-            buttons);
-    }
-
-    private static bool OptionSetChanged(
-        NCardRewardSelectionScreen screen,
-        IReadOnlyList<NGridCardHolder> holders,
-        IReadOnlyList<NCardRewardAlternativeButton> buttons)
-    {
-        Control? cardRow = screen.GetNodeOrNull<Control>("UI/CardRow");
-        Control? alternatives = screen.GetNodeOrNull<Control>("UI/RewardAlternatives");
-        if (cardRow == null || alternatives == null)
-            return true;
-        NGridCardHolder[] currentHolders = VisibleCardHolders(cardRow);
-        NCardRewardAlternativeButton[] currentButtons = VisibleAlternativeButtons(alternatives);
-        return currentHolders.Length != holders.Count
-               || currentButtons.Length != buttons.Count
-               || currentHolders.Where((holder, index) => !ReferenceEquals(holder, holders[index])).Any()
-               || currentButtons.Where((button, index) => !ReferenceEquals(button, buttons[index])).Any();
+            expectedLabel);
     }
 
     private static NGridCardHolder[] VisibleCardHolders(Control cardRow) =>

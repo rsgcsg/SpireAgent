@@ -16,7 +16,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
 import {
   evaluateBuildProvenance,
-  gatewaySourceIdentity as readGatewaySourceIdentity,
+  playerEnvironmentSourceIdentity as readPlayerEnvironmentSourceIdentity,
   readOptionalJson
 } from "./connector-provenance.mjs";
 
@@ -27,6 +27,28 @@ const DEFAULT_ENDPOINT = "http://127.0.0.1:15526";
 const DEFAULT_GATEWAY_WAIT_MS = 60_000;
 const DEFAULT_GATEWAY_POLL_MS = 500;
 const RE_LOCAL_ENV = path.join(WORKSPACE, "Re-SpireAgent", ".env.local");
+const RETIRED_AGENT_ENV_KEYS = new Set([
+  "STS2_MCP_PROTOCOL",
+  "SPIREAGENT_HE_MODE",
+  "STS2_MCP_TIMEOUT_MS",
+  "STS2_MCP_STARTUP_WAIT_MS",
+  "STS2_MCP_STARTUP_POLL_MS",
+  "STS2_HE_ACTION_POLL_MS",
+  "STS2_HE_ACTION_TIMEOUT_MS"
+]);
+
+export function inspectAgentLocalConfig(envFile = RE_LOCAL_ENV) {
+  if (!existsSync(envFile)) return { exists: false, retired_keys: [] };
+  const keys = readFileSync(envFile, "utf8")
+    .replace(/^\uFEFF/u, "")
+    .split(/\r?\n/u)
+    .map((line) => line.match(/^\s*(?:export\s+)?([A-Z][A-Z0-9_]*)\s*=/u)?.[1] ?? null)
+    .filter((key) => key != null);
+  return {
+    exists: true,
+    retired_keys: [...new Set(keys.filter((key) => RETIRED_AGENT_ENV_KEYS.has(key)))].sort()
+  };
+}
 
 export function loadAgentGameDirFromLocalEnv(env = process.env, envFile = RE_LOCAL_ENV) {
   if (env.STS2_GAME_DIR || !existsSync(envFile)) return false;
@@ -77,16 +99,18 @@ export function evaluateLoadedArtifact({
   installedSha,
   builtMvid = null,
   installedMvid = null,
+  builtSourceRevision = null,
   capabilities
 }) {
   const errors = [];
   const loadedHost = capabilities?.host ?? null;
   const loadedSha = loadedHost?.implementation?.artifact_sha256 ?? null;
   const loadedProtocol = capabilities?.protocol_version ?? null;
+  const loadedSourceRevision = loadedHost?.implementation?.source_revision ?? null;
   if (csharpProtocol !== reProtocol) errors.push("source_protocol_mismatch");
   if (!builtSha) errors.push("release_artifact_missing");
   if (!installedSha) errors.push("installed_artifact_missing");
-  if (!capabilities) errors.push("gateway_not_loaded_or_unreachable");
+  if (!capabilities) errors.push("host_not_loaded_or_unreachable");
   if (builtSha && installedSha && builtSha !== installedSha) errors.push("built_installed_sha_mismatch");
   if (builtMvid && installedMvid && builtMvid !== installedMvid) errors.push("built_installed_mvid_mismatch");
   if (installedSha && loadedSha && installedSha !== loadedSha) errors.push("installed_loaded_sha_mismatch");
@@ -95,6 +119,10 @@ export function evaluateLoadedArtifact({
     errors.push("installed_loaded_mvid_mismatch");
   }
   if (loadedProtocol && loadedProtocol !== csharpProtocol) errors.push("source_loaded_protocol_mismatch");
+  if (builtSourceRevision && loadedSourceRevision
+      && builtSourceRevision !== loadedSourceRevision) {
+    errors.push("built_loaded_source_revision_mismatch");
+  }
   return {
     ok: errors.length === 0,
     artifact_identity_ok: errors.length === 0,
@@ -107,6 +135,7 @@ export function evaluateLoadedArtifact({
     installed_mvid: installedMvid,
     loaded_sha256: loadedSha,
     loaded_protocol: loadedProtocol,
+    loaded_source_revision: loadedSourceRevision,
     loaded_mvid: loadedMvid,
     runtime_instance_id: loadedHost?.runtime_instance_id ?? null,
     game: capabilities?.game
@@ -128,16 +157,18 @@ export function evaluateEnvironmentReadiness(
 ) {
   const compatibility = capabilities?.game?.compatibility;
   const modset = capabilities?.game?.modset;
-  const protocolSupported = expectedProtocol?.startsWith("1.0-preview.") === true;
+  const protocolSupported = typeof expectedProtocol === "string"
+    && expectedProtocol.startsWith("1.0-")
+    && capabilities?.protocol_version === expectedProtocol;
   const observationReady = protocolSupported
     && compatibility?.observation_allowed === true;
   const mutationReady = protocolSupported
     && capabilities?.execution_available === true;
   const blockers = [];
-  if (!capabilities) blockers.push("gateway_unreachable");
-  if (capabilities && !protocolSupported) blockers.push("unsupported_human_environment_protocol");
-  if (!observationReady) blockers.push("human_observation_disabled");
-  if (!mutationReady) blockers.push("human_input_delivery_disabled");
+  if (!capabilities) blockers.push("host_unreachable");
+  if (capabilities && !protocolSupported) blockers.push("unsupported_player_environment_protocol");
+  if (!observationReady) blockers.push("player_snapshot_disabled");
+  if (!mutationReady) blockers.push("player_input_delivery_disabled");
   return {
     environment_ready: Boolean(capabilities) && observationReady,
     observation_ready: observationReady,
@@ -172,36 +203,13 @@ export function inspectModInstallation(modsDir) {
   const duplicateManifests = manifests.filter((manifest) => !manifest.canonical);
   return {
     status: duplicateManifests.length === 0
-      ? "single_gateway_manifest"
-      : "duplicate_gateway_manifests_detected",
+      ? "single_host_manifest"
+      : "duplicate_host_manifests_detected",
     canonical_manifest: existsSync(canonicalManifest) ? canonicalManifest : null,
     manifests,
     duplicate_manifests: duplicateManifests,
-    exact_permission_blocker: duplicateManifests.length > 0
+    duplicate_installation_blocker: duplicateManifests.length > 0
   };
-}
-
-export function defaultMigrationCycleArgs(options = {}) {
-  const resolved = paths(options);
-  const endpoint = options.endpoint ?? DEFAULT_ENDPOINT;
-  return [
-    "--endpoint", endpoint,
-    "--registry", path.join(resolved.localRoot, "environment-profiles.json"),
-    "--workspace", path.join(resolved.localRoot, "migration"),
-    "--store", path.join(resolved.modsDir, "STS2_MCP.qualifications.json"),
-    "--binding-audit", path.join(WORKSPACE, "STS2MCP/out/operation-binding-audit/latest.json"),
-    "--policy", path.join(WORKSPACE, "STS2MCP/Authority/migration-permission-policy.json"),
-    "--negative-evidence", path.join(WORKSPACE, "STS2MCP/compatibility/migration-negative-evidence.v1.json"),
-    "--runs", path.join(WORKSPACE, "Re-SpireAgent/data/runs"),
-    "--apply", "true"
-  ];
-}
-
-export function migrationCycleDelegateArgs(options = {}) {
-  return [
-    ...defaultMigrationCycleArgs(options),
-    ...(options.passthrough ?? [])
-  ];
 }
 
 export function agentRunPreflightErrors(
@@ -209,14 +217,14 @@ export function agentRunPreflightErrors(
   { requireObservation = true, requireMutation = false } = {}
 ) {
   const errors = [...(status?.errors ?? [])];
-  if (status?.mod_installation?.exact_permission_blocker === true) {
-    errors.push("duplicate_gateway_manifests_detected");
+  if (status?.mod_installation?.duplicate_installation_blocker === true) {
+    errors.push("duplicate_host_manifests_detected");
   }
   if (requireObservation && status?.observation_ready !== true) {
-    errors.push("human_observation_disabled");
+    errors.push("player_snapshot_disabled");
   }
   if (requireMutation && status?.mutation_ready !== true) {
-    errors.push("human_input_delivery_disabled");
+    errors.push("player_input_delivery_disabled");
   }
   return [...new Set(errors)];
 }
@@ -246,15 +254,15 @@ function paths(options = {}) {
   };
 }
 
-function sourceProtocols() {
+export function sourceProtocols() {
   return {
     csharp: sourceProtocol(
-      path.join(WORKSPACE, "STS2MCP/HumanEnvironment/Protocol/HumanEnvironmentContracts.cs"),
+      path.join(WORKSPACE, "STS2MCP/PlayerEnvironment/Protocol/PlayerEnvironmentContracts.cs"),
       /ProtocolVersion\s*=\s*"([^"]+)"/u
     ),
     re: sourceProtocol(
-      path.join(WORKSPACE, "Re-SpireAgent/src/integrations/sts2mcp/humanEnvironmentProtocol.ts"),
-      /SUPPORTED_HUMAN_ENVIRONMENT_PROTOCOL\s*=\s*"([^"]+)"/u
+      path.join(WORKSPACE, "Re-SpireAgent/src/integrations/sts2mcp/playerEnvironmentProtocol.ts"),
+      /SUPPORTED_PLAYER_ENVIRONMENT_PROTOCOL\s*=\s*"([^"]+)"/u
     )
   };
 }
@@ -378,20 +386,20 @@ export function workspaceSourceIdentity() {
   };
 }
 
-export function gatewaySourceIdentity() {
-  return readGatewaySourceIdentity(WORKSPACE);
+export function playerEnvironmentSourceIdentity() {
+  return readPlayerEnvironmentSourceIdentity(WORKSPACE);
 }
 
 function writeBuildIdentity(resolved) {
-  const currentSource = gatewaySourceIdentity();
+  const currentSource = playerEnvironmentSourceIdentity();
   const protocols = sourceProtocols();
   const identity = artifactIdentity(resolved.builtDll);
-  if (!currentSource || !identity) throw new Error("Could not establish Gateway build provenance.");
+  if (!currentSource || !identity) throw new Error("Could not establish Player Environment build provenance.");
   const metadata = {
     schema_version: 1,
     built_at: new Date().toISOString(),
     source_revision: currentSource.revision,
-    gateway_source_digest: currentSource.sourceDigest,
+    player_environment_source_digest: currentSource.sourceDigest,
     source_worktree_status: currentSource.worktreeStatus,
     source_file_count: currentSource.fileCount,
     source_protocol: protocols.csharp,
@@ -435,7 +443,7 @@ async function readJsonResult(endpoint, route) {
   }
 }
 
-export async function waitForGateway({
+export async function waitForPlayerEnvironmentHost({
   endpoint = DEFAULT_ENDPOINT,
   timeoutMs = DEFAULT_GATEWAY_WAIT_MS,
   pollMs = DEFAULT_GATEWAY_POLL_MS
@@ -445,7 +453,7 @@ export async function waitForGateway({
   let lastError = "not_attempted";
   while (Date.now() - startedAt <= timeoutMs) {
     attempts += 1;
-    const result = await readJsonResult(endpoint, "/api/he/capabilities");
+    const result = await readJsonResult(endpoint, "/api/player-environment/capabilities");
     if (result.ok) {
       return {
         ready: true,
@@ -467,11 +475,11 @@ export async function waitForGateway({
   };
 }
 
-export function isTransientAgentObservation(observation) {
-  return observation?.status === "settling";
+export function isTransientAgentSnapshot(snapshot) {
+  return snapshot?.status === "settling";
 }
 
-export async function waitForAgentObservation({
+export async function waitForAgentSnapshot({
   endpoint = DEFAULT_ENDPOINT,
   timeoutMs = DEFAULT_GATEWAY_WAIT_MS,
   pollMs = DEFAULT_GATEWAY_POLL_MS
@@ -481,13 +489,13 @@ export async function waitForAgentObservation({
   let lastError = "not_attempted";
   while (Date.now() - startedAt <= timeoutMs) {
     attempts += 1;
-    const result = await readJsonResult(endpoint, "/api/he/observation");
-    if (result.ok && !isTransientAgentObservation(result.value)) {
+    const result = await readJsonResult(endpoint, "/api/player-environment/snapshot");
+    if (result.ok && !isTransientAgentSnapshot(result.value)) {
       return {
         ready: true,
         attempts,
         waited_ms: Date.now() - startedAt,
-        observation: result.value,
+        snapshot: result.value,
         error: null
       };
     }
@@ -499,13 +507,13 @@ export async function waitForAgentObservation({
     ready: false,
     attempts,
     waited_ms: Date.now() - startedAt,
-    observation: null,
+    snapshot: null,
     error: lastError
   };
 }
 
-function summarizeGatewayWait(result) {
-  const host = result.capabilities?.host ?? result.capabilities?.bridge ?? null;
+function summarizeHostWait(result) {
+  const host = result.capabilities?.host ?? null;
   return {
     ready: result.ready,
     attempts: result.attempts,
@@ -553,18 +561,14 @@ function parseOptions(args) {
   return options;
 }
 
-export function configureHumanEnvironmentEvidenceProfile(
+export function configurePlayerEnvironmentEvidenceProfile(
   configPath,
   enabled
 ) {
   if (typeof enabled !== "boolean") {
     throw new Error("evidence-profile configure requires --enabled true or --enabled false");
   }
-  let config = {
-    port: 15526,
-    permission_mode: "balanced_gray",
-    qualification_store: "STS2_MCP.qualifications.json"
-  };
+  let config = { port: 15526 };
   if (existsSync(configPath)) {
     const parsed = JSON.parse(readFileSync(configPath, "utf8"));
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
@@ -572,7 +576,9 @@ export function configureHumanEnvironmentEvidenceProfile(
     }
     config = { ...config, ...parsed };
   }
-  config.human_environment_native_page_evidence_enabled = enabled;
+  delete config.permission_mode;
+  delete config.qualification_store;
+  config.player_environment_native_page_evidence_enabled = enabled;
   mkdirSync(path.dirname(configPath), { recursive: true });
   const temporary = `${configPath}.tmp-${process.pid}`;
   writeFileSync(temporary, `${JSON.stringify(config, null, 2)}\n`, "utf8");
@@ -619,13 +625,13 @@ async function evidenceProfile(options) {
   const endpoint = options.endpoint ?? DEFAULT_ENDPOINT;
   if (action === "configure") {
     const resolved = paths(options);
-    return configureHumanEnvironmentEvidenceProfile(
+    return configurePlayerEnvironmentEvidenceProfile(
       resolved.runtimeConfig,
       parseBooleanOption(options.enabled, "--enabled")
     );
   }
   if (action === "status") {
-    const capabilities = await readJson(endpoint, "/api/he/capabilities", true);
+    const capabilities = await readJson(endpoint, "/api/player-environment/capabilities", true);
     return {
       protocol_version: capabilities.protocol_version,
       loaded_runtime_instance_id: capabilities.host.runtime_instance_id,
@@ -634,19 +640,19 @@ async function evidenceProfile(options) {
   }
   if (action === "open") {
     if (!options.kind) throw new Error("evidence-profile open requires --kind");
-    const [capabilities, observation] = await Promise.all([
-      readJson(endpoint, "/api/he/capabilities", true),
-      readJson(endpoint, "/api/he/observation", true)
+    const [capabilities, snapshot] = await Promise.all([
+      readJson(endpoint, "/api/player-environment/capabilities", true),
+      readJson(endpoint, "/api/player-environment/snapshot", true)
     ]);
     const result = await connectorProtocolRequest(
       endpoint,
-      "/api/he/evidence/native-pages/sessions",
+      "/api/player-environment/evidence/native-pages/sessions",
       {
         method: "POST",
         body: JSON.stringify({
           profile: "native_pages.v1",
           kind: options.kind,
-          expected_snapshot_id: options.snapshotId ?? observation.snapshot_id,
+          expected_snapshot_id: options.snapshotId ?? snapshot.snapshot_id,
           expected_runtime_instance_id:
             options.runtimeInstanceId ?? capabilities.host.runtime_instance_id
         })
@@ -658,7 +664,7 @@ async function evidenceProfile(options) {
     if (!options.session || !options.runtimeInstanceId) {
       throw new Error("evidence-profile read requires --session and --runtime-instance-id");
     }
-    const route = "/api/he/evidence/native-pages/sessions/"
+    const route = "/api/player-environment/evidence/native-pages/sessions/"
       + `${encodeURIComponent(options.session)}?expected_runtime_instance_id=`
       + encodeURIComponent(options.runtimeInstanceId);
     return { action, ...await connectorProtocolRequest(endpoint, route) };
@@ -667,7 +673,7 @@ async function evidenceProfile(options) {
     if (!options.session || !options.runtimeInstanceId) {
       throw new Error(`evidence-profile ${action} requires --session and --runtime-instance-id`);
     }
-    const route = "/api/he/evidence/native-pages/sessions/"
+    const route = "/api/player-environment/evidence/native-pages/sessions/"
       + `${encodeURIComponent(options.session)}/return`;
     const result = await connectorProtocolRequest(endpoint, route, {
       method: "POST",
@@ -686,16 +692,16 @@ async function evidenceProfile(options) {
 async function inspect(options, requireLoaded = false) {
   const resolved = paths(options);
   const protocols = sourceProtocols();
-  const currentSource = gatewaySourceIdentity();
+  const currentSource = playerEnvironmentSourceIdentity();
   const endpoint = options.endpoint ?? DEFAULT_ENDPOINT;
   const waited = options.wait
-    ? await waitForGateway({ endpoint, timeoutMs: options.waitMs, pollMs: options.pollMs })
+    ? await waitForPlayerEnvironmentHost({ endpoint, timeoutMs: options.waitMs, pollMs: options.pollMs })
     : null;
   if (options.wait && !waited.ready && requireLoaded) {
-    throw new Error(`Gateway did not become ready within ${waited.waited_ms}ms: ${waited.error}`);
+    throw new Error(`Player Environment Host did not become ready within ${waited.waited_ms}ms: ${waited.error}`);
   }
   const capabilities = waited?.capabilities
-    ?? await readJson(endpoint, "/api/he/capabilities", requireLoaded);
+    ?? await readJson(endpoint, "/api/player-environment/capabilities", requireLoaded);
   const readinessCapabilities = capabilities;
   const builtIdentity = artifactIdentity(resolved.builtDll);
   const installedIdentity = artifactIdentity(resolved.installedDll);
@@ -708,6 +714,7 @@ async function inspect(options, requireLoaded = false) {
     installedSha: sha256File(resolved.installedDll),
     builtMvid: builtIdentity?.module_version_id ?? null,
     installedMvid: installedIdentity?.module_version_id ?? null,
+    builtSourceRevision: buildMetadata?.source_revision ?? null,
     capabilities
   });
   const provenance = evaluateBuildProvenance({
@@ -734,21 +741,24 @@ async function inspect(options, requireLoaded = false) {
     mods_dir: resolved.modsDir,
     game_process_running: gameProcessRunning(),
     endpoint,
-    gateway_wait: waited ? summarizeGatewayWait(waited) : null,
+    host_wait: waited ? summarizeHostWait(waited) : null,
     mod_installation: inspectModInstallation(resolved.modsDir),
     compatibility_status: capabilities?.game?.compatibility?.status ?? null,
-    note: "Human Environment C is the only production path. It exposes canonical UI facts and reads, binds a complete finite action projection to exact Host-local operands, and returns delivery plus successor."
+    note: "Player Environment C is the only production path. It exposes canonical UI facts and reads, binds a complete finite action projection to exact Host-local operands, and returns delivery plus successor."
   };
 }
 
 function build(options) {
   const resolved = paths(options);
+  const source = playerEnvironmentSourceIdentity();
+  if (!source) throw new Error("Could not establish Player Environment source identity before build.");
   run("dotnet", [
     "build",
     "STS2MCP/STS2_MCP.csproj",
     "-c", "Release",
     "-o", "STS2MCP/out/STS2_MCP",
     `-p:STS2GameDir=${resolved.gameDir}`,
+    `-p:SourceRevision=${source.revision}`,
     "-p:UseSharedCompilation=false"
   ]);
   run("dotnet", [
@@ -776,41 +786,17 @@ function test(options) {
   for (const script of [
     "check:connector-cli",
     "check:connector-run-identity",
-    "check:docs",
-    "check:connector-compatibility-fixtures",
-    "check:connector-permission-fixtures",
-    "check:connector-qualification",
-    "check:connector-profiles",
-    "check:connector-migration"
+    "check:docs"
   ]) run("npm", ["run", script]);
-}
-
-function audit(options) {
-  const resolved = paths(options);
-  const env = { ...process.env, STS2_GAME_DIR: resolved.gameDir };
-  const failures = [];
-  for (const script of [
-    "audit:connector-compatibility",
-    "audit:connector-operation-bindings"
-  ]) {
-    const result = spawnPortable("npm", ["run", script], {
-      cwd: WORKSPACE,
-      env,
-      stdio: "inherit"
-    });
-    if (result.error) throw result.error;
-    if (result.status !== 0) failures.push(`${script}:${result.status}`);
-  }
-  if (failures.length > 0) throw new Error(`Connector audits failed: ${failures.join(", ")}`);
 }
 
 function install(options) {
   const resolved = paths(options);
   if (gameProcessRunning()) {
-    throw new Error("Slay the Spire 2 is running. Close it before replacing the Gateway artifact.");
+    throw new Error("Slay the Spire 2 is running. Close it before replacing the Player Environment Host artifact.");
   }
   if (!existsSync(resolved.builtDll)) throw new Error("Release DLL is missing; run connector:build first.");
-  const currentSource = gatewaySourceIdentity();
+  const currentSource = playerEnvironmentSourceIdentity();
   const protocols = sourceProtocols();
   const builtIdentity = artifactIdentity(resolved.builtDll);
   const buildMetadata = readOptionalJson(resolved.buildIdentity);
@@ -826,14 +812,14 @@ function install(options) {
   });
   if (!buildProvenance.ok) {
     throw new Error(
-      `Release build does not match current Gateway source: ${buildProvenance.errors.join(", ")}. Run connector build before install.`
+      `Release build does not match current Player Environment source: ${buildProvenance.errors.join(", ")}. Run connector build before install.`
     );
   }
   mkdirSync(resolved.modsDir, { recursive: true });
   const modInstallation = inspectModInstallation(resolved.modsDir);
-  if (modInstallation.exact_permission_blocker) {
+  if (modInstallation.duplicate_installation_blocker) {
     throw new Error(
-      `Installation refused before changing the Gateway artifact because duplicate STS2_MCP manifests exist under the scanned mods tree: ${modInstallation.duplicate_manifests.map((item) => item.relative_path).join(", ")}. Run connector repair-installation with the game closed.`
+      `Installation refused before changing the Host artifact because duplicate STS2_MCP manifests exist under the scanned mods tree: ${modInstallation.duplicate_manifests.map((item) => item.relative_path).join(", ")}. Run connector repair-installation with the game closed.`
     );
   }
   const builtSha = sha256File(resolved.builtDll);
@@ -850,7 +836,7 @@ function install(options) {
       sha256: builtSha,
       mvid: builtIdentity.module_version_id,
       installed_dll: resolved.installedDll,
-      gateway_source_digest: buildMetadata.gateway_source_digest
+      player_environment_source_digest: buildMetadata.player_environment_source_digest
     };
   }
 
@@ -874,16 +860,17 @@ function install(options) {
     replacement_sha256: builtSha,
     replacement_mvid: builtIdentity.module_version_id,
     replacement_source_revision: buildMetadata.source_revision,
-    replacement_gateway_source_digest: buildMetadata.gateway_source_digest,
+    replacement_player_environment_source_digest:
+      buildMetadata.player_environment_source_digest,
     replacement_protocol: buildMetadata.source_protocol,
     game_dir: resolved.gameDir,
-    scope: "gateway_artifact_only_not_game_or_modset"
+    scope: "player_environment_host_artifact_only_not_game_or_modset"
   }, null, 2)}\n`);
 
   copyFileSync(resolved.builtDll, resolved.installedDll);
   copyFileSync(resolved.sourceManifest, resolved.installedManifest);
   const copiedSha = sha256File(resolved.installedDll);
-  if (copiedSha !== builtSha) throw new Error("Installed Gateway SHA does not match the Release artifact.");
+  if (copiedSha !== builtSha) throw new Error("Installed Host SHA does not match the Release artifact.");
   const installedProvenance = {
     ...buildMetadata,
     installed_at: new Date().toISOString()
@@ -895,7 +882,7 @@ function install(options) {
     sha256: copiedSha,
     mvid: builtIdentity.module_version_id,
     installed_dll: resolved.installedDll,
-    gateway_source_digest: buildMetadata.gateway_source_digest,
+    player_environment_source_digest: buildMetadata.player_environment_source_digest,
     rollback_backup: backupDir
   };
 }
@@ -910,7 +897,7 @@ function deploy(options) {
   return {
     status: "verified_source_build_installed_game_must_be_cold_started",
     source_revision: buildMetadata.source_revision,
-    gateway_source_digest: buildMetadata.gateway_source_digest,
+    player_environment_source_digest: buildMetadata.player_environment_source_digest,
     protocol: buildMetadata.source_protocol,
     artifact_sha256: buildMetadata.artifact_sha256,
     artifact_mvid: buildMetadata.artifact_mvid,
@@ -925,7 +912,7 @@ function repairInstallation(options) {
     throw new Error("Slay the Spire 2 is running. Close it before relocating duplicate mod manifests.");
   }
   const before = inspectModInstallation(resolved.modsDir);
-  if (!before.exact_permission_blocker) {
+  if (!before.duplicate_installation_blocker) {
     return { status: "installation_clean", moved: [], inspection: before };
   }
 
@@ -964,7 +951,7 @@ function repairInstallation(options) {
 
 function restoreKnownEnvironment(options) {
   const resolved = paths(options);
-  if (gameProcessRunning()) throw new Error("Close Slay the Spire 2 before restoring a Gateway artifact.");
+  if (gameProcessRunning()) throw new Error("Close Slay the Spire 2 before restoring a Host artifact.");
   if (!options.backup) throw new Error("restore-known-environment requires --backup DIR.");
   const backup = path.resolve(options.backup);
   const dll = path.join(backup, "STS2_MCP.dll");
@@ -981,28 +968,28 @@ function restoreKnownEnvironment(options) {
     rmSync(resolved.installedIdentity, { force: true });
   }
   return {
-    status: "gateway_artifact_restored_game_must_be_cold_started",
+    status: "host_artifact_restored_game_must_be_cold_started",
     sha256: sha256File(resolved.installedDll),
-    scope: "gateway_artifact_only",
-    non_claims: ["Steam game build not restored", "Modset not restored", "permission not granted"]
+    scope: "player_environment_host_artifact_only",
+    non_claims: ["Steam game build not restored", "Modset not restored", "artifact not loaded"]
   };
 }
 
 async function collectEvidence(options) {
   const endpoint = options.endpoint ?? DEFAULT_ENDPOINT;
-  const waited = await waitForGateway({
+  const waited = await waitForPlayerEnvironmentHost({
     endpoint,
     timeoutMs: options.waitMs,
     pollMs: options.pollMs
   });
   if (!waited.ready) {
-    throw new Error(`Gateway did not become ready within ${waited.waited_ms}ms: ${waited.error}`);
+    throw new Error(`Player Environment Host did not become ready within ${waited.waited_ms}ms: ${waited.error}`);
   }
   const capabilities = waited.capabilities;
-  const state = await readJson(endpoint, "/api/he/observation", true);
-  const controller = await readJsonResult(endpoint, "/api/he/controller");
+  const state = await readJson(endpoint, "/api/player-environment/snapshot", true);
+  const controller = await readJsonResult(endpoint, "/api/player-environment/controller");
   const partialFailures = [
-    ...(controller.ok ? [] : [{ route: "/api/he/controller", error: controller.error }])
+    ...(controller.ok ? [] : [{ route: "/api/player-environment/controller", error: controller.error }])
   ];
   const resolved = paths(options);
   const output = path.resolve(options.out ?? path.join(
@@ -1029,8 +1016,7 @@ async function collectEvidence(options) {
     status: "read_only_evidence_collected",
     output,
     protocol_version: capabilities.protocol_version,
-    loaded_sha256: capabilities.host?.implementation?.artifact_sha256
-      ?? capabilities.bridge?.assembly_file_sha256,
+    loaded_sha256: capabilities.host?.implementation?.artifact_sha256 ?? null,
     snapshot_id: state.snapshot_id,
     owner_id: state.owner?.owner_id ?? null,
     partial_failures: partialFailures
@@ -1074,6 +1060,7 @@ export function recommendDoctorSteps({
   gameDirExists,
   agentDependenciesInstalled,
   status,
+  agentLocalConfig = null,
   inspectionError = null
 }) {
   const steps = [];
@@ -1083,6 +1070,9 @@ export function recommendDoctorSteps({
   if (missing.length > 0) steps.push(`Install required tools: ${missing.join(", ")}.`);
   if (!gameDirExists) steps.push("Install STS2 or set STS2_GAME_DIR to the exact Steam game directory.");
   if (!agentDependenciesInstalled) steps.push("Run npm run bootstrap from the repository root.");
+  if ((agentLocalConfig?.retired_keys?.length ?? 0) > 0) {
+    steps.push(`Remove retired Re-SpireAgent/.env.local settings: ${agentLocalConfig.retired_keys.join(", ")}.`);
+  }
   if (inspectionError) steps.push(`Resolve Connector inspection failure: ${inspectionError}`);
 
   const deployErrors = new Set([
@@ -1090,27 +1080,30 @@ export function recommendDoctorSteps({
     "installed_artifact_missing",
     "build_provenance_missing",
     "installed_provenance_missing",
+    "source_build_revision_mismatch",
     "source_build_digest_mismatch",
     "source_build_protocol_mismatch",
     "build_provenance_sha_mismatch",
     "build_provenance_mvid_mismatch",
     "build_installed_sha_mismatch",
     "build_installed_mvid_mismatch",
-    "build_installed_provenance_mismatch"
+    "build_installed_provenance_mismatch",
+    "build_installed_revision_mismatch"
   ]);
   if (status?.errors?.some((error) => deployErrors.has(error))) {
     steps.push("Fully close STS2, then run npm run deploy from the repository root.");
   }
-  if (status?.mod_installation?.exact_permission_blocker) {
+  if (status?.mod_installation?.duplicate_installation_blocker) {
     steps.push("Fully close STS2, then diagnose and repair duplicate STS2_MCP manifests.");
   }
   if (status?.errors?.some((error) => [
     "installed_loaded_sha_mismatch",
     "installed_loaded_mvid_mismatch",
-    "source_loaded_protocol_mismatch"
+    "source_loaded_protocol_mismatch",
+    "built_loaded_source_revision_mismatch"
   ].includes(error))) {
-    steps.push("After a verified deploy, cold-restart STS2 so the installed Gateway is actually loaded.");
-  } else if (status?.errors?.includes("gateway_not_loaded_or_unreachable")) {
+    steps.push("After a verified deploy, cold-restart STS2 so the installed Player Environment Host is actually loaded.");
+  } else if (status?.errors?.includes("host_not_loaded_or_unreachable")) {
     steps.push("Start STS2, wait for a stable menu, then run npm run verify:loaded.");
   }
   if (status?.ok === true
@@ -1120,7 +1113,7 @@ export function recommendDoctorSteps({
   if (status?.ok === true
       && status.environment_ready === true
       && status.mutation_ready !== true) {
-    steps.push("The loaded environment has no bounded mutation authority; keep actions Fail Closed and inspect compatibility.");
+    steps.push("The loaded Host cannot deliver input; keep actions Fail Closed and inspect exact identity.");
   }
   if (steps.length === 0 && status?.ok) {
     steps.push("Run cd Re-SpireAgent && npm run agent:run.");
@@ -1156,6 +1149,7 @@ async function doctor(options) {
     WORKSPACE,
     "Re-SpireAgent/node_modules/typescript/package.json"
   ));
+  const agentLocalConfig = inspectAgentLocalConfig();
   let status = null;
   let inspectionError = gameDirError;
   if (gameDirExists && prerequisites.dotnet.available) {
@@ -1170,6 +1164,7 @@ async function doctor(options) {
     gameDirExists,
     agentDependenciesInstalled,
     status,
+    agentLocalConfig,
     inspectionError
   });
   return {
@@ -1181,13 +1176,14 @@ async function doctor(options) {
     game_dir: gameDir,
     game_dir_exists: gameDirExists,
     agent_dependencies_installed: agentDependenciesInstalled,
+    agent_local_config: agentLocalConfig,
     connector: status,
     inspection_error: inspectionError,
     next_steps: nextSteps,
     non_claims: [
       "doctor is read-only",
       "installed identity is not loaded identity",
-      "loaded identity is not Organic qualification"
+      "loaded identity is not Live journey evidence"
     ]
   };
 }
@@ -1207,19 +1203,15 @@ function parseIntegerOption(name, value, allowZero) {
   return parsed;
 }
 
-function delegate(script, command, passthrough) {
-  run("node", [path.join(WORKSPACE, script), command, ...passthrough]);
-}
-
 async function prepareAgentRun(options) {
   const endpoint = options.endpoint ?? DEFAULT_ENDPOINT;
-  const waited = await waitForGateway({
+  const waited = await waitForPlayerEnvironmentHost({
     endpoint,
     timeoutMs: options.waitMs,
     pollMs: options.pollMs
   });
   if (!waited.ready) {
-    throw new Error(`Gateway did not become ready within ${waited.waited_ms}ms: ${waited.error}`);
+    throw new Error(`Player Environment Host did not become ready within ${waited.waited_ms}ms: ${waited.error}`);
   }
 
   const before = await inspect({ ...options, endpoint }, true);
@@ -1231,16 +1223,16 @@ async function prepareAgentRun(options) {
   }
 
   let after = before;
-  let observationWait = null;
+  let snapshotWait = null;
   if (before.observation_ready) {
-    observationWait = await waitForAgentObservation({
+    snapshotWait = await waitForAgentSnapshot({
       endpoint,
       timeoutMs: options.waitMs,
       pollMs: options.pollMs
     });
-    if (!observationWait.ready) {
+    if (!snapshotWait.ready) {
       throw new Error(
-        `Gateway loaded but no semantic game context became ready within ${observationWait.waited_ms}ms: ${observationWait.error}`
+        `Player Environment Host loaded but no stable player snapshot became ready within ${snapshotWait.waited_ms}ms: ${snapshotWait.error}`
       );
     }
     after = await inspect({ ...options, endpoint }, true);
@@ -1253,19 +1245,19 @@ async function prepareAgentRun(options) {
     );
   }
   return {
-    status: "human_environment_ready_for_bounded_agent_run",
+    status: "player_environment_ready_for_bounded_agent_run",
     protocol_version: after.loaded_protocol,
     loaded_sha256: after.loaded_sha256,
     loaded_mvid: after.loaded_mvid,
     runtime_instance_id: after.runtime_instance_id,
     compatibility_status: after.compatibility_status,
     authority_path: "current_complete_bound_action_projection",
-    observation_wait: observationWait
+    snapshot_wait: snapshotWait
       ? {
-          attempts: observationWait.attempts,
-          waited_ms: observationWait.waited_ms,
-          context_kind: observationWait.observation?.surface?.content?.context?.kind ?? null,
-          surface_kind: observationWait.observation?.surface?.kind ?? null
+          attempts: snapshotWait.attempts,
+          waited_ms: snapshotWait.waited_ms,
+          context_kind: snapshotWait.snapshot?.interaction?.content?.context?.kind ?? null,
+          surface_kind: snapshotWait.snapshot?.interaction?.content?.surface?.kind ?? null
         }
       : null,
     non_claims: [
@@ -1282,22 +1274,18 @@ function usage() {
     + `  doctor                            Diagnose prerequisites, checkout and deployment drift\n`
     + `  deploy                            Test, build, back up and install with the game closed\n`
     + `  inspect | show-status             Read source, disk and optional loaded identity\n`
-    + `  test                              Run Gateway, Re and connector checks\n`
-    + `  audit                             Run exact local game assembly audits\n`
-    + `  build                             Build Release Gateway and Re\n`
-    + `  install                           Backup and install the built Gateway with game closed\n`
+    + `  test                              Run Host, Re and connector checks\n`
+    + `  build                             Build Release Host and Re\n`
+    + `  install                           Backup and install the built Host with game closed\n`
     + `  diagnose-installation              Find duplicate STS2_MCP manifests in the Mod scan tree\n`
     + `  repair-installation                Relocate known backup manifests with game closed\n`
-    + `  wait-for-gateway                   Bounded read-only capabilities readiness wait\n`
+    + `  wait-for-host                      Bounded read-only capabilities readiness wait\n`
     + `  verify-loaded-artifact [--wait]   Require source/built/installed/loaded identity agreement\n`
     + `  run-agent -- <agent args>         Exact-identity preflight, trial resume, then bounded Re run\n`
     + `  collect-evidence [--out FILE]     Capture read-only capabilities/state/controller/clients\n`
     + `  evidence-profile <operation>       Configure or exercise optional native-page evidence\n`
     + `  audit-run-identity [--run ID|DIR] Audit stale refusals using formal IDs or historical shadows\n`
-    + `  start-or-resume-trial -- <args>   Delegate to the migration cycle\n`
-    + `  revoke -- <ledger args>           Revoke a persistent qualification\n`
-    + `  rollback -- <ledger args>         Roll back a persistent qualification\n`
-    + `  restore-known-environment --backup DIR  Restore only a backed-up Gateway artifact\n\n`
+    + `  restore-known-environment --backup DIR  Restore only a backed-up Host artifact\n\n`
     + `Common options: --game-dir DIR --endpoint URL --wait-ms N --poll-ms N`;
 }
 
@@ -1328,7 +1316,6 @@ export async function main(argv = process.argv.slice(2)) {
     return;
   }
   if (command === "test") return test(options);
-  if (command === "audit") return audit(options);
   if (command === "build") {
     console.log(JSON.stringify(build(options), null, 2));
     return;
@@ -1347,13 +1334,13 @@ export async function main(argv = process.argv.slice(2)) {
     if (result.status === "manual_review_required") process.exitCode = 1;
     return;
   }
-  if (command === "wait-for-gateway") {
-    const result = await waitForGateway({
+  if (command === "wait-for-host") {
+    const result = await waitForPlayerEnvironmentHost({
       endpoint: options.endpoint ?? DEFAULT_ENDPOINT,
       timeoutMs: options.waitMs,
       pollMs: options.pollMs
     });
-    console.log(JSON.stringify(summarizeGatewayWait(result), null, 2));
+    console.log(JSON.stringify(summarizeHostWait(result), null, 2));
     if (!result.ready) process.exitCode = 1;
     return;
   }
@@ -1394,18 +1381,6 @@ export async function main(argv = process.argv.slice(2)) {
           : {})
       }
     });
-    return;
-  }
-  if (command === "start-or-resume-trial") {
-    delegate(
-      "tools/connector-migration-orchestrator.mjs",
-      "cycle",
-      migrationCycleDelegateArgs(options)
-    );
-    return;
-  }
-  if (command === "revoke" || command === "rollback") {
-    delegate("tools/connector-qualification-ledger.mjs", command, options.passthrough);
     return;
   }
   throw new Error(`Unknown command ${command}.\n${usage()}`);

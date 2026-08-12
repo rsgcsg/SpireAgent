@@ -21,19 +21,19 @@ function capture(relative, pattern, label) {
 
 const protocolDeclarations = [
   [
-    "STS2MCP/HumanEnvironment/Protocol/HumanEnvironmentContracts.cs",
+    "STS2MCP/PlayerEnvironment/Protocol/PlayerEnvironmentContracts.cs",
     /ProtocolVersion\s*=\s*"([^"]+)"/u,
     "C# protocol"
   ],
   [
-    "Re-SpireAgent/src/integrations/sts2mcp/humanEnvironmentProtocol.ts",
-    /SUPPORTED_HUMAN_ENVIRONMENT_PROTOCOL\s*=\s*"([^"]+)"/u,
+    "Re-SpireAgent/src/integrations/sts2mcp/playerEnvironmentProtocol.ts",
+    /SUPPORTED_PLAYER_ENVIRONMENT_PROTOCOL\s*=\s*"([^"]+)"/u,
     "Re protocol"
   ],
   ["README.md", /Source protocol is\s*`([^`]+)`/u, "README protocol"],
-  ["docs/current/STATUS.md", /Current source protocol is `([^`]+)`/u, "status protocol"],
-  ["STS2MCP/docs/human-environment/PROTOCOL.md", /Source protocol: `([^`]+)`/u, "protocol doc"],
-  ["Re-SpireAgent/docs/HUMAN_ENVIRONMENT_INTEGRATION.md", /strictly accepts `([^`]+)`/u, "Re coverage protocol"]
+  ["docs/current/STATUS.md", /Current source protocol:\s*`([^`]+)`/u, "status protocol"],
+  ["STS2MCP/docs/player-environment/PROTOCOL.md", /Source protocol: `([^`]+)`/u, "protocol doc"],
+  ["Re-SpireAgent/docs/PLAYER_ENVIRONMENT_INTEGRATION.md", /strictly accepts protocol `([^`]+)`/u, "Re integration protocol"]
 ];
 const protocols = protocolDeclarations.map(([relative, pattern, label]) => ({
   relative,
@@ -50,8 +50,8 @@ const status = read("docs/current/STATUS.md");
 if (/Fixed repository HEAD:/u.test(status)) {
   failures.push("docs/current/STATUS.md: mutable current status must not hard-code a repository HEAD");
 }
-if (!/Per-machine Deployment Truth/iu.test(status)) {
-  failures.push("docs/current/STATUS.md: missing per-machine deployment truth boundary");
+if (!/Evidence Boundary/iu.test(status)) {
+  failures.push("docs/current/STATUS.md: missing evidence boundary");
 }
 
 const setup = read("docs/current/LOCAL_SETUP.md");
@@ -73,12 +73,12 @@ const documentMap = read("docs/current/DOCUMENT_MAP.md");
 if (!documentMap.includes("DEVELOPMENT_MODEL.md")) {
   failures.push("docs/current/DOCUMENT_MAP.md: development model is not indexed");
 }
-for (const required of ["HUMAN_ENVIRONMENT_NEW_ENGINEER_GUIDE.md", "HUMAN_INFORMATION_CLOSURE.md"]) {
+for (const required of ["PLAYER_ENVIRONMENT_NEW_ENGINEER_GUIDE.md", "PLAYER_ENVIRONMENT_INFORMATION_CLOSURE.md"]) {
   if (!documentMap.includes(required)) failures.push(`docs/current/DOCUMENT_MAP.md: missing ${required}`);
 }
 
 for (const [relative, staleTerms] of [
-  ["README.md", ["Human-Equivalent", "1.0-preview.5", "temporary freeze"]],
+  ["README.md", ["Human-Equivalent", "1.0-preview.5", "temporary freeze", "HUMAN_ENVIRONMENT_NEW_ENGINEER_GUIDE"]],
   ["docs/current/STATUS.md", ["Human-Equivalent", "1.0-preview.5", "temporary freeze", "five V3"]],
   ["docs/current/ARCHITECTURE.md", ["Human-Equivalent", "1.0-preview.5", "Temporary Freeze Scope", "five bounded V3"]],
   ["docs/current/REPOSITORY_INVENTORY.md", ["STS2MCP/HumanEquivalent/", "STS2MCP/ConnectorV3/", "STS2MCP/BridgeV2/"]]
