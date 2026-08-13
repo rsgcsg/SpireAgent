@@ -2,7 +2,7 @@ import type {
   PlayerSnapshot,
   SemanticContext
 } from "../domain/state/index.js";
-import type { PlayerCombatContext } from "../integrations/sts2mcp/playerCombatPresentation.js";
+import type { PlayerCombatContext } from "../integrations/sts2Connector/playerCombatPresentation.js";
 import { projectPlayerVisibleCard } from "./projectPlayerVisibleState.js";
 
 export function projectPlayerCombatContext(context: PlayerCombatContext): SemanticContext {

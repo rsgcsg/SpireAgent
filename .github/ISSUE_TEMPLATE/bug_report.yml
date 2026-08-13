@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible Agent, Player Environment, deployment or documentation defect.
+description: Report a reproducible Agent, provider, consumer integration or documentation defect.
 title: "[Bug]: "
 labels: ["bug"]
 body:
@@ -22,8 +22,8 @@ body:
         - Unknown
         - Agent or prompt
         - Re consumer or supervision
-        - Player Environment observation, Read or action delivery
-        - Build, install or loaded identity
+        - Connector client integration
+        - External Connector or game environment
         - Documentation
     validations:
       required: true
@@ -31,7 +31,7 @@ body:
     id: identity
     attributes:
       label: Non-secret identity
-      description: Paste the relevant protocol, SHA, MVID, game version, Modset and runtime from `npm run doctor`; remove local paths if desired.
+      description: Paste the relevant Agent revision and redacted Connector protocol/runtime identity from `npm run doctor`; remove local paths if desired.
   - type: textarea
     id: reproduction
     attributes:

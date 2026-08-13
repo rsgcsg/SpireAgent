@@ -4,6 +4,7 @@ import { stateHash } from "./stateHash.js";
 
 const TRANSPORT_IDENTITY_KEYS = new Set([
   "boundActionId",
+  "choiceId",
   "interactionId",
   "expectedSnapshotId",
   "snapshotId"

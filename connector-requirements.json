@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "contract": "sts2.player-environment",
+  "protocol": {
+    "accepted": [
+      "1.0-rc.2"
+    ]
+  },
+  "client": {
+    "package": "@rsgcsg/sts2-connector-client",
+    "version": "1.0.0-rc.1",
+    "development_source": "../STS2-Connector/sdk/typescript"
+  },
+  "connector": {
+    "repository": "https://github.com/rsgcsg/STS2-Connector",
+    "recommended_release": "1.0.0-rc.1",
+    "required": {
+      "snapshot_schema": "sts2.player-environment/snapshot-1",
+      "action_schema": "sts2.player-environment/action-1",
+      "receipt_schema": "sts2.player-environment/receipt-1",
+      "control_schema": "sts2.player-environment/control-1",
+      "snapshot_bound": true,
+      "single_controller": true
+    }
+  }
+}

@@ -1,41 +1,30 @@
 # Current Documentation Map
 
-## New Engineer Path
+## Read First
 
-1. [Player Environment guide](PLAYER_ENVIRONMENT_NEW_ENGINEER_GUIDE.md)
-2. [Status](STATUS.md)
-3. [Architecture](ARCHITECTURE.md)
-4. [Information Closure](PLAYER_ENVIRONMENT_INFORMATION_CLOSURE.md)
-5. [ADR-0009](decisions/ADR-0009-player-environment-core-boundaries.md)
-6. [Implementation plan](PLAYER_ENVIRONMENT_IMPLEMENTATION_PLAN.md)
-7. [Roadmap](ROADMAP.md)
+1. [Status](STATUS.md)
+2. [Architecture](ARCHITECTURE.md)
+3. [Local setup](LOCAL_SETUP.md)
+4. [Development model](DEVELOPMENT_MODEL.md)
+5. [Re integration](../../Re-SpireAgent/docs/PLAYER_ENVIRONMENT_INTEGRATION.md)
+6. [ADR-0010](decisions/ADR-0010-standalone-connector-dependency.md)
 
-## Component Contracts
+## Workflows
 
-- [Player Environment protocol](../../STS2MCP/docs/player-environment/PROTOCOL.md)
-- [Player Environment coverage](../../STS2MCP/docs/player-environment/COVERAGE.md)
-- [Re integration](../../Re-SpireAgent/docs/PLAYER_ENVIRONMENT_INTEGRATION.md)
-- [Machine-readable contract](../../contracts/player-environment-contract.json)
-
-## Operations
-
-- [Local setup](LOCAL_SETUP.md)
-- [Development model](DEVELOPMENT_MODEL.md)
 - [Operations](OPERATIONS.md)
 - [Development and evaluation](DEVELOPMENT_AND_EVALUATION.md)
 - [Repository inventory](REPOSITORY_INVENTORY.md)
+- [Product](PRODUCT.md)
+- [Program plan](PROGRAM_PLAN.md)
+- [Roadmap](ROADMAP.md)
 
-## Evidence And History
+## Connector Authority
 
-- [C1 semantic-seal closeout](audits/PLAYER_ENVIRONMENT_C1_SEMANTIC_SEAL_CLOSEOUT_2026-08-13.md)
-  records the final monorepo source cleanup and exact evidence boundary before
-  standalone extraction.
+Protocol, coverage, Host architecture, information closure, installation,
+compatibility, release identity and Connector evidence are maintained only in
+[`rsgcsg/STS2-Connector`](https://github.com/rsgcsg/STS2-Connector). The local
+machine-readable consumer constraint is
+[`connector-requirements.json`](../../connector-requirements.json).
 
-- [2026-08-12 predecessor clean-baseline closeout](audits/HUMAN_ENVIRONMENT_CLEAN_BASELINE_CLOSEOUT_2026-08-12.md)
-- [2026-08-11 core/projection reaudit](audits/HUMAN_ENVIRONMENT_CORE_AND_PROJECTION_REAUDIT_2026-08-11.md)
-- [2026-08-11 predecessor temporary-freeze evidence](audits/HUMAN_ENVIRONMENT_TEMPORARY_FREEZE_CLOSEOUT_2026-08-11.md)
-
-Dated audits preserve what their exact source, artifact and runtime established;
-they are not current implementation instructions. ADR-0008, Connector V3 and
-Bridge v2 are superseded migration history. Only the documents above define
-current Player Environment C1 source truth.
+`docs/history/` preserves dated monorepo and migration records. It is excluded
+from current documentation checks and must not be used as live instructions.

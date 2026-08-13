@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { buildPlayerEnvironmentAllowedActions } from "../src/domain/actions/buildPlayerEnvironmentAllowedActions.js";
-import type { AdapterDescriptor } from "../src/game-io/adapter.js";
-import { Sts2PlayerEnvironmentAdapter } from "../src/integrations/sts2mcp/playerEnvironmentAdapter.js";
-import { prefetchPlayerEnvironmentDecisionBundle } from "../src/integrations/sts2mcp/playerEnvironmentDecisionBundle.js";
 import {
   decodePlayerClientRegistration,
   decodePlayerControllerLeaseResponse,
-  decodePlayerSnapshot
-} from "../src/integrations/sts2mcp/playerEnvironmentProtocol.js";
-import { wrapPlayerEnvironmentState } from "../src/integrations/sts2mcp/rawState.js";
+  decodePlayerSnapshot,
+  prefetchPlayerEnvironmentDecisionBundle
+} from "@rsgcsg/sts2-connector-client";
+import { buildPlayerEnvironmentAllowedActions } from "../src/domain/actions/buildPlayerEnvironmentAllowedActions.js";
+import type { AdapterDescriptor } from "../src/game-io/adapter.js";
+import { Sts2PlayerEnvironmentAdapter } from "../src/integrations/sts2Connector/playerEnvironmentAdapter.js";
+import { wrapPlayerEnvironmentState } from "../src/integrations/sts2Connector/rawState.js";
 import { normalizePlayerEnvironmentCurrentState } from "../src/normalization/normalizePlayerEnvironmentCurrentState.js";
 import type { JsonObject } from "../src/shared/json.js";
 
@@ -113,6 +113,35 @@ function json(value: JsonObject, status = 200): Response {
     status,
     headers: { "content-type": "application/json" }
   });
+}
+
+function deliveredReceipt(requestId: string, successor: JsonObject | null = null): JsonObject {
+  return {
+    protocol_version: "1.0-rc.2",
+    schema: "sts2.player-environment/receipt-1",
+    request_id: requestId,
+    delivery: "delivered",
+    action: {
+      bound_action_id: "bound-action-card-1",
+      verb: "select",
+      subject_referent_id: "card-1",
+      arguments: []
+    },
+    reason_code: null,
+    detail: "native input delivered",
+    retry: { allowed: false, reason: "terminal_receipt" },
+    successor,
+    attribution: {
+      runtime_instance_id: "fixture-runtime",
+      client_session_id: "client-session",
+      client_instance_id: "client-instance",
+      product_id: "re-spireagent",
+      product_name: "Re-SpireAgent",
+      product_version: "0.1.0",
+      controller_lease_id: "controller-lease",
+      controller_generation: 1
+    }
+  };
 }
 
 describe("Player Environment C", () => {
@@ -583,5 +612,77 @@ describe("Player Environment C", () => {
     expect(submittedBody).not.toHaveProperty("parameters");
     expect(submittedBody).not.toHaveProperty("expected_owner_id");
     expect(submittedBody).not.toHaveProperty("expected_frame_id");
+  });
+
+  it("polls the same request after an ambiguous submit response without resubmitting", async () => {
+    const current = snapshot();
+    let submittedRequestId: string | undefined;
+    let submitCount = 0;
+    let pollCount = 0;
+    const adapter = new Sts2PlayerEnvironmentAdapter(
+      "http://fixture.invalid",
+      1_000,
+      {},
+      async (input, init) => {
+        const url = String(input);
+        if (url.endsWith("/api/player-environment/capabilities")) return json(capabilities());
+        if (url.endsWith("/api/player-environment/snapshot")) return json(current);
+        if (url.endsWith("/api/player-environment/clients/register")) {
+          const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+          return json({
+            protocol_version: "1.0-rc.2",
+            schema: "sts2.player-environment/control-1",
+            runtime_instance_id: "fixture-runtime",
+            client: {
+              client_session_id: "client-session",
+              client_instance_id: String(body.client_instance_id)
+            },
+            controller: null
+          }, 201);
+        }
+        if (url.endsWith("/api/player-environment/controller/acquire")) {
+          return json({
+            protocol_version: "1.0-rc.2",
+            schema: "sts2.player-environment/control-1",
+            runtime_instance_id: "fixture-runtime",
+            status: "controller_acquired",
+            detail: "acquired",
+            client: {
+              client_session_id: "client-session",
+              client_instance_id: "client-instance"
+            },
+            controller: {
+              controller_lease_id: "controller-lease",
+              controller_generation: 1,
+              client_session_id: "client-session",
+              expires_at: new Date(Date.now() + 60_000).toISOString()
+            }
+          });
+        }
+        if (url.endsWith("/api/player-environment/actions") && init?.method === "POST") {
+          submitCount += 1;
+          const body = JSON.parse(String(init.body)) as Record<string, unknown>;
+          submittedRequestId = String(body.request_id);
+          throw new TypeError("response connection was lost");
+        }
+        if (submittedRequestId
+            && url.endsWith(`/api/player-environment/actions/${submittedRequestId}`)) {
+          pollCount += 1;
+          return json(deliveredReceipt(submittedRequestId));
+        }
+        throw new Error(`Unexpected request ${url}`);
+      }
+    );
+
+    const raw = await adapter.readCurrentState();
+    const normalized = normalizePlayerEnvironmentCurrentState(raw, adapter.describe());
+    const action = buildPlayerEnvironmentAllowedActions(normalized.currentState, normalized.stateHash)[0]!;
+    const result = await adapter.execute(action.action);
+    await adapter.close();
+
+    expect(result).toMatchObject({ accepted: true, outcome: "accepted" });
+    expect(submitCount).toBe(1);
+    expect(pollCount).toBe(1);
+    expect(submittedRequestId).toMatch(/^re-player-/u);
   });
 });

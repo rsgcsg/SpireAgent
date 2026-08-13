@@ -1,97 +1,55 @@
 #!/usr/bin/env node
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-const workspace = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const root = process.cwd();
 const failures = [];
+const read = (relative) => readFileSync(path.join(root, relative), "utf8");
 
-function read(relative) {
-  return readFileSync(path.join(workspace, relative), "utf8");
+for (const forbidden of [
+  "STS2MCP",
+  "contracts/player-environment-contract.json",
+  "tools/connector.mjs"
+]) {
+  if (existsSync(path.join(root, forbidden))) failures.push(`active C ownership remains at ${forbidden}`);
 }
 
-function capture(relative, pattern, label) {
-  const match = read(relative).match(pattern);
-  if (!match) {
-    failures.push(`${relative}: missing ${label}`);
-    return null;
-  }
-  return match[1];
-}
-
-const protocolDeclarations = [
-  [
-    "STS2MCP/PlayerEnvironment/Protocol/PlayerEnvironmentContracts.cs",
-    /ProtocolVersion\s*=\s*"([^"]+)"/u,
-    "C# protocol"
-  ],
-  [
-    "Re-SpireAgent/src/integrations/sts2mcp/playerEnvironmentProtocol.ts",
-    /SUPPORTED_PLAYER_ENVIRONMENT_PROTOCOL\s*=\s*"([^"]+)"/u,
-    "Re protocol"
-  ],
-  ["README.md", /Source protocol is\s*`([^`]+)`/u, "README protocol"],
-  ["docs/current/STATUS.md", /Current source protocol:\s*`([^`]+)`/u, "status protocol"],
-  ["STS2MCP/docs/player-environment/PROTOCOL.md", /Source protocol: `([^`]+)`/u, "protocol doc"],
-  ["Re-SpireAgent/docs/PLAYER_ENVIRONMENT_INTEGRATION.md", /strictly accepts protocol `([^`]+)`/u, "Re integration protocol"]
-];
-const protocols = protocolDeclarations.map(([relative, pattern, label]) => ({
-  relative,
-  protocol: capture(relative, pattern, label)
-}));
-const expected = protocols[0].protocol;
-for (const declaration of protocols) {
-  if (declaration.protocol && declaration.protocol !== expected) {
-    failures.push(`${declaration.relative}: ${declaration.protocol} != ${expected}`);
-  }
-}
-
+const requirements = JSON.parse(read("connector-requirements.json"));
 const status = read("docs/current/STATUS.md");
-if (/Fixed repository HEAD:/u.test(status)) {
-  failures.push("docs/current/STATUS.md: mutable current status must not hard-code a repository HEAD");
-}
-if (!/Evidence Boundary/iu.test(status)) {
-  failures.push("docs/current/STATUS.md: missing evidence boundary");
+if (/Fixed repository HEAD:/u.test(status)) failures.push("mutable current status hard-codes a repository HEAD");
+if (!status.includes(requirements.client.package) || !status.includes(requirements.protocol.accepted[0])) {
+  failures.push("current status does not match machine Connector requirements");
 }
 
-const setup = read("docs/current/LOCAL_SETUP.md");
-for (const stale of [
-  "git switch develop",
-  "git pull --ff-only origin develop",
-  "/api/v2/capabilities",
-  "/api/v2/state",
-  "Re negotiates `bridge_v2`",
-  "It forwards the v2 Gateway contract"
-]) {
-  if (setup.includes(stale)) failures.push(`docs/current/LOCAL_SETUP.md: stale deployment instruction: ${stale}`);
-}
-for (const required of ["npm run bootstrap", "npm run doctor", "npm run deploy", "npm run verify:loaded"]) {
-  if (!setup.includes(required)) failures.push(`docs/current/LOCAL_SETUP.md: missing canonical command ${required}`);
-}
-
-const documentMap = read("docs/current/DOCUMENT_MAP.md");
-if (!documentMap.includes("DEVELOPMENT_MODEL.md")) {
-  failures.push("docs/current/DOCUMENT_MAP.md: development model is not indexed");
-}
-for (const required of ["PLAYER_ENVIRONMENT_NEW_ENGINEER_GUIDE.md", "PLAYER_ENVIRONMENT_INFORMATION_CLOSURE.md"]) {
-  if (!documentMap.includes(required)) failures.push(`docs/current/DOCUMENT_MAP.md: missing ${required}`);
-}
-
-for (const [relative, staleTerms] of [
-  ["README.md", ["Human-Equivalent", "1.0-preview.5", "temporary freeze", "HUMAN_ENVIRONMENT_NEW_ENGINEER_GUIDE"]],
-  ["docs/current/STATUS.md", ["Human-Equivalent", "1.0-preview.5", "temporary freeze", "five V3"]],
-  ["docs/current/ARCHITECTURE.md", ["Human-Equivalent", "1.0-preview.5", "Temporary Freeze Scope", "five bounded V3"]],
-  ["docs/current/REPOSITORY_INVENTORY.md", ["STS2MCP/HumanEquivalent/", "STS2MCP/ConnectorV3/", "STS2MCP/BridgeV2/"]]
-]) {
-  const current = read(relative);
-  for (const stale of staleTerms) {
-    if (current.includes(stale)) failures.push(`${relative}: stale current-truth term ${stale}`);
+const currentFiles = [...walk(path.join(root, "docs/current"))]
+  .filter((file) => file.endsWith(".md"));
+for (const file of currentFiles) {
+  const text = readFileSync(file, "utf8");
+  for (const stale of ["STS2MCP/", "tools/connector.mjs", "contracts/player-environment-contract.json"]) {
+    if (text.includes(stale)) failures.push(`${path.relative(root, file)} contains retired ownership ${stale}`);
   }
 }
 
-if (failures.length > 0) {
-  console.error(["Current-truth checks failed:", ...failures.map((failure) => `- ${failure}`)].join("\n"));
+for (const duplicate of [
+  "Re-SpireAgent/src/integrations/sts2Connector/playerEnvironmentProtocol.ts",
+  "Re-SpireAgent/src/integrations/sts2Connector/playerEnvironmentClient.ts",
+  "Re-SpireAgent/src/integrations/sts2Connector/controllerSession.ts",
+  "Re-SpireAgent/src/integrations/sts2Connector/playerVisibleStateProtocol.ts"
+]) {
+  if (existsSync(path.join(root, duplicate))) failures.push(`duplicate Connector SDK truth remains at ${duplicate}`);
+}
+
+if (failures.length) {
+  console.error(["Current-truth checks failed:", ...failures.map((item) => `- ${item}`)].join("\n"));
   process.exitCode = 1;
 } else {
-  console.log(`current-truth checks passed (${expected})`);
+  console.log(`current-truth checks passed (${currentFiles.length} current documents)`);
+}
+
+function* walk(directory) {
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const full = path.join(directory, entry.name);
+    if (entry.isDirectory()) yield* walk(full);
+    else yield full;
+  }
 }

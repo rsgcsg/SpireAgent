@@ -1,7 +1,8 @@
 # Re-SpireAgent Engineering Guide
 
-Re is a consumer of Player Environment C. Read ADR-0009 and
-`docs/PLAYER_ENVIRONMENT_INTEGRATION.md` before changing its connector path.
+Re is a consumer of the standalone STS2 Connector. Read
+`docs/PLAYER_ENVIRONMENT_INTEGRATION.md` and the root `connector-requirements.json`
+before changing its connector path.
 
 ## Current Pipeline
 
@@ -23,7 +24,8 @@ Player Environment Snapshot -> strict decoder -> PlayerEnvironmentRawState
 
 ## Module Ownership
 
-- `src/integrations/sts2mcp/playerEnvironment*`: strict wire/client adapter
+- `@rsgcsg/sts2-connector-client`: strict wire, REST, controller and Read helpers
+- `src/integrations/sts2Connector/`: thin Re adapter and presentation parsing
 - `src/normalization/normalizePlayerEnvironmentCurrentState.ts`: raw-to-domain
 - `src/domain/actions/buildPlayerEnvironmentAllowedActions.ts`: finite import
 - `src/prompting/`: model format only

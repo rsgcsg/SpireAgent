@@ -4,17 +4,19 @@ import {
   type SemanticContext,
   type StateEnvelope
 } from "../domain/state/index.js";
+import {
+  decodePlayerSnapshot,
+  persistentVisibleStateSchema
+} from "@rsgcsg/sts2-connector-client";
 import type { AdapterDescriptor } from "../game-io/adapter.js";
 import {
   playerCombatContextSchema,
   type PlayerCombatContext
-} from "../integrations/sts2mcp/playerCombatPresentation.js";
-import { decodePlayerSnapshot } from "../integrations/sts2mcp/playerEnvironmentProtocol.js";
+} from "../integrations/sts2Connector/playerCombatPresentation.js";
 import {
   isPlayerEnvironmentWrappedState,
   type PlayerEnvironmentRawState
-} from "../integrations/sts2mcp/rawState.js";
-import { persistentVisibleStateSchema } from "../integrations/sts2mcp/playerVisibleStateProtocol.js";
+} from "../integrations/sts2Connector/rawState.js";
 import { isJsonObject, type JsonObject } from "../shared/json.js";
 import { stateHash } from "../runtime/stateHash.js";
 import { DiagnosticsBuilder } from "./diagnostics.js";

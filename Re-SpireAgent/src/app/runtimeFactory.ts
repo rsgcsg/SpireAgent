@@ -1,7 +1,7 @@
 import type { RuntimeConfig } from "../config/env.js";
 import { buildPlayerEnvironmentAllowedActions } from "../domain/actions/buildPlayerEnvironmentAllowedActions.js";
 import { NORMALIZED_STATE_SCHEMA_VERSION } from "../domain/state/index.js";
-import { Sts2PlayerEnvironmentAdapter } from "../integrations/sts2mcp/playerEnvironmentAdapter.js";
+import { Sts2PlayerEnvironmentAdapter } from "../integrations/sts2Connector/playerEnvironmentAdapter.js";
 import { DeepSeekDecisionProvider } from "../llm/deepseekProvider.js";
 import { normalizePlayerEnvironmentCurrentState } from "../normalization/normalizePlayerEnvironmentCurrentState.js";
 import { createRunId, FileDecisionRecorder } from "../recording/fileDecisionRecorder.js";

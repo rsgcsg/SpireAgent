@@ -2,26 +2,21 @@
   "name": "spireagent-workspace",
   "version": "0.0.0",
   "private": true,
-  "description": "Workspace entrypoint for Re-SpireAgent and the STS2 Player Environment Host.",
+  "description": "SpireAgent consumer, evaluation and product workspace.",
   "type": "module",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "bootstrap": "npm --prefix Re-SpireAgent ci",
-    "doctor": "node tools/connector.mjs doctor",
-    "deploy": "node tools/connector.mjs deploy",
-    "verify:loaded": "node tools/connector.mjs verify-loaded-artifact --wait",
-    "check": "npm run check:agent && npm run check:docs && npm run check:connector-cli && npm run check:connector-run-identity",
+    "doctor": "node tools/consumer-doctor.mjs",
+    "check": "npm run check:agent && npm run check:docs && npm run check:connector-requirements && npm run check:run-identity",
     "check:agent": "npm --prefix Re-SpireAgent run check",
     "test:agent": "npm --prefix Re-SpireAgent test",
     "build:agent": "npm --prefix Re-SpireAgent run build",
-    "check:docs": "node tools/check-active-markdown-links.mjs && npm run check:current-truth && npm run check:player-environment-contract && npm run check:player-environment-boundary",
-    "check:player-environment-contract": "node tools/check-player-environment-contract.mjs",
+    "check:docs": "node tools/check-active-markdown-links.mjs && npm run check:current-truth",
     "check:current-truth": "node tools/check-current-truth.mjs",
-    "check:player-environment-boundary": "node tools/check-player-environment-boundary.mjs",
-    "connector": "node tools/connector.mjs",
-    "check:connector-cli": "node tools/test-connector-cli.mjs",
-    "check:connector-run-identity": "node tools/test-connector-run-identity-audit.mjs"
+    "check:connector-requirements": "node tools/check-connector-requirements.mjs",
+    "check:run-identity": "node tools/test-run-identity-audit.mjs"
   }
 }

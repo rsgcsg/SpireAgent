@@ -15,34 +15,26 @@ permissions:
   contents: read
 
 jobs:
-  re-spire-agent:
+  agent:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: SpireAgent
+      - uses: actions/checkout@v4
+        with:
+          repository: rsgcsg/STS2-Connector
+          ref: v1.0.0-rc.1
+          path: STS2-Connector
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: Re-SpireAgent/package-lock.json
+          cache-dependency-path: SpireAgent/Re-SpireAgent/package-lock.json
       - run: npm ci
-        working-directory: Re-SpireAgent
+        working-directory: SpireAgent/Re-SpireAgent
       - run: npm run check
-        working-directory: Re-SpireAgent
+        working-directory: SpireAgent
 
-  repository-contracts:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: npm run check:docs
-      - run: npm run check:connector-cli
-      - run: npm run check:connector-run-identity
-      - run: python -m py_compile STS2MCP/mcp/server.py
-
-  # Player Environment Host C# tests/builds require the user's exact local STS2 assemblies.
-  # They intentionally remain local evidence and are not replaced by fixtures.
+  # Exact-game Connector Host tests/builds run in the Connector repository;
+  # proprietary STS2 assemblies are never supplied to this consumer CI.

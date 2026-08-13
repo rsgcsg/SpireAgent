@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import type { AdapterDescriptor } from "../src/game-io/adapter.js";
-import { wrapPlayerEnvironmentState } from "../src/integrations/sts2mcp/rawState.js";
+import { wrapPlayerEnvironmentState } from "../src/integrations/sts2Connector/rawState.js";
 import type { JsonObject } from "../src/shared/json.js";
 
 export const TEST_ADAPTER: AdapterDescriptor = {

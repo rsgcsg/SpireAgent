@@ -1,81 +1,49 @@
-# Current Architecture: Player Environment C
-
-Authority: [ADR-0009](decisions/ADR-0009-player-environment-core-boundaries.md)
-
-## One Production Path
+# SpireAgent Architecture
 
 ```text
-STS2 rules, RNG, objects and UI lifecycle
-  -> LiveHost: current fair-player facts and current owner
-  -> NativeUi: private exact binding and native input callback
-  -> PlayerEnvironment: Snapshot / Read / BoundAction / Receipt / successor
-  -> REST or optional MCP transport
-  -> consumer projection such as Re
+real STS2
+-> versioned STS2 Connector release
+-> Player Environment Snapshot / Read / BoundAction / Receipt
+-> @rsgcsg/sts2-connector-client
+-> Re thin adapter and normalized Agent state
+-> finite model choices
+-> provider decision
+-> exact bound-action submit and successor supervision
+-> run recording and evaluation
 ```
-
-Identity and single-writer control are a hard shell around delivery, not a
-second source of game legality. Current UI actionability publishes actions;
-execute-time native revalidation decides whether that exact input can still be
-delivered.
-
-## Public Contract
-
-- **Snapshot:** stable current player-visible state, current Interaction,
-  Referents, complete finite BoundActions, Reads, completeness and exact session
-  identity.
-- **Read:** one advertised, state-bound, read-only player information path.
-- **BoundAction:** an opaque finite projection of one private native binding.
-  It does not expose native operands or create legality.
-- **Action request:** request ID, expected snapshot, bound action and controller
-  lease.
-- **Receipt:** `delivered | not_delivered | unknown`, retry policy and an
-  immediate successor when readable. Delivery is not business completion.
-
-The public wire is understandable without Bridge/V2/V3 history. Interaction
-content is tagged by `surface.kind` and `context.kind`; exact Godot/STS2 objects
-never leave the Host.
-
-Visible interaction content is projected before action materialization. Only
-those facts create Referents. A Host-local candidate cannot synthesize a public
-Referent; if any public operand is missing from current facts, the finite
-projection is `truncated`, the Snapshot remains readable, and execution
-authority is empty.
 
 ## Ownership
 
-- **Game/Host:** rules, RNG, effects, native legality and object lifetime.
-- **LiveHost:** visible fact extraction and current owner/readiness.
-- **NativeUi:** entity registry, exact private binding, execution revalidation,
-  native adapters and main-thread input.
-- **PlayerEnvironment:** public truth, reads, projection, stale/idempotent
-  submission, receipts and successor.
-- **Identity/Control:** exact provenance, one writer and attribution only.
-- **Transport:** serialization and delivery only.
-- **Consumer/A:** model projection, read policy, strategy, progress
-  interpretation and recovery; never game legality.
-- **D/P:** optional non-authorizing evaluation and deployment/rollback; neither
-  changes C truth or actions.
+`STS2-Connector` owns fair-player observation, one current input owner, native
+operands, finite complete BoundActions, execute-time revalidation, native input
+delivery, controller coordination, idempotency, strict wire schemas and
+strategy-free client utilities.
+
+`Re-SpireAgent` owns the consumer projection: normalized state, prompt input,
+provider integration, selection of one advertised action, progress/cycle
+supervision and run recording. It cannot create legality, infer hidden facts,
+replace native operands or retry unknown delivery.
+
+An ambiguous submit transport response is resolved only by reading the
+Connector's idempotent ledger for the same request ID. Re never re-submits that
+request or creates a replacement action attempt.
+
+Evaluation reads recorded runs. It never grants live authority. Product tooling
+may resolve compatible releases, but compatibility metadata cannot replace the
+loaded runtime's state and controller checks.
 
 ## Consumer Boundary
 
-Re uses compact Snapshot plus optional Reads and finite BoundActions. A future
-RL adapter may eagerly aggregate advertised Reads into one snapshot-coherent
-feature tensor and action mask. Search/Replay may build different deterministic
-views. Every view resolves to the same Host-local binding and Receipt path;
-none redefines C ontology or authority.
+Re's connector-specific production modules are deliberately small:
 
-## Information Boundary
+1. `integrations/sts2Connector/playerEnvironmentAdapter.ts` negotiates the
+   package contract, imports current BoundActions and submits one handle.
+2. `integrations/sts2Connector/rawState.ts` wraps untrusted transport JSON for
+   the normalizer.
+3. `integrations/sts2Connector/playerCombatPresentation.ts` validates the
+   combat context needed by Re's domain projection.
 
-Stable current facts belong in Snapshot. Stable player-reachable detail may be
-advertised as a state-bound Read. Missing player-visible information is marked
-partial/unsupported; it is not moved to A or D. Hidden RNG, true draw order,
-future events/rewards and inaccessible native state are omitted by policy.
+Wire validators, REST, controller sessions, visible-state schemas and coherent
+Read aggregation must not be copied into this repository.
 
-See [Player Environment Information Closure](PLAYER_ENVIRONMENT_INFORMATION_CLOSURE.md).
-
-## Non-Goals
-
-C is not an LLM API, reward API, strategy engine, business transaction model,
-coordinate/reflection service, privileged simulator or second game engine.
-Headless lifecycle, Training, Search, learning and transient PlayerCue are
-separate work after the C1 stable/inspectable contract is sealed.
+See [ADR-0010](decisions/ADR-0010-standalone-connector-dependency.md).

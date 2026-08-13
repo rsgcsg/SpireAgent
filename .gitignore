@@ -21,20 +21,3 @@
 !/Re-SpireAgent/.env.example
 /Re-SpireAgent/data/runs/
 /Re-SpireAgent/data/tmp/
-
-# STS2MCP build, local configuration, and Python artifacts
-/STS2MCP/bin/
-/STS2MCP/obj/
-/STS2MCP/out/
-/STS2MCP/TestResults/
-/STS2MCP/mcp/.venv/
-/STS2MCP/mcp/__pycache__/
-/STS2MCP/mcp/*.py[cod]
-/STS2MCP/.env
-/STS2MCP/.env.local
-/STS2MCP/.mcp.json
-/STS2MCP/.local/
-/STS2MCP/STS2_MCP.qualifications.json
-/STS2MCP/*.qualification-package.json
-/STS2MCP/*.qualification-evidence.json
-/STS2MCP/*-capabilities.json

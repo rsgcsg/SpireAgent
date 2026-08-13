@@ -1,6 +1,6 @@
 import { loadEnvironment, readDataDirectory, readRuntimeConfig } from "../config/env.js";
 import { buildPlayerEnvironmentAllowedActions } from "../domain/actions/buildPlayerEnvironmentAllowedActions.js";
-import { Sts2PlayerEnvironmentAdapter } from "../integrations/sts2mcp/playerEnvironmentAdapter.js";
+import { Sts2PlayerEnvironmentAdapter } from "../integrations/sts2Connector/playerEnvironmentAdapter.js";
 import { DeepSeekDecisionProvider } from "../llm/deepseekProvider.js";
 import { normalizePlayerEnvironmentCurrentState } from "../normalization/normalizePlayerEnvironmentCurrentState.js";
 import { createBaselineReport } from "../evaluation/baselineReport.js";

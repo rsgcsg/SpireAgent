@@ -7,7 +7,7 @@ import type {
   PlayerPersistentVisibleState,
   PlayerVisibleCard,
   PlayerVisibleRelic
-} from "../integrations/sts2mcp/playerVisibleStateProtocol.js";
+} from "@rsgcsg/sts2-connector-client";
 
 export function projectPlayerVisibleCard(card: PlayerVisibleCard): CardSnapshot {
   return {
