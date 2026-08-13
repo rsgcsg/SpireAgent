@@ -120,7 +120,7 @@ internal sealed class MainMenuSurfaceReader : ILiveSurfaceReader
             new MenuLiveContext("menu", "root_navigation"),
             surface,
             new StateCompleteness(
-                "contract_complete_for_visible_root_choices_and_standard_run_entry",
+                "contract_complete_for_supported_single_player_entry_and_visible_root_controls",
                 "derived_from_exact_visible_root_controls_and_saved_run_binding",
                 new[]
                 {
@@ -129,7 +129,7 @@ internal sealed class MainMenuSurfaceReader : ILiveSurfaceReader
                     "NModalContainer.OpenModal exclusion",
                     "exact ReadSaveResult<SerializableRun>"
                 },
-                new[] { "profile_and_patch_notes_hover_detail_not_exposed" }),
+                Array.Empty<string>()),
             game,
             new[] { "unsupported_root_choices_are_visible_facts_only" });
     }

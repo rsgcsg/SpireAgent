@@ -1,6 +1,6 @@
 # Current Status: Player Environment C
 
-Baseline date: 2026-08-12
+Baseline date: 2026-08-13
 
 Branch: `human_equivalent_connector`
 
@@ -8,32 +8,27 @@ Current source protocol: `1.0-rc.1`
 
 ## Verdict
 
-The source tree is a **C1 source freeze candidate in migration**, not frozen.
-Player Environment is the only current connector contract. Bridge v2, Connector
-V3 and the transitional `/api/he` route are retired and return `410`; Re has no
-fallback decoder or executor.
+Player Environment is the only current connector contract. Bridge v2,
+Connector V3 and the transitional HE route are absent from dispatch; Re has no
+fallback decoder or executor. The source is a C1 semantic freeze candidate
+being extracted to the standalone `rsgcsg/STS2-Connector` repository. It is
+not yet frozen.
 
 ## Current Ownership
 
 - `LiveHost` extracts fair-player facts and resolves the one current UI owner.
 - `NativeUi` keeps native objects private, derives exact bindings from current
   UI mechanics, revalidates them at execution and invokes STS2 callbacks.
-- `EnvironmentIdentityRuntime` records runtime, artifact, game and Modset
-  identity; it does not grant source/operation permissions.
-- mutation control owns the single-writer lease and attribution.
+- identity records runtime, artifact, game and Modset; it grants no action.
+- mutation control owns the single-writer lease and request idempotency.
 - `PlayerEnvironment` owns Snapshot, Read, finite BoundAction projection,
-  stale rejection, idempotency, delivery Receipt and successor capture.
+  stale rejection, delivery Receipt and successor capture.
 - REST and optional MCP are transport only.
 - Re imports opaque `bound_action_id` values and never reconstructs legality.
 
-The compiled permission/qualification/operation-manifest graph has been
-deleted. Random deck transform, deck selection, combat-pile selection,
-generated card choice and rest are source-free Native UI mechanics.
-
-Player-visible Surface facts now use an explicit per-family projection. Native
-screen, room, hand, slot and annotation-input bindings remain Host-private.
-Referents come only from visible facts; an unobserved native operand truncates
-the finite projection and publishes neither capability nor action authority.
+The permission/qualification/operation-manifest graph, SourceContract gates,
+legacy route dispatch, settings acceleration patch and Harmony dependency are
+absent from current production source.
 
 ## Information Closure
 
@@ -41,52 +36,51 @@ C1 covers stable and inspectable player information:
 
 - persistent run/player summary and complete current structured interaction;
 - visible referents plus directly observed enabled/selected state;
-- state-bound `run_deck`, `combat_piles`, `shop_catalog` and `surface_card`
-  reads;
-- optional, non-authorizing `native_pages.v1` open/read/return evidence for run
-  deck, combat piles and shop catalog.
+- player-visible card, relic, potion, event-option, power, orb and intent
+  descriptions, keywords and previews;
+- state-bound `run_deck`, `combat_piles`, `shop_catalog` and
+  `surface_card` reads;
+- optional, non-authorizing `native_pages.v1` open/read/return evidence.
 
-Current keyboard/controller focus, active hover traversal, arbitrary scroll
-traversal and exhaustive tooltip subtypes remain explicit partial/unsupported
-scope. Transient VFX/SFX, floating
-text and highlight history are deferred to C1.x, not silently claimed by C1.
+Unsupported product controls such as Profile and Patch Notes remain visible
+facts but are outside the ordinary single-player action envelope. Current
+keyboard/controller focus, arbitrary scroll traversal and unreviewed tooltip
+subtypes remain explicit partial/unsupported scope. Transient VFX/SFX, floating
+text and highlight history are deferred to C1.x.
 
-## Evidence Boundary
+## Live Evidence Boundary
 
-The latest predecessor artifact loaded in the game is protocol
-`1.0-preview.6`, SHA
-`3dc9febfc857e483f7e70da331a1ebda50233e294b89ffc8ba8643cca13288df`, MVID
-`63ae2447-c4b1-4c70-8550-5846dc955f2b`, runtime
-`943c1e4ecdad400aaa6fd3bb2654936f`. Runs
-`run-20260812011821-glpzol` and `run-20260812034353-ye6qd7` reached correct
-complete-run boundaries on that exact artifact. They are historical evidence,
-not evidence for rc1.
+The exact loaded predecessor for this source-seal pass is:
 
-The same predecessor runtime also supplied actionable negative evidence:
+```text
+source          8b633cffc0e40d77ad5d44bb7d2ca04490cf2c44
+protocol        1.0-rc.1
+artifact SHA    74c1f53c45341aae01a5a2421e29ec0bfa832f5e5ced30fa615949322644390f
+MVID            0a7e5b7f-a07b-441b-975e-640f526e1de5
+runtime         e11215f55bc340ef9a57b3b63b39ffc0
+game            v0.110.1 / db5d3552
+Modset          806ab38e6334e9866ded3474787fc63ba2c4d2be25dd4b0f3ea5e3670c7feb8b
+```
 
-- `run-20260812013637-jijudq` stopped after 526 decisions because
-  `FIELD_OF_MAN_SIZED_HOLES` reached an exact visible selector that the old
-  source-contract gate rejected. Current source replaces that gate with the
-  source-free native simple/deck selector path.
-- `run-20260812031218-khf4vp` stopped after 611 decisions when `THE_ARCHITECT`
-  remained in a legitimate empty event settling state longer than the old
-  eight-observation Re guard. Current Re uses a bounded 40-observation settling
-  guard.
-- `run-20260812031135-jc8iz5` stopped on provider `fetch failed`; it is an A/
-  provider failure, not C evidence.
+`run-20260812150244-h6fbo1` reached `completed_run_boundary`
+after 289 decisions: 246 executed-and-settled, nine delivered transitions that
+remained settling beyond Re's three-second checkpoint window, 20 safe stale
+refusals and 14 non-actionable polls. Every stale refusal changed snapshot
+semantics and the selected binding was no longer published. There were no
+unknown deliveries, malformed provider responses or C unsupported stops.
+Provenance is `unrecorded`, so this is diagnostic Live coverage rather than
+durable qualification.
 
-All three records declare provenance `unrecorded`; they are diagnostic Live
-coverage, not qualification or authority for rc1.
-
-The current rc1 source has automated evidence while this migration is being
-closed: Host tests pass `82/82`; Re tests pass `67/67`; strict protocol,
-CLI, identity, documentation and boundary checks pass. It must still be built
-as the final committed revision, installed, cold-loaded and exercised as one exact
-artifact before any C1 freeze verdict. Source, test, build, install, loaded,
-Live journey and a C1 freeze verdict remain separate claims.
+That run exposed six completed-event handoff frames and one treasure screen
+handoff frame incorrectly labelled `visible_unsupported`. Current source now
+classifies those exact no-owner transitions as `settling`, removes the
+unrelated Instant Mode/Harmony patch and removes retired route dispatch. Host
+tests pass `86/86`. These changes are source/test evidence only and will
+receive a new source and artifact identity after extraction.
 
 ## Deployment Rule
 
-Every checkout runs `npm run doctor`, builds and deploys while STS2 is closed,
-then cold-starts the game and runs `npm run verify:loaded`. Matching source,
-Release output and installed bytes do not prove the process loaded that DLL.
+Build and deploy while STS2 is closed, then cold-start and run
+`npm run verify:loaded`. Matching source, Release output and installed bytes
+does not prove that a process loaded that DLL. Pre-split Live evidence never
+qualifies the standalone artifact.

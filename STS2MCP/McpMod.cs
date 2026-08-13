@@ -9,7 +9,6 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Multiplayer.Game;
 using STS2_MCP.Authority;
@@ -121,9 +120,6 @@ public static partial class McpMod
     {
         try
         {
-            // Optional settings UI patches should not block the Player Environment transport.
-            TryApplyHarmonyPatches();
-
             // Connect to main thread process frame for action execution
             var tree = (SceneTree)Engine.GetMainLoop();
             tree.Connect(SceneTree.SignalName.ProcessFrame, Callable.From(ProcessMainThreadQueue));
@@ -148,24 +144,10 @@ public static partial class McpMod
             GD.Print($"[STS2 MCP] v{Version} server started on http://localhost:{port}/");
             GD.Print(
                 $"[STS2 MCP] Player Environment native-page evidence: {(config.NativePageEvidenceEnabled ? "enabled" : "disabled")}");
-            GD.Print("[STS2 MCP] Legacy v1 HTTP namespace: retired");
         }
         catch (Exception ex)
         {
             GD.PrintErr($"[STS2 MCP] Failed to start: {ex}");
-        }
-    }
-
-    private static void TryApplyHarmonyPatches()
-    {
-        try
-        {
-            new Harmony("com.sts2mcp").PatchAll();
-        }
-        catch (Exception ex)
-        {
-            GD.Print(
-                $"[STS2 MCP] Optional Harmony settings UI injection skipped: {ex.GetType().Name}: {ex.Message}");
         }
     }
 
@@ -247,29 +229,14 @@ public static partial class McpMod
 
             string path = request.Url?.AbsolutePath ?? "/";
 
-            if (LegacyV1RoutePolicy.IsRetiredPath(path))
-            {
-                SendError(
-                    response,
-                    410,
-                    "Legacy v1 is retired. Use the Player Environment contract at /api/player-environment.");
-                return;
-            }
-
-            if (path.StartsWith("/api/v2", StringComparison.Ordinal)
-                || path.StartsWith("/api/v3", StringComparison.Ordinal)
-                || path.StartsWith("/api/he", StringComparison.Ordinal))
-            {
-                SendError(
-                    response,
-                    410,
-                    "Bridge v2, Connector v3 and the transitional HE route are retired in this artifact. Use /api/player-environment; rollback requires a prior artifact.");
-                return;
-            }
-
             if (path == "/")
             {
-                SendJson(response, new { message = $"Hello from STS2 MCP v{Version}", status = "ok" });
+                SendJson(response, new
+                {
+                    message = $"STS2 Player Environment Host v{Version}",
+                    status = "ok",
+                    contract = "/api/player-environment"
+                });
             }
             else if (path == "/api/player-environment/capabilities")
             {

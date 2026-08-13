@@ -93,6 +93,5 @@
     "enters_action_ledger": false,
     "snapshot_bound": true,
     "runtime_bound": true
-  }],
-  "retired_current_routes": ["/api/v1", "/api/v2", "/api/v3", "/api/he"]
+  }]
 }

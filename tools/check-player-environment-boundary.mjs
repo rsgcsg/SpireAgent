@@ -151,8 +151,17 @@ forbidText(submission, "CompletionProbe", "business completion wait");
 const transport = read("STS2MCP/McpMod.cs")
   + read("STS2MCP/PlayerEnvironment/Transport/McpMod.PlayerEnvironment.cs");
 requireText("STS2MCP/McpMod.cs", "/api/player-environment/snapshot", "snapshot route");
-requireText("STS2MCP/McpMod.cs", 'path.StartsWith("/api/he"', "retired HE route returns explicit error");
-if (transport.includes("/api/v3/human-equivalence")) failures.push("transport retains V3-owned HE route");
+for (const retiredRoute of ["/api/v1", "/api/v2", "/api/v3", "/api/he"]) {
+  if (transport.includes(retiredRoute)) failures.push(`transport retains retired route ${retiredRoute}`);
+}
+for (const retiredFile of [
+  "STS2MCP/LegacyV1RoutePolicy.cs",
+  "STS2MCP/McpMod.SettingsUI.cs"
+]) {
+  if (existsSync(absolute(retiredFile))) failures.push(`${retiredFile}: retired compatibility or acceleration ownership remains`);
+}
+const project = read("STS2MCP/STS2_MCP.csproj");
+if (project.includes("0Harmony")) failures.push("STS2MCP/STS2_MCP.csproj: C retains an unnecessary Harmony dependency");
 
 const python = "STS2MCP/mcp/server.py";
 requireText(python, "observe_sts2_player_environment", "current MCP observe tool");

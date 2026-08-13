@@ -69,22 +69,22 @@ async def _control_request(path: str, body: dict) -> dict:
     try:
         payload = response.json()
     except ValueError as error:
-        raise RuntimeError(f"Gateway control endpoint returned invalid JSON: {error}") from error
+        raise RuntimeError(f"Player Environment control endpoint returned invalid JSON: {error}") from error
     if not response.is_success:
         status = payload.get("status") if isinstance(payload, dict) else None
         detail = payload.get("detail") if isinstance(payload, dict) else None
         raise RuntimeError(
-            f"Gateway control request {path} rejected: "
+            f"Player Environment control request {path} rejected: "
             f"{status or response.status_code} {detail or ''}".strip()
         )
     if not isinstance(payload, dict):
-        raise RuntimeError("Gateway control response must be a JSON object")
+        raise RuntimeError("Player Environment control response must be a JSON object")
     # The control DTO protects single-writer delivery; it does not authorize
     # game actions or expose business semantics.
     if payload.get("protocol_version") != _CONTROL_PROTOCOL:
-        raise RuntimeError("Gateway control protocol does not match this adapter")
+        raise RuntimeError("Player Environment control protocol does not match this adapter")
     if payload.get("schema") != _CONTROL_SCHEMA:
-        raise RuntimeError("Gateway control schema does not match this adapter")
+        raise RuntimeError("Player Environment control schema does not match this adapter")
     return payload
 
 
@@ -144,7 +144,7 @@ async def _ensure_controller() -> dict:
 
 def _handle_error(error: Exception) -> str:
     if isinstance(error, httpx.ConnectError):
-        return "Error: Cannot connect to the STS2 Gateway. Is the game running with the mod enabled?"
+        return "Error: Cannot connect to the STS2 Player Environment Host. Is the game running with the mod enabled?"
     if isinstance(error, httpx.HTTPStatusError):
         return f"Error: HTTP {error.response.status_code} - {error.response.text}"
     return f"Error: {error}"
@@ -224,8 +224,8 @@ async def get_sts2_action_receipt(request_id: str) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="STS2 Player Environment MCP adapter")
-    parser.add_argument("--port", type=int, default=15526, help="Gateway HTTP port")
-    parser.add_argument("--host", type=str, default="localhost", help="Gateway HTTP host")
+    parser.add_argument("--port", type=int, default=15526, help="Player Environment HTTP port")
+    parser.add_argument("--host", type=str, default="localhost", help="Player Environment HTTP host")
     parser.add_argument(
         "--no-trust-env",
         action="store_true",

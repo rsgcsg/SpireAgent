@@ -15,8 +15,7 @@ const reads = read("STS2MCP/PlayerEnvironment/Reads/ReadService.cs")
 const typescript = read("Re-SpireAgent/src/integrations/sts2mcp/playerEnvironmentProtocol.ts");
 const client = read("Re-SpireAgent/src/integrations/sts2mcp/playerEnvironmentClient.ts");
 const transport = read("STS2MCP/McpMod.cs")
-  + read("STS2MCP/PlayerEnvironment/Transport/McpMod.PlayerEnvironment.cs")
-  + read("STS2MCP/LegacyV1RoutePolicy.cs");
+  + read("STS2MCP/PlayerEnvironment/Transport/McpMod.PlayerEnvironment.cs");
 const python = read("STS2MCP/mcp/server.py");
 const failures = [];
 
@@ -70,7 +69,6 @@ for (const profile of contract.evidence_profiles) {
   requireIn(typescript, "creates_mutation_authority: z.literal(false)", "non-authorizing evidence profile");
 }
 
-for (const retired of contract.retired_current_routes) requireIn(transport, retired, `retired route ${retired}`);
 requireIn(python, '_environment_get("snapshot")', "Python snapshot route");
 
 if (failures.length > 0) {

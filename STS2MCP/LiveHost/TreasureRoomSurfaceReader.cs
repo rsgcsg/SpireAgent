@@ -55,10 +55,16 @@ internal sealed class TreasureRoomSurfaceReader : ILiveSurfaceReader
         {
         step = "screen_authority";
         NTreasureRoom? uiRoom = NRun.Instance?.TreasureRoom;
-        if (uiRoom == null
-            || !McpMod.IsLiveNode(uiRoom)
-            || !ActiveScreenContext.Instance.IsCurrent(uiRoom))
-            return BindingUnavailable(game, "The visible treasure room does not own the current screen context.");
+        if (uiRoom == null || !McpMod.IsLiveNode(uiRoom))
+            return null;
+        if (ClassifyScreenHandoff(
+                RunManager.Instance.IsInProgress,
+                currentRoomIsTreasure: true,
+                uiRoomIsLive: true,
+                ActiveScreenContext.Instance.IsCurrent(uiRoom)))
+        {
+            return ScreenHandoff(game, runState);
+        }
 
         step = "lifecycle_flags";
         if (!TryReadBool(ChestOpenedField, uiRoom, out bool chestOpened)
@@ -445,6 +451,67 @@ internal sealed class TreasureRoomSurfaceReader : ILiveSurfaceReader
             }
         };
     }
+
+    private static LiveObservation ScreenHandoff(GameBuildIdentity game, RunState runState)
+    {
+        var context = new TreasureLiveContext("treasure");
+        var surface = new NoActionSurface(
+            "no_action",
+            "settling",
+            "The treasure room node is still live while native screen ownership is handing off; no player input owner is current.");
+        var completeness = new StateCompleteness(
+            "complete_for_bounded_treasure_screen_handoff",
+            "none_no_input_owner",
+            new[]
+            {
+                "TreasureRoom exact current room",
+                "NTreasureRoom live node",
+                "ActiveScreenContext current-owner check"
+            },
+            Array.Empty<string>());
+        string signature = StableIdentityHash.Object(new
+        {
+            game.Version,
+            game.Commit,
+            context,
+            surface,
+            runState.CurrentActIndex,
+            runState.TotalFloor
+        });
+        return new LiveObservation(
+            signature,
+            "settling",
+            context,
+            surface,
+            completeness,
+            game,
+            Array.Empty<string>())
+        {
+            InputOwnership = new InputOwnership(
+                "none_fail_closed",
+                null,
+                "The treasure room exists but does not own the current native screen context; the Host polls without publishing actions."),
+            Diagnostics = new[]
+            {
+                HostDiagnostics.Create(
+                    "host.lifecycle.treasure_screen_handoff",
+                    "info",
+                    "runtime",
+                    "none",
+                    "settle")
+            }
+        };
+    }
+
+    internal static bool ClassifyScreenHandoff(
+        bool runInProgress,
+        bool currentRoomIsTreasure,
+        bool uiRoomIsLive,
+        bool ownsCurrentScreen) =>
+        runInProgress
+        && currentRoomIsTreasure
+        && uiRoomIsLive
+        && !ownsCurrentScreen;
 }
 
 internal static class TreasureVisibilityFacts
