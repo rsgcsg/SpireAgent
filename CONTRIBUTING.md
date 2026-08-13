@@ -23,12 +23,12 @@ vertical slice.
 
 - `Re-SpireAgent/`: provider calls, strict decode, projection, supervision and
   recording.
-- `STS2MCP/`: player-visible facts, current owner, command admission,
-  execute-time native validation, Commit, Outcome, REST and optional MCP.
+- `STS2MCP/`: player-visible facts, current owner, finite bound actions,
+  execute-time native validation, native input delivery, REST and optional MCP.
 - `tools/` and `docs/current/`: non-authorizing operator workflow and current
   cross-component truth.
 
-Do not move Gateway legality/completion into Re or grant additional authority
+Do not move Host legality or delivery truth into Re or grant additional authority
 through REST, MCP, fixtures, manifests or documentation.
 
 ## Validation
@@ -42,14 +42,14 @@ npm run check:connector-cli
 git diff --check
 ```
 
-Gateway changes also require the exact local STS2 assemblies:
+Player Environment Host changes also require the exact local STS2 assemblies:
 
 ```bash
 npm run connector -- test
 npm run connector -- build
 ```
 
-GitHub Actions cannot access proprietary game assemblies, so local Gateway test
+GitHub Actions cannot access proprietary game assemblies, so local Host test
 and build evidence must be reported honestly. Use `npm run deploy` for a safe
 local install and `npm run verify:loaded` only after a cold start.
 

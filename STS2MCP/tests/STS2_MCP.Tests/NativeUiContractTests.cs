@@ -5,12 +5,31 @@ using STS2_MCP.NativeUi;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models.Potions;
 
 namespace STS2_MCP.Tests;
 
 public sealed class NativeUiContractTests
 {
+    [Fact]
+    public void CurrentGameHoverTipKindsAreExhaustivelyProjected()
+    {
+        string[] implementations = typeof(IHoverTip).Assembly.GetTypes()
+            .Where(type => type != typeof(IHoverTip)
+                           && !type.IsAbstract
+                           && typeof(IHoverTip).IsAssignableFrom(type))
+            .Select(type => type.FullName!)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(new[]
+        {
+            typeof(CardHoverTip).FullName,
+            typeof(HoverTip).FullName
+        }, implementations);
+    }
+
     [Fact]
     public void BoundedTransportBodyDoesNotTrustContentLength()
     {

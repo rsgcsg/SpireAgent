@@ -49,7 +49,7 @@ internal static class EnvironmentIdentityRuntime
             executionIdentityComplete ? "identified" : "identity_incomplete",
             ActionExecutionAllowed: executionIdentityComplete,
             StateObservationAllowed: true,
-            InspectionAllowed: true,
+            ReadAllowed: true,
             executionIdentityComplete
                 ? "Exact runtime, game, artifact and Modset identity recorded; current native UI mechanics determine actionability."
                 : "Fair observation remains available, but mutation is disabled until exact game and loaded-artifact identity are complete.");

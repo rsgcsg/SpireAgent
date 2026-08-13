@@ -61,7 +61,7 @@ internal static partial class PlayerEnvironmentService
                 null,
                 opportunity.VisibilityBasis,
                 draft.OrderingSemantics,
-                ReadContentSchema(draft.Kind),
+                PlayerEnvironmentContract.ReadContentSchema(draft.Kind),
                 JsonSerializer.SerializeToNode(draft.Content, draft.Content.GetType(), McpMod._jsonOptions) ?? new JsonObject(),
                 ToCompleteness(draft.Completeness, Array.Empty<string>()),
                 observation.Session,
@@ -122,57 +122,6 @@ internal static partial class PlayerEnvironmentService
                 observation.InformationPolicy),
             null,
             null);
-    }
-
-    private static IReadOnlyList<PlayerReadCatalogEntry> BuildInspectionCatalog(
-        LiveObservation draft,
-        bool runStateAvailable,
-        bool shopCatalogAvailable)
-    {
-        var entries = new List<PlayerReadCatalogEntry>();
-        if (runStateAvailable)
-        {
-            entries.Add(new PlayerReadCatalogEntry(
-                PlayerVisibleReadBuilder.RunDeckKind,
-                "active_run",
-                "player_visible",
-                "player_openable_run_deck_view",
-                StateBound: true,
-                CreatesActionAuthority: false,
-                "unordered_multiset",
-                "medium",
-                new[] { "deck_planning" },
-                Array.Empty<string>()));
-        }
-        if (draft.Context.Kind == "combat")
-        {
-            entries.Add(new PlayerReadCatalogEntry(
-                PlayerVisibleReadBuilder.CombatPilesKind,
-                "current_combat",
-                "player_visible",
-                "player_openable_draw_discard_exhaust_pile_views",
-                StateBound: true,
-                CreatesActionAuthority: false,
-                "unordered_multiset",
-                "medium",
-                new[] { "combat_planning" },
-                new[] { "draw_pile_true_order" }));
-        }
-        if (draft.Context.Kind == "shop" && shopCatalogAvailable)
-        {
-            entries.Add(new PlayerReadCatalogEntry(
-                PlayerVisibleReadBuilder.ShopCatalogKind,
-                "current_shop",
-                "player_visible",
-                "player_openable_current_merchant_inventory",
-                StateBound: true,
-                CreatesActionAuthority: false,
-                "fixed_ui_slots",
-                "low",
-                new[] { "shop_planning" },
-                Array.Empty<string>()));
-        }
-        return entries;
     }
 
     private static IReadOnlyList<PlayerEnvironmentLinkedDetailCatalogEntry>

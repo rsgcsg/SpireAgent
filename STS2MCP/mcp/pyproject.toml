@@ -1,7 +1,7 @@
 [project]
-name = "sts2-mcp"
-version = "1.0.0"
-description = "Thin MCP adapter for the STS2 Human-Equivalent Connector"
+name = "sts2-connector-mcp"
+version = "1.0.0rc1"
+description = "Thin MCP transport for the STS2 Player Environment"
 requires-python = ">=3.11"
 dependencies = [
     "mcp>=1.7.1",
@@ -9,4 +9,4 @@ dependencies = [
 ]
 
 [project.scripts]
-sts2-mcp = "server:main"
+sts2-connector-mcp = "server:main"

@@ -17,7 +17,7 @@ public sealed class PlayerEnvironmentContractTests
             Status: "unqualified_modset",
             ActionExecutionAllowed: true,
             StateObservationAllowed: true,
-            InspectionAllowed: false,
+            ReadAllowed: false,
             Detail: "Current visible UI remains the action authority.");
         var game = new GameBuildIdentity(
             "v0.110.1",
@@ -114,7 +114,7 @@ public sealed class PlayerEnvironmentContractTests
     [Fact]
     public void BreakingWireCleanupUsesRevisionedSchemas()
     {
-        Assert.Equal("1.0-rc.1", PlayerEnvironmentContract.ProtocolVersion);
+        Assert.Equal("1.0-rc.2", PlayerEnvironmentContract.ProtocolVersion);
         Assert.Equal("sts2.player-environment/snapshot-1", PlayerEnvironmentContract.SnapshotSchema);
         Assert.Equal("sts2.player-environment/action-1", PlayerEnvironmentContract.ActionSchema);
         Assert.Equal("sts2.player-environment/receipt-1", PlayerEnvironmentContract.ReceiptSchema);

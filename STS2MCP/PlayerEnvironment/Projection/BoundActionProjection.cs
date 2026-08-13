@@ -285,9 +285,6 @@ internal static partial class PlayerEnvironmentService
     private static string ReferentPropertiesSchema(string role) =>
         $"sts2.player-environment/referent/{role}-1";
 
-    internal static string ReadContentSchema(string kind) =>
-        $"sts2.player-environment/read/{kind}-1";
-
     internal static string GenericAction(string command, string operation) => command switch
     {
         "play_card" => "play",

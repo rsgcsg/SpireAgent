@@ -34,8 +34,8 @@ assert.match(environmentIdentity.revision, /^[0-9a-f]{40}$/u);
 assert.match(environmentIdentity.sourceDigest, /^[0-9a-f]{64}$/u);
 assert.ok(environmentIdentity.fileCount > 0);
 assert.deepEqual(sourceProtocols(), {
-  csharp: "1.0-rc.1",
-  re: "1.0-rc.1"
+  csharp: "1.0-rc.2",
+  re: "1.0-rc.2"
 });
 
 assert.equal(
@@ -164,16 +164,16 @@ assert.equal(isTransientAgentSnapshot({
 }), false);
 
 const playerEnvironmentReady = evaluateEnvironmentReadiness({
-  protocol_version: "1.0-rc.1",
+  protocol_version: "1.0-rc.2",
   execution_available: true,
   game: {
     compatibility: { observation_allowed: true },
     modset: { status: "additional_mods_loaded" }
   }
-}, "1.0-rc.1");
+}, "1.0-rc.2");
 assert.equal(playerEnvironmentReady.environment_ready, true);
 assert.equal(playerEnvironmentReady.mutation_ready, true);
-const playerEnvironmentOffline = evaluateEnvironmentReadiness(null, "1.0-rc.1");
+const playerEnvironmentOffline = evaluateEnvironmentReadiness(null, "1.0-rc.2");
 assert.deepEqual(playerEnvironmentOffline.blockers, [
   "host_unreachable",
   "player_snapshot_disabled",
@@ -181,7 +181,7 @@ assert.deepEqual(playerEnvironmentOffline.blockers, [
 ]);
 assert.deepEqual(agentRunPreflightErrors({
   ...playerEnvironmentReady,
-  loaded_protocol: "1.0-rc.1",
+  loaded_protocol: "1.0-rc.2",
   errors: [],
   mod_installation: { duplicate_installation_blocker: false }
 }, { requireMutation: true }), []);

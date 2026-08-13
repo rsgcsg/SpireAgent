@@ -22,7 +22,7 @@ public sealed record CompatibilityAssessment(
     string Status,
     bool ActionExecutionAllowed,
     bool StateObservationAllowed,
-    bool InspectionAllowed,
+    bool ReadAllowed,
     string Detail);
 
 public sealed record GameBuildIdentity(
@@ -81,7 +81,7 @@ public sealed record PlayerVisibilityState(
     string ProfileId,
     string CoreStatus,
     string PlayerVisibleClosureStatus,
-    IReadOnlyList<string> AvailableInspections,
+    IReadOnlyList<string> AvailableReads,
     IReadOnlyList<string> LinkedDetailKinds,
     IReadOnlyList<string> HiddenByPolicy,
     IReadOnlyList<string> Missing,
@@ -124,27 +124,27 @@ public sealed class PlayerReadContentJsonConverter : JsonConverter<IPlayerReadCo
         JsonSerializer.Serialize(writer, value, value.GetType(), options);
 }
 
-public sealed record RunDeckInspectionContent(
+public sealed record RunDeckReadContent(
     string Kind,
     int CardCount,
     IReadOnlyList<VisibleCard> Cards) : IPlayerReadContent;
 
-public sealed record CombatPileInspectionZone(
+public sealed record CombatPileReadZone(
     string Zone,
     int CardCount,
     string OrderingSemantics,
     IReadOnlyList<VisibleCard> Cards);
 
-public sealed record CombatPilesInspectionContent(
+public sealed record CombatPilesReadContent(
     string Kind,
-    IReadOnlyList<CombatPileInspectionZone> Zones) : IPlayerReadContent;
+    IReadOnlyList<CombatPileReadZone> Zones) : IPlayerReadContent;
 
 /// <summary>
 /// Read-only projection of the current merchant catalog. The entries describe
 /// facts a player can inspect by opening the merchant UI; they do not publish
 /// purchase authority when the inventory is closed.
 /// </summary>
-public sealed record ShopCatalogInspectionContent(
+public sealed record ShopCatalogReadContent(
     string Kind,
     string AccessState,
     IReadOnlyList<VisibleShopCardOffer> Cards,
@@ -309,7 +309,7 @@ public sealed record PersistentStateCompleteness(
 
 /// <summary>
 /// Persistent facts rendered by the normal single-player run HUD. This is
-/// read-only state, not a Surface, Inspection, or source of action authority.
+/// read-only state, not an Interaction or source of action authority.
 /// </summary>
 public sealed record PersistentVisibleState(
     string Scope,

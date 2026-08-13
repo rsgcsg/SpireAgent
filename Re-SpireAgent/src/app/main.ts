@@ -1,4 +1,4 @@
-import { loadEnvironment, readRuntimeConfig } from "../config/env.js";
+import { loadEnvironment, readDataDirectory, readRuntimeConfig } from "../config/env.js";
 import { buildPlayerEnvironmentAllowedActions } from "../domain/actions/buildPlayerEnvironmentAllowedActions.js";
 import { Sts2PlayerEnvironmentAdapter } from "../integrations/sts2mcp/playerEnvironmentAdapter.js";
 import { DeepSeekDecisionProvider } from "../llm/deepseekProvider.js";
@@ -21,15 +21,15 @@ async function main(): Promise<void> {
   }
 
   loadEnvironment();
-  const config = readRuntimeConfig();
+  const dataDir = readDataDirectory();
 
   if (invocation.command === "replay") {
-    await replay(config.runtime.dataDir, invocation.runId, invocation.decisionId);
+    await replay(dataDir, invocation.runId, invocation.decisionId);
     return;
   }
 
   if (invocation.command === "prompt-audit") {
-    const result = await auditPromptArtifacts(config.runtime.dataDir, {
+    const result = await auditPromptArtifacts(dataDir, {
       ...(invocation.runId ? { runId: invocation.runId } : {}),
       ...(invocation.limitRuns ? { limitRuns: invocation.limitRuns } : {})
     });
@@ -38,10 +38,12 @@ async function main(): Promise<void> {
   }
 
   if (invocation.command === "baseline-report") {
-    const result = await createBaselineReport(config.runtime.dataDir, invocation.runId);
+    const result = await createBaselineReport(dataDir, invocation.runId);
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     return;
   }
+
+  const config = readRuntimeConfig();
 
   if (invocation.command === "prompt-shadow-compare") {
     const provider = new DeepSeekDecisionProvider(config.deepseek);

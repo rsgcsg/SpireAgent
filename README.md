@@ -7,7 +7,7 @@ one fair-player Player Environment contract.
 - [`Re-SpireAgent/`](Re-SpireAgent/) is the current LLM consumer.
 
 Player Environment is the only production connector. Source protocol is
-`1.0-rc.1`. Bridge v2 and Connector V3 are retired implementation history,
+`1.0-rc.2`. Bridge v2 and Connector V3 are retired implementation history,
 not fallback paths.
 
 > Source, tests, build, install, load, Live exercise and a freeze verdict are

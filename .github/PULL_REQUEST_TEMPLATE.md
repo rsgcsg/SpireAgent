@@ -5,15 +5,15 @@
 - Problem and evidence:
 - User-visible behavior change:
 
-## Connector Contract
+## Player Environment Contract
 
-For Connector behavior changes, complete each applicable item:
+For Player Environment behavior changes, complete each applicable item:
 
-- Active owner/source:
+- Current input owner:
 - Exact operands/entities:
-- Publication and execute-time validation:
-- Native Commit:
-- Outcome/receipt:
+- BoundAction publication and execute-time validation:
+- Native input delivery path:
+- Receipt/successor:
 - Unknown/stale behavior:
 - Authority or protocol/schema impact:
 - Re consumer impact:
@@ -25,7 +25,7 @@ For Connector behavior changes, complete each applicable item:
 - [ ] `npm run check:docs`
 - [ ] `npm run check:connector-cli`
 - [ ] `git diff --check`
-- [ ] Exact-game Gateway tests/build, or marked not run
+- [ ] Exact-game Host tests/build, or marked not run
 
 Commands and results:
 

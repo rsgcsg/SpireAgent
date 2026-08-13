@@ -24,9 +24,15 @@ Implemented:
 - default-off native-page evidence for run deck, combat draw/discard/exhaust
   piles and shop catalog.
 
-Partial/unsupported: current keyboard/controller focus, active hover traversal,
-arbitrary scrolling, exhaustive native tooltip subtype coverage and native
-pages outside the fixed profile.
+The exact `v0.110.1/db5d3552` assembly exposes only `HoverTip` and
+`CardHoverTip` as concrete `IHoverTip` implementations; both are typed and an
+exact-game test rejects subtype drift. Supported bounded lists/grids project
+their complete player-reachable logical collections without requiring scroll
+gestures.
+
+Partial/unsupported: current keyboard/controller focus, generic hover/scroll
+gestures, future unknown tooltip subtypes and native pages outside the fixed
+profile.
 See the repository [Player Environment Information Closure](../../../docs/current/PLAYER_ENVIRONMENT_INFORMATION_CLOSURE.md).
 
 ## Evidence

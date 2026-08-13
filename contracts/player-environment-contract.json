@@ -1,7 +1,7 @@
 {
   "contract_id": "sts2.player-environment",
-  "protocol_version": "1.0-rc.1",
-  "status": "source_freeze_candidate",
+  "protocol_version": "1.0-rc.2",
+  "status": "semantic_seal_candidate",
   "routes": {
     "capabilities": "/api/player-environment/capabilities",
     "snapshot": "/api/player-environment/snapshot",
@@ -68,6 +68,9 @@
     "c1_scope": "stable_and_inspectable_player_information",
     "hot_snapshot": "current stable visible decision facts and finite current actions",
     "on_demand_reads": "stable player-reachable detail that need not occupy every hot snapshot",
+    "current_game_tooltip_subtypes": ["HoverTip", "CardHoverTip"],
+    "tooltip_subtype_drift": "exact_game_test_and_fail_closed",
+    "bounded_collection_policy": "complete_player_reachable_logical_collection_without_gesture_replay",
     "unsupported_must_be_explicit": true,
     "transient_player_cues": "deferred_to_c1_x"
   },

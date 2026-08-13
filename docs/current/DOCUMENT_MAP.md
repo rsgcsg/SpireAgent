@@ -27,6 +27,10 @@
 
 ## Evidence And History
 
+- [C1 semantic-seal closeout](audits/PLAYER_ENVIRONMENT_C1_SEMANTIC_SEAL_CLOSEOUT_2026-08-13.md)
+  records the final monorepo source cleanup and exact evidence boundary before
+  standalone extraction.
+
 - [2026-08-12 predecessor clean-baseline closeout](audits/HUMAN_ENVIRONMENT_CLEAN_BASELINE_CLOSEOUT_2026-08-12.md)
 - [2026-08-11 core/projection reaudit](audits/HUMAN_ENVIRONMENT_CORE_AND_PROJECTION_REAUDIT_2026-08-11.md)
 - [2026-08-11 predecessor temporary-freeze evidence](audits/HUMAN_ENVIRONMENT_TEMPORARY_FREEZE_CLOSEOUT_2026-08-11.md)

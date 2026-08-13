@@ -76,7 +76,7 @@ internal sealed class CombatTurnSurfaceReader : ILiveSurfaceReader
         };
         string readiness = context.IsPlayPhase ? "ready" : "settling";
         var completeness = new StateCompleteness(
-            "contract_complete_for_immediate_combat_turn_including_visible_companions; pile contents available through separate read-only inspection",
+            "contract_complete_for_immediate_combat_turn_including_visible_companions; pile contents available through a separate read-only Player Environment Read",
             context.IsPlayPhase
                 ? "derived_from_same_validator_as_execution"
                 : "empty_during_non_player_phase",
@@ -116,9 +116,9 @@ internal sealed class CombatTurnSurfaceReader : ILiveSurfaceReader
                     "none",
                     "unknown",
                     Path: "context.player.draw_discard_exhaust_piles",
-                    VisibilityClass: "normal_inspection",
+                    VisibilityClass: "normal_player_read",
                     RequiredForAction: false,
-                    SafeDetail: "Pile counts remain in immediate context; player-inspectable contents use the state-bound inspection contract.")
+                    SafeDetail: "Pile counts remain in immediate context; player-inspectable contents use the state-bound Read contract.")
             }
         };
     }

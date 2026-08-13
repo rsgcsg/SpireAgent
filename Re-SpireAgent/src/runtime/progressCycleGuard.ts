@@ -3,18 +3,10 @@ import type { NormalizedCurrentState } from "../domain/state/index.js";
 import { stateHash } from "./stateHash.js";
 
 const TRANSPORT_IDENTITY_KEYS = new Set([
-  "actionId",
   "boundActionId",
   "interactionId",
   "expectedSnapshotId",
-  "expectedStateId",
-  "expectedStateToken",
-  "inspectionId",
-  "observationId",
-  "observedStateId",
-  "snapshotId",
-  "stateId",
-  "choiceId"
+  "snapshotId"
 ]);
 
 export interface RepeatedSemanticTransition {

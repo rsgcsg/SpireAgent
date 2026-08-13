@@ -40,6 +40,13 @@ export function loadEnvironment(projectRoot = RE_PROJECT_ROOT): void {
   loadDotEnv({ path: resolve(projectRoot, ".env"), override: false, quiet: true });
 }
 
+export function readDataDirectory(
+  env: NodeJS.ProcessEnv = process.env,
+  projectRoot = RE_PROJECT_ROOT
+): string {
+  return resolve(projectRoot, env.AGENT_DATA_DIR ?? "data/runs");
+}
+
 export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectRoot = RE_PROJECT_ROOT): RuntimeConfig {
   if (env.STS2_MCP_PROTOCOL !== undefined || env.SPIREAGENT_HE_MODE !== undefined) {
     throw new Error(
@@ -89,7 +96,7 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectR
       thinkingMode
     },
     runtime: {
-      dataDir: resolve(projectRoot, env.AGENT_DATA_DIR ?? "data/runs"),
+      dataDir: readDataDirectory(env, projectRoot),
       ...(agentSourceRevision ? { agentSourceRevision } : {}),
       ...(agentSourceDigest ? { agentSourceDigest } : {}),
       ...(agentWorktreeStatus ? { agentWorktreeStatus } : {}),

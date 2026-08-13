@@ -3,7 +3,7 @@
 Host coverage is canonical in
 [Player Environment Coverage](../../STS2MCP/docs/player-environment/COVERAGE.md).
 
-Re strictly accepts protocol `1.0-rc.1`, preserves persistent facts,
+Re strictly accepts protocol `1.0-rc.2`, preserves persistent facts,
 current interaction, referents and read opportunities, and imports choices only
 from a complete current bound-action projection. It does not add native
 operands, infer legality/effects or retry unknown delivery.

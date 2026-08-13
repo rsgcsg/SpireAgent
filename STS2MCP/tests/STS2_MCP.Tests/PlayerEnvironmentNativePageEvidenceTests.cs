@@ -264,7 +264,7 @@ public sealed class PlayerEnvironmentNativePageEvidenceTests
             Array.Empty<string>(),
             "sts2.he/read.run-deck-1",
             JsonSerializer.SerializeToNode(
-                new RunDeckInspectionContent(
+                new RunDeckReadContent(
                     "run_deck",
                     0,
                     Array.Empty<VisibleCard>()))!,

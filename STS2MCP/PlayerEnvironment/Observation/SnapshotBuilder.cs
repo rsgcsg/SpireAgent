@@ -47,22 +47,21 @@ internal static partial class PlayerEnvironmentService
             : new PersistentVisibleStateBuildResult(false, null, null);
         draft = LiveObservationReader.ApplyMissingPersistentStatePolicy(draft, shared);
         bool shopCatalogAvailable = ShopSurfaceFacts.TryGetCurrent(out _, out _, out _);
-        PlayerVisibilityProjection inheritedVisibility = PlayerVisibilityCatalog.Build(
+        PlayerVisibilityProjection information = PlayerVisibilityCatalog.Build(
             draft,
             shared.State != null,
             shopCatalogAvailable);
-        IReadOnlyList<PlayerReadCatalogEntry> inspections =
-            BuildInspectionCatalog(draft, shared.State != null, shopCatalogAvailable);
+        IReadOnlyList<PlayerReadCatalogEntry> readCatalog = information.ReadCatalog;
         IReadOnlyList<PlayerEnvironmentLinkedDetailCatalogEntry> linkedDetails =
             BuildLinkedDetailCatalog(draft.Surface);
-        PlayerVisibilityState visibility = inheritedVisibility.Visibility with
+        PlayerVisibilityState visibility = information.Visibility with
         {
-            AvailableInspections = inspections.Select(entry => entry.Kind).ToArray(),
+            AvailableReads = readCatalog.Select(entry => entry.Kind).ToArray(),
             LinkedDetailKinds = linkedDetails.Select(entry => entry.Kind)
                 .Distinct(StringComparer.Ordinal)
                 .OrderBy(kind => kind, StringComparer.Ordinal)
                 .ToArray(),
-            Missing = inheritedVisibility.Visibility.Missing
+            Missing = information.Visibility.Missing
                 .Where(value => value != "linked_entity_detail_catalog_not_implemented")
                 .ToArray()
         };
@@ -91,12 +90,12 @@ internal static partial class PlayerEnvironmentService
             ProjectInteractionCapabilities(projected.Projection, referents);
         string stage = ReadFirstString(rawSurface, "stage") ?? draft.Readiness;
         string? prompt = ReadFirstString(rawSurface, "prompt", "body", "message");
-        IReadOnlyList<PlayerEnvironmentReadOpportunity> reads = inspections
+        IReadOnlyList<PlayerEnvironmentReadOpportunity> reads = readCatalog
             .Select(entry => new PlayerEnvironmentReadOpportunity(
                 $"read:{entry.Kind}",
                 entry.Kind,
                 null,
-                ReadContentSchema(entry.Kind),
+                PlayerEnvironmentContract.ReadContentSchema(entry.Kind),
                 entry.VisibilityBasis,
                 SnapshotBound: true,
                 entry.OrderingSemantics,
@@ -105,7 +104,7 @@ internal static partial class PlayerEnvironmentService
                 $"read:{entry.Kind}:{entry.EntityId}",
                 entry.Kind,
                 entry.EntityId,
-                ReadContentSchema(entry.Kind),
+                PlayerEnvironmentContract.ReadContentSchema(entry.Kind),
                 entry.VisibilityBasis,
                 SnapshotBound: true,
                 "single_entity",

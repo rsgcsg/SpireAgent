@@ -53,15 +53,15 @@ internal static class PlayerVisibleReadBuilder
                 CombatPilesKind => BuildCombatPiles(context, entities),
                 ShopCatalogKind => BuildShopCatalog(context, entities),
                 _ => PlayerReadBuildResult.Failure(
-                    "inspection_kind_not_implemented",
+                    "read_kind_not_implemented",
                     $"Player read kind '{kind}' is not implemented by this Host revision.")
             };
         }
         catch (Exception ex)
         {
             return PlayerReadBuildResult.Failure(
-                "inspection_binding_failed",
-                $"Inspection binding failed closed with {ex.GetType().Name}.");
+                "read_binding_failed",
+                $"Player read binding failed closed with {ex.GetType().Name}.");
         }
     }
 
@@ -72,15 +72,15 @@ internal static class PlayerVisibleReadBuilder
         if (player == null)
         {
             return PlayerReadBuildResult.Failure(
-                "inspection_not_available",
-                "Run deck inspection requires a current local singleplayer run.");
+                "read_not_available",
+                "Run deck reading requires a current local singleplayer run.");
         }
 
         VisibleCard[] cards = BuildCards(player.Deck.Cards, PileType.Deck, entities);
-        var content = new RunDeckInspectionContent(RunDeckKind, cards.Length, cards);
+        var content = new RunDeckReadContent(RunDeckKind, cards.Length, cards);
         return PlayerReadBuildResult.Success(new PlayerReadDraft(
             RunDeckKind,
-            "normal_inspection",
+            "normal_player_read",
             "unordered_multiset",
             content,
             new PlayerReadCompleteness(
@@ -102,8 +102,8 @@ internal static class PlayerVisibleReadBuilder
         if (context is not CombatLiveContext)
         {
             return PlayerReadBuildResult.Failure(
-                "inspection_scope_mismatch",
-                "Combat pile inspection is available only for the current combat context.");
+                "read_scope_mismatch",
+                "Combat pile reading is available only for the current combat context.");
         }
 
         RunState? runState = RunManager.Instance.DebugOnlyGetState();
@@ -112,20 +112,20 @@ internal static class PlayerVisibleReadBuilder
         if (combat == null)
         {
             return PlayerReadBuildResult.Failure(
-                "inspection_not_available",
-                "Combat pile inspection requires a current local player combat state.");
+                "read_not_available",
+                "Combat pile reading requires a current local player combat state.");
         }
 
-        CombatPileInspectionZone[] zones =
+        CombatPileReadZone[] zones =
         {
             BuildZone("draw", combat.DrawPile, PileType.Draw, entities),
             BuildZone("discard", combat.DiscardPile, PileType.Discard, entities),
             BuildZone("exhaust", combat.ExhaustPile, PileType.Exhaust, entities)
         };
-        var content = new CombatPilesInspectionContent(CombatPilesKind, zones);
+        var content = new CombatPilesReadContent(CombatPilesKind, zones);
         return PlayerReadBuildResult.Success(new PlayerReadDraft(
             CombatPilesKind,
-            "normal_inspection",
+            "normal_player_read",
             "unordered_multiset",
             content,
             new PlayerReadCompleteness(
@@ -154,8 +154,8 @@ internal static class PlayerVisibleReadBuilder
             || inventory == null)
         {
             return PlayerReadBuildResult.Failure(
-                "inspection_scope_mismatch",
-                "Shop catalog inspection is available only for the current merchant context.");
+                "read_scope_mismatch",
+                "Shop catalog reading is available only for the current merchant context.");
         }
 
         MerchantEntry[] entries = inventory.AllEntries.ToArray();
@@ -167,7 +167,7 @@ internal static class PlayerVisibleReadBuilder
             if (matches.Length != 1)
             {
                 return PlayerReadBuildResult.Failure(
-                    "inspection_binding_failed",
+                    "read_binding_failed",
                     $"Merchant entry {entry.GetType().Name} does not have exactly one UI slot.");
             }
             slotByEntry[entry] = matches[0];
@@ -211,7 +211,7 @@ internal static class PlayerVisibleReadBuilder
                 inputReady,
                 entities);
 
-        var content = new ShopCatalogInspectionContent(
+        var content = new ShopCatalogReadContent(
             ShopCatalogKind,
             inventoryOpen ? "inventory_open" : "inventory_closed_open_to_inspect",
             cards,
@@ -220,7 +220,7 @@ internal static class PlayerVisibleReadBuilder
             removal);
         return PlayerReadBuildResult.Success(new PlayerReadDraft(
             ShopCatalogKind,
-            "normal_inspection",
+            "normal_player_read",
             "fixed_ui_slots",
             content,
             new PlayerReadCompleteness(
@@ -236,14 +236,14 @@ internal static class PlayerVisibleReadBuilder
                 Array.Empty<string>())));
     }
 
-    private static CombatPileInspectionZone BuildZone(
+    private static CombatPileReadZone BuildZone(
         string zone,
         CardPile pile,
         PileType pileType,
         NativeEntityRegistry entities)
     {
         VisibleCard[] cards = BuildCards(pile.Cards, pileType, entities);
-        return new CombatPileInspectionZone(
+        return new CombatPileReadZone(
             zone,
             cards.Length,
             "unordered_multiset",

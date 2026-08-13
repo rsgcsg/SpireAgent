@@ -11,7 +11,7 @@ namespace STS2_MCP.PlayerEnvironment.Protocol;
 /// </summary>
 public static class PlayerEnvironmentContract
 {
-    public const string ProtocolVersion = "1.0-rc.1";
+    public const string ProtocolVersion = "1.0-rc.2";
     public const string EnvironmentId = "sts2_player_environment";
     public const string EnvironmentName = "STS2 Player Environment";
     public const string SnapshotSchema = "sts2.player-environment/snapshot-1";
@@ -22,6 +22,9 @@ public static class PlayerEnvironmentContract
     public const string NativePageEvidenceSchema =
         "sts2.player-environment/native-page-evidence-1";
     public const string NativePageEvidenceProfile = "native_pages.v1";
+
+    public static string ReadContentSchema(string kind) =>
+        $"sts2.player-environment/read/{kind}-1";
 }
 
 public sealed record PlayerEnvironmentHostIdentity(

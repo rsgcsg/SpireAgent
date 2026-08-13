@@ -152,9 +152,9 @@ internal sealed class PlayerEnvironmentNativePageSession
         if (!string.Equals(current.SnapshotId, expectedSnapshotId, StringComparison.Ordinal))
             return Failure("stale_state", "The expected state token is no longer current; obtain a fresh observation before opening a native page.");
 
-        string inspectionKind = InspectionKind(kind);
-        if (!current.ReadKinds.Contains(inspectionKind, StringComparer.Ordinal))
-            return Failure("native_page_evidence_not_available", "The matching semantic Inspection is not advertised for the exact current state.");
+        string readKind = ReadKind(kind);
+        if (!current.ReadKinds.Contains(readKind, StringComparer.Ordinal))
+            return Failure("native_page_evidence_not_available", "The matching Player Environment Read is not advertised for the exact current state.");
 
         string sessionId = CreateSessionId(
             expectedSnapshotId,
@@ -374,7 +374,7 @@ internal sealed class PlayerEnvironmentNativePageSession
         };
     }
 
-    internal static string InspectionKind(string kind) => kind switch
+    internal static string ReadKind(string kind) => kind switch
     {
         RunDeckKind => PlayerVisibleReadBuilder.RunDeckKind,
         CombatDrawPileKind or CombatDiscardPileKind or CombatExhaustPileKind =>
@@ -749,17 +749,17 @@ internal sealed class LiveNativePageEvidenceHost :
 
     private PlayerEnvironmentNativePageResult BuildPageRead(string kind)
     {
-        string inspectionKind =
-            PlayerEnvironmentNativePageSession.InspectionKind(kind);
+        string readKind =
+            PlayerEnvironmentNativePageSession.ReadKind(kind);
         PlayerReadBuildResult built = PlayerVisibleReadBuilder.Build(
-            inspectionKind,
+            readKind,
             _preContext!,
             _entities);
         if (built.Draft == null)
         {
             return PlayerEnvironmentNativePageResult.Failure(
                 built.ErrorCode ?? "native_page_semantic_read_failed",
-                built.Detail ?? "The matching semantic Inspection could not be rebuilt while the native page was open.");
+                built.Detail ?? "The matching Player Environment Read could not be rebuilt while the native page was open.");
         }
 
         string[] visibleEntities = _activePage switch
@@ -777,10 +777,10 @@ internal sealed class LiveNativePageEvidenceHost :
         return PlayerEnvironmentNativePageResult.Success(
             new PlayerEnvironmentNativePageRead(
                 _activePage!.GetType().FullName ?? _activePage.GetType().Name,
-                inspectionKind,
+                readKind,
                 visibleEntities.Length,
                 visibleEntities,
-                PlayerEnvironmentService.ReadContentSchema(inspectionKind),
+                PlayerEnvironmentContract.ReadContentSchema(readKind),
                 JsonSerializer.SerializeToNode(
                     draft.Content,
                     draft.Content.GetType(),
@@ -793,7 +793,7 @@ internal sealed class LiveNativePageEvidenceHost :
                     "exact native player control ForceClick",
                     "ActiveScreenContext exact owner verification",
                     "current native page visible holder/slot projection",
-                    "matching state-bound semantic Inspection rebuilt while page is open"
+                    "matching state-bound Player Environment Read rebuilt while page is open"
                 }));
     }
 

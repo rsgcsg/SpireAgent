@@ -634,8 +634,8 @@ wheels = [
 ]
 
 [[package]]
-name = "sts2-mcp"
-version = "1.0.0"
+name = "sts2-connector-mcp"
+version = "1.0.0rc1"
 source = { virtual = "." }
 dependencies = [
     { name = "httpx" },

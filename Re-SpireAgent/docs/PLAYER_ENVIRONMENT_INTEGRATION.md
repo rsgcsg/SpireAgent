@@ -1,6 +1,6 @@
 # Re Player Environment Integration
 
-Re strictly accepts protocol `1.0-rc.1`.
+Re strictly accepts protocol `1.0-rc.2`.
 
 ```text
 C Snapshot

@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible Agent, Gateway, deployment or documentation defect.
+description: Report a reproducible Agent, Player Environment, deployment or documentation defect.
 title: "[Bug]: "
 labels: ["bug"]
 body:
@@ -11,7 +11,7 @@ body:
     id: revision
     attributes:
       label: Branch and exact commit
-      placeholder: connectorV3 / 40-character SHA
+      placeholder: branch / 40-character SHA
     validations:
       required: true
   - type: dropdown
@@ -22,7 +22,7 @@ body:
         - Unknown
         - Agent or prompt
         - Re consumer or supervision
-        - Gateway observation or command
+        - Player Environment observation, Read or action delivery
         - Build, install or loaded identity
         - Documentation
     validations:

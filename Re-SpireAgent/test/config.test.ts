@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { resolve } from "node:path";
-import { RE_PROJECT_ROOT, readRuntimeConfig } from "../src/config/env.js";
+import { RE_PROJECT_ROOT, readDataDirectory, readRuntimeConfig } from "../src/config/env.js";
 
 describe("runtime evidence provenance", () => {
   it("defaults to unrecorded and accepts an explicit coverage label", () => {
@@ -38,6 +38,13 @@ describe("runtime evidence provenance", () => {
       .toBe(resolve("/tmp/re-spire-test", "../external-evidence"));
     expect(readRuntimeConfig({ AGENT_DATA_DIR: "/var/tmp/re-spire-evidence" }).runtime.dataDir)
       .toBe(resolve("/var/tmp/re-spire-evidence"));
+  });
+
+  it("lets offline evidence commands locate runs without parsing live connector settings", () => {
+    expect(readDataDirectory({
+      AGENT_DATA_DIR: "runs",
+      STS2_MCP_PROTOCOL: "retired-local-value"
+    }, "/tmp/re-spire-test")).toBe(resolve("/tmp/re-spire-test", "runs"));
   });
 
   it("keeps a full-game-sized emergency decision ceiling without making it a success boundary", () => {

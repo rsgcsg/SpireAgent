@@ -18,7 +18,7 @@ namespace STS2_MCP;
 [ModInitializer("Initialize")]
 public static partial class McpMod
 {
-    public const string Version = "0.6.0-dev";
+    public const string Version = "1.0.0-rc.1";
     public const int DefaultPort = 15526;
     private const string ConfigFileName = "STS2_MCP.conf";
 

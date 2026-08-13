@@ -5,8 +5,7 @@ on:
   push:
     branches:
       - main
-      - develop
-      - connectorV3
+      - human_equivalent_connector
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -41,14 +40,9 @@ jobs:
         with:
           python-version: "3.11"
       - run: npm run check:docs
-      - run: npm run check:connector-compatibility-fixtures
-      - run: npm run check:connector-permission-fixtures
-      - run: npm run check:connector-qualification
-      - run: npm run check:connector-profiles
-      - run: npm run check:connector-migration
       - run: npm run check:connector-cli
       - run: npm run check:connector-run-identity
       - run: python -m py_compile STS2MCP/mcp/server.py
 
-  # Gateway C# tests/builds require the user's exact local STS2 assemblies.
+  # Player Environment Host C# tests/builds require the user's exact local STS2 assemblies.
   # They intentionally remain local evidence and are not replaced by fixtures.

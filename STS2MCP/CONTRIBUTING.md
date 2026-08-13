@@ -1,46 +1,48 @@
 # Contributing
 
-Read [AGENTS.md](AGENTS.md) and the [Bridge v2 docs](docs/bridge-v2/README.md)
-before changing protocol or game-bound behavior.
+Start with [AGENTS.md](AGENTS.md), the
+[new engineer guide](../docs/current/PLAYER_ENVIRONMENT_NEW_ENGINEER_GUIDE.md),
+and the [current protocol](docs/player-environment/PROTOCOL.md). Historical
+Bridge and preview documents are evidence records, not implementation guides.
 
 ## Change Rules
 
-- One audited surface or infrastructure concern per change.
-- Cite the exact game version, commit, and assembly hash used to validate game
-  facts.
-- Do not infer private API signatures from names; inspect the current assembly
-  or produce runtime evidence.
-- Keep Python MCP tools as a thin HTTP adapter.
-- Preserve v1 unless an explicit migration decision removes a qualified surface.
-- Never make an unsupported surface executable to improve apparent coverage.
+- Keep stable player-visible extraction in `LiveHost`, exact native bindings
+  and delivery in `NativeUi`, and public Observe/Read/Interact behavior in
+  `PlayerEnvironment`.
+- Cite the exact game version, commit, assembly SHA-256 and MVID used to audit
+  native types or private bindings.
+- Never infer private APIs from names, expose hidden state, add arbitrary
+  reflection/clicks, or let REST/MCP/consumers create action authority.
+- Every finite BoundAction must resolve to one current Host-local binding and
+  be revalidated immediately before native input delivery.
+- Reads remain snapshot-bound, read-only and non-authorizing. Unknown delivery
+  is never retried automatically.
 
 ## Required Checks
 
+From the repository root:
+
 ```bash
-GAME_DIR="<Slay the Spire 2 install directory>"
-dotnet test STS2_MCP.sln -p:STS2GameDir="$GAME_DIR" -p:UseSharedCompilation=false
-dotnet build STS2_MCP.csproj -c Release -p:STS2GameDir="$GAME_DIR" -p:UseSharedCompilation=false
-uv run --directory mcp python -m py_compile server.py
+npm run check:docs
+npm run check:connector-cli
+dotnet test STS2MCP/tests/STS2_MCP.Tests/STS2_MCP.Tests.csproj -c Release -p:STS2GameDir="<game-dir>"
+dotnet build STS2MCP/STS2_MCP.csproj -c Release -p:STS2GameDir="<game-dir>"
+python -m py_compile STS2MCP/mcp/server.py
+git diff --check
 ```
 
-Game-bound changes also require a disposable-run smoke with before/after state,
-command events, and the exact field/action under test. Fixture tests prove code
-behavior only; they do not qualify a game binding.
+Game-bound changes also require honest source/build/install/load/Live evidence
+separation. Fixture tests do not qualify an exact game binding.
 
 ## Documentation
 
-Update:
+Update the current protocol, coverage, Information Closure and status files
+when their truth changes. Preserve dated historical evidence without assigning
+it to a new source or artifact.
 
-- `docs/bridge-v2/CURRENT_STATUS.md` for phase/blocker changes;
-- `PLAYER_VISIBLE_COVERAGE.md` for surface/field support;
-- `PROTOCOL.md` for wire or lifecycle changes;
-- `OBSERVATION_POLICY.md` for visibility changes;
-- `REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md`
-  when new game facts invalidate an earlier assumption; consult the preview
-  archive only for the exact historical evidence it records.
-
-Do not commit game assemblies, local mod config, runtime logs/snapshots, local MCP
-permissions, `.env.local`, or secrets.
+Do not commit game assemblies, local config, runtime logs or runs, installed
+artifacts, `.env.local`, credentials, or provider output.
 
 ## License
 

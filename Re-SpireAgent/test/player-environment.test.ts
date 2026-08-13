@@ -27,7 +27,7 @@ const SOURCE: AdapterDescriptor = {
 
 function snapshot(): JsonObject {
   return {
-    protocol_version: "1.0-rc.1",
+    protocol_version: "1.0-rc.2",
     schema: "sts2.player-environment/snapshot-1",
     snapshot_id: "state-he-1",
     sequence: 1,
@@ -80,7 +80,7 @@ function snapshot(): JsonObject {
 
 function capabilities(): JsonObject {
   return {
-    protocol_version: "1.0-rc.1",
+    protocol_version: "1.0-rc.2",
     snapshot_schema: "sts2.player-environment/snapshot-1",
     action_schema: "sts2.player-environment/action-1",
     receipt_schema: "sts2.player-environment/receipt-1",
@@ -290,14 +290,14 @@ describe("Player Environment C", () => {
 
   it("uses the Player Environment control schema without a V3 wire dependency", () => {
     const registration = decodePlayerClientRegistration({
-      protocol_version: "1.0-rc.1",
+      protocol_version: "1.0-rc.2",
       schema: "sts2.player-environment/control-1",
       runtime_instance_id: "runtime-he",
       client: { client_session_id: "client-session", client_instance_id: "client-instance" },
       controller: null
     }).data;
     const lease = decodePlayerControllerLeaseResponse({
-      protocol_version: "1.0-rc.1",
+      protocol_version: "1.0-rc.2",
       schema: "sts2.player-environment/control-1",
       runtime_instance_id: "runtime-he",
       status: "controller_acquired",
@@ -400,7 +400,7 @@ describe("Player Environment C", () => {
       async (readId, expectedSnapshotId) => {
         calls.push(readId);
         return {
-          protocol_version: "1.0-rc.1",
+          protocol_version: "1.0-rc.2",
           schema: "sts2.player-environment/read-1",
           read_id: readId,
           expected_snapshot_id: expectedSnapshotId,
@@ -451,7 +451,7 @@ describe("Player Environment C", () => {
     }).data;
 
     await expect(prefetchPlayerEnvironmentDecisionBundle(current, async () => ({
-      protocol_version: "1.0-rc.1",
+      protocol_version: "1.0-rc.2",
       schema: "sts2.player-environment/read-1",
       read_id: "read:run_deck",
       expected_snapshot_id: current.snapshot_id,
@@ -500,7 +500,7 @@ describe("Player Environment C", () => {
         if (url.endsWith("/api/player-environment/clients/register")) {
           const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
           return json({
-            protocol_version: "1.0-rc.1",
+            protocol_version: "1.0-rc.2",
             schema: "sts2.player-environment/control-1",
             runtime_instance_id: "fixture-runtime",
             client: {
@@ -512,7 +512,7 @@ describe("Player Environment C", () => {
         }
         if (url.endsWith("/api/player-environment/controller/acquire")) {
           return json({
-            protocol_version: "1.0-rc.1",
+            protocol_version: "1.0-rc.2",
             schema: "sts2.player-environment/control-1",
             runtime_instance_id: "fixture-runtime",
             status: "controller_acquired",
@@ -533,7 +533,7 @@ describe("Player Environment C", () => {
           const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
           submittedBody = body;
           return json({
-            protocol_version: "1.0-rc.1",
+            protocol_version: "1.0-rc.2",
             schema: "sts2.player-environment/receipt-1",
             request_id: String(body.request_id),
             delivery: "delivered",

@@ -3,7 +3,7 @@
 `STS2MCP` is the compatibility-sensitive in-game Mod directory and Mod ID. The
 current code inside it is the Live Host, Player Environment runtime, localhost
 REST server and optional thin Python MCP transport. MCP is not required by Re.
-The current protocol is `1.0-rc.1`.
+The current protocol is `1.0-rc.2`.
 
 ## Source Ownership
 

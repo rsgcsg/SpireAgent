@@ -2,7 +2,7 @@ import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 import { persistentVisibleStateSchema } from "./playerVisibleStateProtocol.js";
 
-export const SUPPORTED_PLAYER_ENVIRONMENT_PROTOCOL = "1.0-rc.1" as const;
+export const SUPPORTED_PLAYER_ENVIRONMENT_PROTOCOL = "1.0-rc.2" as const;
 
 const hostSchema = z.object({
   id: z.string().min(1),

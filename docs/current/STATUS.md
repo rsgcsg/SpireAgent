@@ -4,7 +4,7 @@ Baseline date: 2026-08-13
 
 Branch: `human_equivalent_connector`
 
-Current source protocol: `1.0-rc.1`
+Current source protocol: `1.0-rc.2`
 
 ## Verdict
 
@@ -37,15 +37,18 @@ C1 covers stable and inspectable player information:
 - persistent run/player summary and complete current structured interaction;
 - visible referents plus directly observed enabled/selected state;
 - player-visible card, relic, potion, event-option, power, orb and intent
-  descriptions, keywords and previews;
+  descriptions, keywords and previews. Exact `v0.110.1/db5d3552` assembly
+  audit found only `HoverTip` and `CardHoverTip` implementations, and both are
+  projected; the test fails if a later exact assembly adds another subtype;
 - state-bound `run_deck`, `combat_piles`, `shop_catalog` and
   `surface_card` reads;
 - optional, non-authorizing `native_pages.v1` open/read/return evidence.
 
 Unsupported product controls such as Profile and Patch Notes remain visible
 facts but are outside the ordinary single-player action envelope. Current
-keyboard/controller focus, arbitrary scroll traversal and unreviewed tooltip
-subtypes remain explicit partial/unsupported scope. Transient VFX/SFX, floating
+keyboard/controller focus and arbitrary generic scroll traversal remain
+explicit partial/unsupported scope. Unknown future tooltip subtypes fail closed
+rather than disappearing. Transient VFX/SFX, floating
 text and highlight history are deferred to C1.x.
 
 ## Live Evidence Boundary
@@ -75,7 +78,7 @@ That run exposed six completed-event handoff frames and one treasure screen
 handoff frame incorrectly labelled `visible_unsupported`. Current source now
 classifies those exact no-owner transitions as `settling`, removes the
 unrelated Instant Mode/Harmony patch and removes retired route dispatch. Host
-tests pass `86/86`. These changes are source/test evidence only and will
+tests pass `87/87`. These changes are source/test evidence only and will
 receive a new source and artifact identity after extraction.
 
 ## Deployment Rule

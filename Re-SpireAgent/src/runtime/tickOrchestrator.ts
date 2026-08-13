@@ -61,7 +61,7 @@ export class TickOrchestrator<TAction extends { kind: string } = ExecutableGameA
       const record = baseRecord<TAction>(this.dependencies.recorder.runId, decisionId, tick, startedAt, "observation_failed");
       record.error = safeError(error);
       await this.dependencies.recorder.append(record);
-      // Composite state/inspection drift means this tick observed no coherent
+      // Composite Snapshot/Read drift means this tick observed no coherent
       // decision state. It is safe to skip only this tick; no prompt or action
       // was produced. Every other observation failure remains terminal.
       const shouldStopRun = !(error instanceof TransientObservationError);

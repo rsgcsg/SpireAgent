@@ -41,7 +41,7 @@ for (const legacy of ["/api/he", "/api/v2", "/api/v3", "legal_actions"])
   forbidText(client, legacy, `legacy client seam ${legacy}`);
 
 const protocol = "Re-SpireAgent/src/integrations/sts2mcp/playerEnvironmentProtocol.ts";
-requireText(protocol, 'SUPPORTED_PLAYER_ENVIRONMENT_PROTOCOL = "1.0-rc.1"', "current protocol");
+requireText(protocol, 'SUPPORTED_PLAYER_ENVIRONMENT_PROTOCOL = "1.0-rc.2"', "current protocol");
 requireText(protocol, "information_policy:", "information boundary");
 requireText(protocol, "bound_actions:", "finite C projection");
 for (const legacy of [
@@ -130,12 +130,19 @@ const currentHost = currentHostFiles.map((file) => readFileSync(file, "utf8")).j
 for (const legacy of [
   "GatewayAuthorityRuntime", "EnvironmentPermission", "QualificationStore",
   "NativeOperationManifest", "provider_native_binding_adapter", "SourceContract",
-  "CompletionProbe", "NativeInputResult.Started", "business_contract", "gateway_owned"
+  "CompletionProbe", "NativeInputResult.Started", "business_contract", "gateway_owned",
+  "InspectionAllowed", "AvailableInspections", "normal_inspection"
 ]) {
   if (currentHost.includes(legacy)) failures.push(`current Host/C/NativeUi path contains retired authority ${legacy}`);
 }
 
 const snapshotBuilder = read("STS2MCP/PlayerEnvironment/Observation/SnapshotBuilder.cs");
+if (!snapshotBuilder.includes("information.ReadCatalog")) {
+  failures.push("SnapshotBuilder: current Read advertisement does not consume the one information catalog");
+}
+if (snapshotBuilder.includes("BuildInspectionCatalog")) {
+  failures.push("SnapshotBuilder: duplicate legacy Inspection catalog remains");
+}
 for (const adapter of [
   "NativeGeneratedCardChoice", "NativeDeckTransformSelection", "NativeCombatPileSelection",
   "NativeDeckCardSelection", "NativeSimpleCardSelection", "NativeRestSite"

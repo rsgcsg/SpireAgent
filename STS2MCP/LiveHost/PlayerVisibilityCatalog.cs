@@ -7,11 +7,11 @@ namespace STS2_MCP.LiveHost;
 
 internal sealed record PlayerVisibilityProjection(
     PlayerVisibilityState Visibility,
-    IReadOnlyList<PlayerReadCatalogEntry> InspectionCatalog);
+    IReadOnlyList<PlayerReadCatalogEntry> ReadCatalog);
 
 /// <summary>
 /// Read-only visibility inventory. It describes what the current player may
-/// inspect; it never grants action or Inspection authority by itself.
+/// inspect; it never grants action authority by itself.
 /// </summary>
 internal static class PlayerVisibilityCatalog
 {

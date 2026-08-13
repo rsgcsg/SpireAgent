@@ -1,6 +1,6 @@
 # Player Environment Protocol
 
-Source protocol: `1.0-rc.1`
+Source protocol: `1.0-rc.2`
 
 ## Endpoints
 

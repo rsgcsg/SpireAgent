@@ -2,15 +2,15 @@
 
 ## Current Product Status
 
-SpireAgent is a development project. Connector V3 listens on loopback and
-validates game actions, but it does not yet authenticate hostile local clients,
+SpireAgent is a development project. The STS2 Player Environment listens on
+loopback and validates current bound actions, but it does not authenticate hostile local clients,
 isolate provider credentials, or provide a consumer-grade installer. It
 coordinates one runtime-bound mutation controller, but registration metadata
 and lease IDs are not authentication and do not isolate a malicious local
 process. Do not expose port `15526` beyond the local machine.
 
-The Gateway is the only authority for player-visible facts, advertised opaque
-actions, execute-time validation, and semantic completion. Re-SpireAgent,
+The in-game Host is the only authority for player-visible facts, advertised
+opaque actions, execute-time validation and native input delivery. Re-SpireAgent,
 Python MCP, and other clients must not bypass that authority.
 
 ## Secrets And Local Data
@@ -29,7 +29,7 @@ actions, bypass state binding, retry an unknown outcome, or leak hidden game
 information, use GitHub private vulnerability reporting when available. Do not
 publish exploit details or credentials in a public issue.
 
-Include the repository commit, Bridge protocol, game identity, Modset, Bridge
+Include the repository commit, Player Environment protocol, game identity, Modset, Host
 SHA/MVID/runtime identity, and a redacted reproduction. Do not attach the game
 binary or provider output containing secrets.
 
