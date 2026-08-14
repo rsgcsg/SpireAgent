@@ -10,15 +10,15 @@ import type { DecisionOutcome, DecisionRecord, DecisionRecorder, RecordedState }
 import type { JsonValue } from "../shared/json.js";
 import { ProgressCycleGuard } from "./progressCycleGuard.js";
 import { executeAdvertisedAction } from "./advertisedActionExecutor.js";
-import type { SettlementWatcher } from "./settlementWatcher.js";
+import type { SuccessorWatcher } from "./successorWatcher.js";
 
-export interface TickOrchestratorDependencies {
-  adapter: GameAdapter<RawGameState, ExecutableGameAction, GameExecutionResult>;
+export interface TickOrchestratorDependencies<TAction extends { kind: string } = ExecutableGameAction> {
+  adapter: GameAdapter<RawGameState, TAction, GameExecutionResult>;
   normalize: (raw: unknown) => StateEnvelope;
-  buildAllowedActions: (state: StateEnvelope["currentState"], sourceStateHash: string) => AllowedAction[];
+  buildAllowedActions: (state: StateEnvelope["currentState"], sourceStateHash: string) => AllowedAction<TAction>[];
   llm: LlmDecisionProvider;
-  settlement: SettlementWatcher;
-  recorder: DecisionRecorder;
+  settlement: SuccessorWatcher<TAction>;
+  recorder: DecisionRecorder<TAction>;
 }
 
 export interface TickResult {
@@ -33,15 +33,19 @@ export interface TickResult {
   stopReason?: "run_boundary" | "repeated_exact_transition" | "repeated_semantic_transition" | "repeated_non_actionable_state";
 }
 
-export class TickOrchestrator {
-  private static readonly maxRepeatedNonActionableState = 8;
+const MAX_REPEATED_NON_ACTIONABLE_STATE = 8;
+const MAX_REPEATED_STARTUP_UNKNOWN_STATE = 40;
+const MAX_REPEATED_SETTLING_STATE = 40;
+
+export class TickOrchestrator<TAction extends { kind: string } = ExecutableGameAction> {
   private readonly executedTransitionOccurrences = new Map<string, number>();
-  private readonly progressCycleGuard = new ProgressCycleGuard();
+  private readonly progressCycleGuard = new ProgressCycleGuard<TAction>();
   private lastNonActionableStateKey?: string;
   private nonActionableStateOccurrences = 0;
+  private observedKnownState = false;
   private runTerminalObserved = false;
 
-  constructor(private readonly dependencies: TickOrchestratorDependencies) {}
+  constructor(private readonly dependencies: TickOrchestratorDependencies<TAction>) {}
 
   async runTick(
     tick: number,
@@ -54,10 +58,10 @@ export class TickOrchestrator {
       pre = this.dependencies.normalize(await this.dependencies.adapter.readCurrentState());
     } catch (error) {
       this.resetNonActionableStateGuard();
-      const record = baseRecord(this.dependencies.recorder.runId, decisionId, tick, startedAt, "observation_failed");
+      const record = baseRecord<TAction>(this.dependencies.recorder.runId, decisionId, tick, startedAt, "observation_failed");
       record.error = safeError(error);
       await this.dependencies.recorder.append(record);
-      // Composite state/inspection drift means this tick observed no coherent
+      // Composite Snapshot/Read drift means this tick observed no coherent
       // decision state. It is safe to skip only this tick; no prompt or action
       // was produced. Every other observation failure remains terminal.
       const shouldStopRun = !(error instanceof TransientObservationError);
@@ -65,6 +69,8 @@ export class TickOrchestrator {
     }
 
     if (pre.currentState.context.kind === "run_ended") this.runTerminalObserved = true;
+    const startupUnknown = isStartupUnknownState(pre.currentState) && !this.observedKnownState;
+    if (!startupUnknown) this.observedKnownState = true;
     const builtAllowedActions = this.dependencies.buildAllowedActions(pre.currentState, pre.stateHash);
     const cycleFilter = this.progressCycleGuard.filterActions(pre.currentState, builtAllowedActions);
     const allowedActions = cycleFilter.actions;
@@ -82,7 +88,8 @@ export class TickOrchestrator {
     }
     if (pre.currentState.stability !== "actionable") {
       const occurrence = this.observeNonActionableState(pre);
-      const stalled = occurrence >= TickOrchestrator.maxRepeatedNonActionableState;
+      const limit = nonActionableStallLimit(pre.currentState, this.observedKnownState);
+      const stalled = occurrence >= limit;
       return this.recordWithoutDecision({
         decisionId,
         tick,
@@ -99,7 +106,9 @@ export class TickOrchestrator {
                 code: "repeated_non_actionable_state" as const,
                 occurrence,
                 stateHash: pre.stateHash,
-                ...(bridgeStateToken(pre) ? { stateToken: bridgeStateToken(pre) } : {}),
+                ...(environmentSnapshotId(pre)
+                  ? { stateToken: environmentSnapshotId(pre) }
+                  : {}),
                 contextKind: pre.currentState.context.kind,
                 surfaceKind: pre.currentState.surface.kind
               }
@@ -120,12 +129,13 @@ export class TickOrchestrator {
           outcome: "not_executed_non_actionable_state",
           error: completedRun
             ? "Stopped after the completed run returned to the top-level menu; a bounded agent:run never starts a second game"
-            : `Stopped at ${pre.currentState.context.kind} run-start boundary; pass --allow-run-entry to permit Gateway-advertised run entry`,
+            : `Stopped at ${pre.currentState.context.kind} run-start boundary; pass --allow-run-entry to permit Player Environment-advertised run entry`,
           shouldStopRun: true,
           stopReason: "run_boundary"
         });
       }
-      if (options.allowRunEntry && pre.currentState.actionAuthority !== "bridge_advertised") {
+      if (options.allowRunEntry
+          && pre.currentState.actionAuthority !== "player_environment") {
         return this.recordWithoutDecision({
           decisionId,
           tick,
@@ -133,7 +143,7 @@ export class TickOrchestrator {
           pre,
           allowedActions,
           outcome: "not_executed_invalid_state",
-          error: "Run entry requires bridge_advertised action authority; local reconstruction cannot cross the run boundary",
+          error: "Run entry requires current connector action authority; local reconstruction cannot cross the run boundary",
           shouldStopRun: true
         });
       }
@@ -162,7 +172,7 @@ export class TickOrchestrator {
       prompt
     });
     if (options.dryRun) {
-      const record = baseRecord(this.dependencies.recorder.runId, decisionId, tick, startedAt, "dry_run");
+      const record = baseRecord<TAction>(this.dependencies.recorder.runId, decisionId, tick, startedAt, "dry_run");
       record.preState = prepared.preState;
       record.allowedActions = allowedActions;
       if (prepared.prompt) record.prompt = prepared.prompt;
@@ -178,7 +188,7 @@ export class TickOrchestrator {
         allowedActionIds: allowedActions.map((action) => action.id)
       });
     } catch (error) {
-      const record = baseRecord(this.dependencies.recorder.runId, decisionId, tick, startedAt, "not_executed_llm_failure");
+      const record = baseRecord<TAction>(this.dependencies.recorder.runId, decisionId, tick, startedAt, "not_executed_llm_failure");
       record.preState = prepared.preState;
       record.allowedActions = allowedActions;
       if (prepared.prompt) record.prompt = prepared.prompt;
@@ -190,7 +200,7 @@ export class TickOrchestrator {
     const validation = validateDecisionForActions(session.finalAttempt, allowedActions);
     if (!validation.valid) {
       const outcome = validation.outcome === "unknown_action_id" ? "not_executed_invalid_decision" : "not_executed_llm_failure";
-      const record = baseRecord(this.dependencies.recorder.runId, decisionId, tick, startedAt, outcome);
+      const record = baseRecord<TAction>(this.dependencies.recorder.runId, decisionId, tick, startedAt, outcome);
       record.preState = prepared.preState;
       record.allowedActions = allowedActions;
       if (prepared.prompt) record.prompt = prepared.prompt;
@@ -252,6 +262,27 @@ export class TickOrchestrator {
       });
       await this.dependencies.recorder.append(record);
       return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, true);
+    }
+
+    if (execution.stage === "adapter_stale") {
+      const record = decisionRecordWithLlm({
+        runId: this.dependencies.recorder.runId,
+        decisionId,
+        tick,
+        startedAt,
+        outcome: "not_executed_stale_state",
+        preState: prepared.preState,
+        allowedActions,
+        prompt: prepared.prompt,
+        session,
+        selectedActionId: validation.selectedAction.id,
+        selectedAction: validation.selectedAction.action,
+        stateHashMatched: false,
+        adapterResult: execution.adapterResult.response,
+        error: execution.error
+      });
+      await this.dependencies.recorder.append(record);
+      return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, false);
     }
 
     if (execution.stage === "adapter_terminal") {
@@ -359,12 +390,12 @@ export class TickOrchestrator {
     tick: number;
     startedAt: string;
     pre: StateEnvelope;
-    allowedActions: AllowedAction[];
+    allowedActions: AllowedAction<TAction>[];
     outcome: DecisionOutcome;
     error?: string;
     shouldStopRun: boolean;
     stopReason?: TickResult["stopReason"];
-    runtimeGuard?: DecisionRecord["runtimeGuard"];
+    runtimeGuard?: DecisionRecord<TAction>["runtimeGuard"];
   }): Promise<TickResult> {
     const prepared = await this.dependencies.recorder.prepare({
       decisionId: input.decisionId,
@@ -374,7 +405,7 @@ export class TickOrchestrator {
       normalizedStateHash: input.pre.normalizedStateHash,
       diagnostics: input.pre.diagnostics
     });
-    const record = baseRecord(this.dependencies.recorder.runId, input.decisionId, input.tick, input.startedAt, input.outcome);
+    const record = baseRecord<TAction>(this.dependencies.recorder.runId, input.decisionId, input.tick, input.startedAt, input.outcome);
     record.preState = prepared.preState;
     record.allowedActions = input.allowedActions;
     if (input.error) record.error = input.error;
@@ -392,7 +423,7 @@ export class TickOrchestrator {
   }
 
   private observeNonActionableState(pre: StateEnvelope): number {
-    const stateToken = bridgeStateToken(pre) ?? pre.stateHash;
+    const stateToken = environmentSnapshotId(pre) ?? pre.stateHash;
     const key = `${stateToken}|${pre.currentState.context.kind}|${pre.currentState.surface.kind}|${pre.currentState.stability}`;
     this.nonActionableStateOccurrences = this.lastNonActionableStateKey === key
       ? this.nonActionableStateOccurrences + 1
@@ -407,9 +438,34 @@ export class TickOrchestrator {
   }
 }
 
-function bridgeStateToken(envelope: StateEnvelope): string | undefined {
-  const surface = envelope.currentState.surface as { bridgeStateId?: unknown };
-  return typeof surface.bridgeStateId === "string" ? surface.bridgeStateId : undefined;
+export function isStartupUnknownState(
+  state: StateEnvelope["currentState"]
+): boolean {
+  return state.context.kind === "unknown"
+    && state.surface.kind === "player_environment"
+    && state.surface.interactionKind === "unsupported"
+    && state.stability !== "actionable";
+}
+
+export function nonActionableStallLimit(
+  state: StateEnvelope["currentState"],
+  observedKnownState: boolean
+): number {
+  if (isStartupUnknownState(state) && !observedKnownState) {
+    return MAX_REPEATED_STARTUP_UNKNOWN_STATE;
+  }
+  // Native animation and async room handoffs can legitimately hold a coherent
+  // no-input state for several seconds. Keep this bounded without declaring a
+  // normal 250 ms polling cadence permanently stalled after only two seconds.
+  return state.stability === "settling"
+    ? MAX_REPEATED_SETTLING_STATE
+    : MAX_REPEATED_NON_ACTIONABLE_STATE;
+}
+
+function environmentSnapshotId(envelope: StateEnvelope): string | undefined {
+  return envelope.currentState.surface.kind === "player_environment"
+    ? envelope.currentState.surface.snapshotId
+    : undefined;
 }
 
 function invalidStateReason(envelope: StateEnvelope): string {
@@ -421,7 +477,13 @@ function invalidStateReason(envelope: StateEnvelope): string {
   return `${surfaceReason}; ${firstInvalid.path}: ${firstInvalid.reason}`.slice(0, 500);
 }
 
-function baseRecord(runId: string, decisionId: string, tick: number, startedAt: string, outcome: DecisionOutcome): DecisionRecord {
+function baseRecord<TAction extends { kind: string }>(
+  runId: string,
+  decisionId: string,
+  tick: number,
+  startedAt: string,
+  outcome: DecisionOutcome
+): DecisionRecord<TAction> {
   return {
     recordSchemaVersion: 2,
     decisionId,
@@ -435,26 +497,26 @@ function baseRecord(runId: string, decisionId: string, tick: number, startedAt: 
   };
 }
 
-function decisionRecordWithLlm(input: {
+function decisionRecordWithLlm<TAction extends { kind: string }>(input: {
   runId: string;
   decisionId: string;
   tick: number;
   startedAt: string;
   outcome: DecisionOutcome;
   preState: RecordedState;
-  allowedActions: AllowedAction[];
-  prompt: DecisionRecord["prompt"];
-  session: NonNullable<DecisionRecord["llm"]>["session"];
+  allowedActions: AllowedAction<TAction>[];
+  prompt: DecisionRecord<TAction>["prompt"];
+  session: NonNullable<DecisionRecord<TAction>["llm"]>["session"];
   postState?: RecordedState;
   selectedActionId?: string;
-  selectedAction?: ExecutableGameAction;
+  selectedAction?: TAction;
   stateHashMatched?: boolean;
   adapterResult?: JsonValue;
-  settlement?: DecisionRecord["settlement"];
+  settlement?: DecisionRecord<TAction>["settlement"];
   error?: string;
-}): DecisionRecord {
+}): DecisionRecord<TAction> {
   return {
-    ...baseRecord(input.runId, input.decisionId, input.tick, input.startedAt, input.outcome),
+    ...baseRecord<TAction>(input.runId, input.decisionId, input.tick, input.startedAt, input.outcome),
     preState: input.preState,
     allowedActions: input.allowedActions,
     ...(input.prompt ? { prompt: input.prompt } : {}),

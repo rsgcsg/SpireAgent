@@ -12,13 +12,12 @@
     "typecheck": "tsc -p tsconfig.typecheck.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "build": "tsc -p tsconfig.json",
+    "build": "node scripts/clean-dist.mjs && tsc -p tsconfig.json",
     "check": "npm run typecheck && npm run test && npm run build",
-    "connector": "node ../tools/connector.mjs",
     "agent:inspect": "tsx src/app/main.ts inspect",
     "agent:connector-canary": "tsx src/app/main.ts connector-canary",
     "agent:tick": "tsx src/app/main.ts tick",
-    "agent:run": "node ../tools/connector.mjs run-agent",
+    "agent:run": "node scripts/run-agent.mjs",
     "agent:run:direct": "tsx src/app/main.ts run --allow-run-entry",
     "agent:replay": "tsx src/app/main.ts replay",
     "agent:baseline-report": "tsx src/app/main.ts baseline-report",
@@ -27,6 +26,7 @@
     "agent:prompt-repeat-baseline": "tsx src/app/main.ts prompt-repeat-baseline"
   },
   "dependencies": {
+    "@rsgcsg/sts2-connector-client": "https://github.com/rsgcsg/STS2-Connector/releases/download/v1.0.0-rc.2/rsgcsg-sts2-connector-client-1.0.0-rc.2.tgz",
     "dotenv": "^16.6.1",
     "zod": "^3.25.76"
   },

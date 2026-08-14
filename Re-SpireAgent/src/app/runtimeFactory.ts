@@ -1,17 +1,18 @@
 import type { RuntimeConfig } from "../config/env.js";
-import { buildAllowedActions } from "../domain/actions/buildAllowedActions.js";
+import { buildPlayerEnvironmentAllowedActions } from "../domain/actions/buildPlayerEnvironmentAllowedActions.js";
 import { NORMALIZED_STATE_SCHEMA_VERSION } from "../domain/state/index.js";
-import { Sts2McpHybridAdapter } from "../integrations/sts2mcp/hybridAdapter.js";
+import { Sts2PlayerEnvironmentAdapter } from "../integrations/sts2Connector/playerEnvironmentAdapter.js";
 import { DeepSeekDecisionProvider } from "../llm/deepseekProvider.js";
-import { normalizeCurrentState } from "../normalization/normalizeCurrentState.js";
+import { normalizePlayerEnvironmentCurrentState } from "../normalization/normalizePlayerEnvironmentCurrentState.js";
 import { createRunId, FileDecisionRecorder } from "../recording/fileDecisionRecorder.js";
 import type { RunMetadata } from "../recording/types.js";
-import { SettlementWatcher } from "../runtime/settlementWatcher.js";
+import { SuccessorWatcher } from "../runtime/successorWatcher.js";
 import { acquireRuntimeLock } from "../runtime/runtimeLock.js";
 import { TickOrchestrator } from "../runtime/tickOrchestrator.js";
+import { onceAsync } from "./gracefulShutdown.js";
 
 export async function createRuntime(config: RuntimeConfig): Promise<{
-  adapter: Sts2McpHybridAdapter;
+  adapter: Sts2PlayerEnvironmentAdapter;
   llm: DeepSeekDecisionProvider;
   recorder: FileDecisionRecorder;
   orchestrator: TickOrchestrator;
@@ -47,8 +48,7 @@ export async function createRuntime(config: RuntimeConfig): Promise<{
       provider: llm.describe(),
       evidence: {
         provenance: config.runtime.evidenceProvenance,
-        declaredBy: "runtime_configuration",
-        qualificationUse: "coverage_only_unless_independently_reviewed"
+        declaredBy: "runtime_configuration"
       },
       schemas: { normalizedState: NORMALIZED_STATE_SCHEMA_VERSION, prompt: 3, decisionRecord: 2 }
     };
@@ -57,7 +57,7 @@ export async function createRuntime(config: RuntimeConfig): Promise<{
     const orchestrator = new TickOrchestrator({
       adapter: connector.adapter,
       normalize: connector.normalize,
-      buildAllowedActions,
+      buildAllowedActions: buildPlayerEnvironmentAllowedActions,
       llm,
       settlement: connector.settlement,
       recorder
@@ -70,36 +70,39 @@ export async function createRuntime(config: RuntimeConfig): Promise<{
 }
 
 export async function createConnectorRuntime(config: RuntimeConfig): Promise<{
-  adapter: Sts2McpHybridAdapter;
-  normalize: (raw: unknown) => ReturnType<typeof normalizeCurrentState>;
-  settlement: SettlementWatcher;
+  adapter: Sts2PlayerEnvironmentAdapter;
+  normalize: (raw: unknown) => ReturnType<typeof normalizePlayerEnvironmentCurrentState>;
+  settlement: SuccessorWatcher;
   release(): Promise<void>;
 }> {
   const lock = await acquireRuntimeLock(config.runtime.dataDir);
   try {
-    const adapter = new Sts2McpHybridAdapter(config.mcp.baseUrl, config.mcp.timeoutMs, {
-      startupWaitMs: config.mcp.startupWaitMs,
-      startupPollMs: config.mcp.startupPollMs,
-      commandPollMs: config.mcp.commandPollMs,
-      commandTimeoutMs: config.mcp.commandTimeoutMs
+    const adapter = new Sts2PlayerEnvironmentAdapter(config.connector.baseUrl, config.connector.timeoutMs, {
+      startupWaitMs: config.connector.startupWaitMs,
+      startupPollMs: config.connector.startupPollMs
     });
     await adapter.initialize();
     const adapterDescription = adapter.describe();
-    const normalize = (raw: unknown) => normalizeCurrentState(raw, adapterDescription);
-    const settlement = new SettlementWatcher(adapter, normalize, {
+    const normalize = (raw: unknown) =>
+      normalizePlayerEnvironmentCurrentState(raw, adapterDescription);
+    const settlement = new SuccessorWatcher(adapter, normalize, {
       pollMs: config.runtime.settlementPollMs,
       defaultTimeoutMs: config.runtime.settlementTimeoutMs,
       endTurnTimeoutMs: config.runtime.endTurnSettlementTimeoutMs,
       roomTransitionTimeoutMs: config.runtime.roomTransitionSettlementTimeoutMs
     });
+    const release = onceAsync(async () => {
+      try {
+        await adapter.close();
+      } finally {
+        await lock.release();
+      }
+    });
     return {
       adapter,
       normalize,
       settlement,
-      release: async () => {
-        await adapter.close();
-        await lock.release();
-      }
+      release
     };
   } catch (error) {
     await lock.release();

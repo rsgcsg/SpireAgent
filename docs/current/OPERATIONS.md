@@ -1,75 +1,26 @@
-# Current Operations Map
+# Operations
 
-Use [Local Setup](LOCAL_SETUP.md) for the authoritative fresh-clone,
-cross-device build/install, loaded-identity, and troubleshooting sequence. This
-file is only the concise command map.
-
-## Re-SpireAgent
+## Agent
 
 ```bash
-cd Re-SpireAgent
-npm ci
-npm run typecheck
-npm test
-npm run build
-```
-
-Use the bounded inspect/tick/run commands from `Re-SpireAgent/README.md`. Keep
-provider keys in `Re-SpireAgent/.env.local`; never print or commit them.
-
-Current internal D-lane commands have narrower meanings:
-
-```bash
-# Read stored records; this is not deterministic re-execution.
-npm --prefix Re-SpireAgent run agent:replay -- --run-id <id>
-
-# Read-only structure measurement; this is not strategy evaluation.
-npm --prefix Re-SpireAgent run agent:prompt-audit -- --limit-runs 5
-
-# Provider-costing, non-executing experiments; neither grants runtime status.
-npm --prefix Re-SpireAgent run agent:prompt-shadow-compare -- --run-id <id> --decision-id <id>
-npm --prefix Re-SpireAgent run agent:prompt-repeat-baseline -- --run-id <id> --decision-id <id> --samples 3 --variant full
-```
-
-See [Internal development and evaluation](DEVELOPMENT_AND_EVALUATION.md) for
-the capability inventory and missing scenario/eval infrastructure.
-
-## STS2 Gateway
-
-Preferred root entrypoints:
-
-```bash
-npm run connector -- inspect
-npm run connector -- test
-npm run connector -- audit
-npm run connector -- build
-npm run connector -- install
-npm run connector -- verify-loaded-artifact
-npm run connector -- collect-evidence
-```
-
-The CLI is a thin process/file-hash orchestrator over the existing Gateway,
-Re, D and qualification tools. It owns no game semantics, permission,
-completion or compatibility claims. Use `npm run connector -- help` for the
-full command map.
-
-Set `STS2_GAME_DIR` to the exact local Steam installation, then use the
-platform-specific commands in `STS2MCP/README.md` to run C# tests, Python MCP
-syntax checks, and a Release build. Close the game before replacing an
-installed DLL. Build/install evidence is not proof of loaded runtime identity;
-capture that identity before claiming a canary or qualification.
-
-## Repository Checks
-
-```bash
+npm run doctor
 npm run check
-npm run check:docs
-git diff --check
+cd Re-SpireAgent
+npm run agent:inspect
+npm run agent:run
 ```
 
-`npm run check` delegates only to the active Re project. Gateway checks remain
-environment-dependent and should be recorded separately.
+`agent:run` records the current Re source revision, digest and worktree status,
+then starts the bounded run. A stale or not-delivered action requires a fresh
+Snapshot. An ambiguous submit response may be looked up once by the same
+request ID; unknown delivery is never retried.
 
-The public CI workflow checks Re and active documentation on Linux. Gateway
-tests and Release builds still require proprietary local game assemblies and
-remain explicit local checks; CI success is not Gateway qualification.
+## Connector
+
+Build, install, rollback and `verify:loaded` are Connector operations. Use the
+versioned release or the commands documented by the standalone repository.
+SpireAgent deliberately contains no Host build/deploy implementation.
+
+Do not expose the local REST endpoint outside the machine. Controller leases
+coordinate cooperative consumers; they are not authentication against a
+malicious local process.

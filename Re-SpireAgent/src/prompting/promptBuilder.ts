@@ -1,28 +1,22 @@
 import type { AllowedAction, PromptAllowedAction } from "../domain/actions/allowedAction.js";
 import { toPromptAllowedAction } from "../domain/actions/allowedAction.js";
-import { NORMALIZED_STATE_SCHEMA_VERSION, type NormalizedCurrentState } from "../domain/state/index.js";
+import type { NormalizedCurrentState } from "../domain/state/index.js";
 import { stateHash } from "../runtime/stateHash.js";
+import type { JsonObject, JsonValue } from "../shared/json.js";
 import { GLOBAL_PROMPT_ID, GLOBAL_PROMPT_VERSION, GLOBAL_SYSTEM_PROMPT } from "./globalPrompt.js";
+import {
+  buildStrategyProjection,
+  STRATEGY_PROJECTION_VERSION
+} from "./shadowStrategyProjection.js";
 import { CONTEXT_GUIDES, SURFACE_GUIDES } from "./stateGuides.js";
 
 export interface DecisionPromptPayload {
-  promptSchemaVersion: 3;
-  currentStateSchemaVersion: typeof NORMALIZED_STATE_SCHEMA_VERSION;
-  contextKind: NormalizedCurrentState["context"]["kind"];
-  surfaceKind: NormalizedCurrentState["surface"]["kind"];
+  promptProjectionVersion: typeof STRATEGY_PROJECTION_VERSION;
   actionAuthority: NormalizedCurrentState["actionAuthority"];
-  contextGuideId: string;
-  contextGuideVersion: number;
-  surfaceGuideId: string;
-  surfaceGuideVersion: number;
   task: "select_one_allowed_action";
-  currentState: NormalizedCurrentState;
+  currentState: JsonObject;
   allowedActions: PromptAllowedAction[];
-  outputSchema: {
-    selectedActionId: "string_exactly_matching_allowed_action_id";
-    reasonBrief: "non_empty_string_max_240_chars";
-    confidence: "optional_number_0_to_1";
-  };
+  informationBoundary?: JsonObject;
 }
 
 export interface PromptBundle {
@@ -36,33 +30,30 @@ export interface PromptBundle {
   userPromptHash: string;
   systemPromptBytes: number;
   userPromptBytes: number;
+  sourceNormalizedStateHash: string;
+  projectionHash: string;
+  omittedEvidenceFields: readonly string[];
+  deduplicatedFactGroups: readonly string[];
   payload: DecisionPromptPayload;
 }
 
-export function buildDecisionPrompt(currentState: NormalizedCurrentState, allowedActions: AllowedAction[]): PromptBundle {
+export function buildDecisionPrompt<TAction extends { kind: string }>(
+  currentState: NormalizedCurrentState,
+  allowedActions: AllowedAction<TAction>[]
+): PromptBundle {
   const contextGuide = CONTEXT_GUIDES[currentState.context.kind];
   const surfaceGuide = SURFACE_GUIDES[currentState.surface.kind];
-  const payload: DecisionPromptPayload = {
-    promptSchemaVersion: 3,
-    currentStateSchemaVersion: NORMALIZED_STATE_SCHEMA_VERSION,
+  const promptActions = allowedActions.map(toPromptAllowedAction);
+  const projection = buildStrategyProjection({
     contextKind: currentState.context.kind,
     surfaceKind: currentState.surface.kind,
     actionAuthority: currentState.actionAuthority,
-    contextGuideId: contextGuide.id,
-    contextGuideVersion: contextGuide.version,
-    surfaceGuideId: surfaceGuide.id,
-    surfaceGuideVersion: surfaceGuide.version,
-    task: "select_one_allowed_action",
-    currentState,
-    allowedActions: allowedActions.map(toPromptAllowedAction),
-    outputSchema: {
-      selectedActionId: "string_exactly_matching_allowed_action_id",
-      reasonBrief: "non_empty_string_max_240_chars",
-      confidence: "optional_number_0_to_1"
-    }
-  };
+    currentState: currentState as unknown as JsonObject,
+    allowedActions: promptActions as unknown as readonly JsonValue[]
+  });
+  const payload = projection.modelPayload as unknown as DecisionPromptPayload;
   const systemPrompt = `${GLOBAL_SYSTEM_PROMPT}\n\nSemantic context guide:\n${contextGuide.text}\n\nInteraction surface guide:\n${surfaceGuide.text}`;
-  const userPrompt = JSON.stringify(payload);
+  const userPrompt = projection.userPrompt;
   return {
     globalPromptId: GLOBAL_PROMPT_ID,
     globalPromptVersion: GLOBAL_PROMPT_VERSION,
@@ -74,6 +65,10 @@ export function buildDecisionPrompt(currentState: NormalizedCurrentState, allowe
     userPromptHash: stateHash(userPrompt),
     systemPromptBytes: Buffer.byteLength(systemPrompt),
     userPromptBytes: Buffer.byteLength(userPrompt),
+    sourceNormalizedStateHash: projection.sourceNormalizedStateHash,
+    projectionHash: projection.projectionHash,
+    omittedEvidenceFields: projection.omittedEvidenceFields,
+    deduplicatedFactGroups: projection.deduplicatedFactGroups,
     payload
   };
 }

@@ -28,7 +28,7 @@ export interface RecordedState {
   diagnostics: NormalizationDiagnostics;
 }
 
-export interface DecisionRecord {
+export interface DecisionRecord<TAction extends { kind: string } = ExecutableGameAction> {
   /** v1 records remain replay-readable; v2 carries context/surface normalized state. */
   recordSchemaVersion: 1 | 2;
   decisionId: string;
@@ -37,7 +37,7 @@ export interface DecisionRecord {
   startedAt: string;
   completedAt: string;
   preState?: RecordedState;
-  allowedActions: AllowedAction[];
+  allowedActions: AllowedAction<TAction>[];
   prompt?: {
     promptRef: string;
     globalPromptId: string;
@@ -63,7 +63,7 @@ export interface DecisionRecord {
   execution: {
     attempted: boolean;
     selectedActionId?: string;
-    action?: ExecutableGameAction;
+    action?: TAction;
     stateHashMatchedBeforeExecution?: boolean;
     adapterResult?: JsonValue;
     error?: string;
@@ -139,10 +139,9 @@ export interface RunMetadata {
   evidence: {
     provenance: "unrecorded" | "ordinary_gameplay" | "operator_positioned" | "console_assisted" | "fixture";
     declaredBy: "runtime_configuration";
-    qualificationUse: "coverage_only_unless_independently_reviewed";
   };
   schemas: {
-    normalizedState: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31;
+    normalizedState: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32;
     prompt: 1 | 2 | 3;
     decisionRecord: 1 | 2;
   };
@@ -169,7 +168,7 @@ export interface PreparedEvidence {
   prompt?: DecisionRecord["prompt"];
 }
 
-export interface DecisionRecorder {
+export interface DecisionRecorder<TAction extends { kind: string } = ExecutableGameAction> {
   readonly runId: string;
   initialize(): Promise<void>;
   prepare(input: {
@@ -181,5 +180,5 @@ export interface DecisionRecorder {
     diagnostics: NormalizationDiagnostics;
     prompt?: PromptBundle;
   }): Promise<PreparedEvidence>;
-  append(record: DecisionRecord, evidence?: { postRawState?: JsonValue }): Promise<void>;
+  append(record: DecisionRecord<TAction>, evidence?: { postRawState?: JsonValue }): Promise<void>;
 }

@@ -1,63 +1,44 @@
 # Prompt Contract
 
-RE-P1 has one prompt path:
+RE-P1 has one production Prompt path:
 
 ```text
-global system contract + semantic-context guide + interaction-surface guide
-runtime JSON payload
+global system contract
++ semantic context guide
++ interaction Surface guide
++ deterministic compact JSON projection v1
 ```
 
-The v3 runtime payload contains the complete normalized current state,
-`contextKind`, `surfaceKind`, `actionAuthority`, both guide identities, action
-summaries, schema versions, and output contract. It never includes executable
-MCP payloads or an API key. This avoids a custom prompt for every
-context/surface combination while retaining combat facts under an overlay and
-making the action source explicit. Surface guides also prohibit factual claims
-about selected cards or capacity when the adapter does not expose them.
+## Model Payload
 
-This full-state serialization is current behavior, not a settled compression
-architecture. The normalized state also contains evidence/governance metadata,
-and some Inspection and action facts appear in both normalized evidence and the
-model-oriented action list. A deterministic `shadowStrategyProjection` v1 now
-exists only for offline comparison of already-recorded Prompts. It removes
-governance-only fields, retains a small information boundary, deduplicates exact
-player/Inspection pile copies, and carries source and projection hashes. It is
-not wired into the live Prompt, provider, action selection, execution, replay,
-or validation path. It therefore proves only structural byte savings, not
-strategy fidelity or runtime eligibility.
+The JSON payload contains:
 
-Any future compact projection must remain deterministic/versioned/auditable,
-preserve full evidence for replay and validation, and never create action
-authority. A paired provider shadow experiment and semantic review are still
-required before changing the Prompt path. No model-driven detail-request path
-is implemented or approved. See the
-[visibility and observation audit](../../docs/current/audits/VISIBILITY_AND_OBSERVATION_ARCHITECTURE_AUDIT_2026-07-22.md).
+- `promptProjectionVersion`;
+- one `actionAuthority`;
+- `task=select_one_allowed_action`;
+- compact `currentState`;
+- one exact `allowedActions` menu;
+- an optional bounded `informationBoundary`.
 
-`npm run agent:prompt-audit` is a read-only aggregate report over ignored local
-Prompt artifacts. It reports byte distributions, Surface groups, current-state
-component sizes, and repeated-representation candidates without printing prompt
-content or calling a provider. It does not create a compact Prompt, alter a
-decision, or count as runtime evidence.
+It preserves player-visible decision facts, current Surface/stage, exact
+instance identities, legal actions and hidden/missing/coherence boundaries. It
+removes governance-only diagnostics/catalogs, the duplicate
+`surface.legalActions` menu and exact duplicate player/Inspection pile facts.
+No API key or executable MCP payload enters the Prompt.
 
-`npm run agent:prompt-shadow-compare -- --run-id <id> --decision-id <id>` is a
-bounded provider-costing comparison over one exact recorded `PromptBundle`. It
-calls the provider against the original full Prompt and the deterministic shadow
-candidate, emits redacted outcome/latency/usage summaries, and performs no
-Gateway request, action submission, command poll, run creation, or artifact
-write. Agreement is neither strategy truth nor permission to change the runtime
-Prompt; semantic review and multiple comparable samples remain required. The
-reported byte delta is signed: small states can become larger when projection
-metadata costs more than the removed repetition.
+The complete normalized state is still recorded for replay, validation and
+audit. Projection v1 records the source-state hash, exact projection hash,
+omitted evidence fields and deduplicated fact groups. These hashes do not grant
+action authority. Execution resolves the local choice against the in-memory
+allowed-action table and submits only the current C-issued `bound_action_id`.
 
-`npm run agent:prompt-repeat-baseline -- --run-id <id> --decision-id <id>
---samples <2-5> [--variant full|shadow]` repeats one exact recorded Prompt
-variant without execution. It exists solely to bound provider variation before
-interpreting a projection disagreement. It has the same no-Gateway/no-write
-boundary as the paired comparison. The generic v1 candidate is currently
-rejected for runtime use after stable reward-scope disagreement; these commands
-remain investigation tools, not an approval path.
+The implementation file retains the historical
+`shadowStrategyProjection.ts` name and `buildShadowStrategyProjection`
+alias so recorded comparison tooling remains readable. Production Prompt
+construction calls `buildStrategyProjection`; the projection is no longer
+shadow-only.
 
-Expected model output:
+## Output
 
 ```json
 {
@@ -67,8 +48,27 @@ Expected model output:
 }
 ```
 
-The object is strict. Extra fields, code fences, trailing text, multiple objects, blank reasons, out-of-range confidence, and unknown action IDs are rejected. Provider JSON mode is transport assistance, not local authorization.
+The object is strict. Extra fields, fences, trailing text, multiple objects,
+blank reasons, invalid confidence and unknown IDs are rejected. Provider JSON
+mode is transport assistance, not local authorization.
 
-State guides explain field and action semantics only. The deck-enchant guide explains its two-stage protocol and visible constraints, but does not prescribe which card is strategically best. Guides must not grow into per-screen hand-authored strategy piles. Strategic knowledge belongs in a later, separately designed layer after RE-P1 is stable.
+## Audit
 
-Each prompt file stores the full system and user strings, prompt payload, versions, hashes, and byte counts. Headers and secrets are never recorded.
+`npm run agent:prompt-audit` is read-only over ignored local Prompt
+artifacts. It reports full/projected byte distributions, duplicate
+representations and malformed files without printing Prompt content or calling
+the provider.
+
+The 2026-08-03 audit over 628 Prompts found zero malformed artifacts, full
+median/p95/max 12,071/28,937/38,004 bytes, projected
+6,945/16,305/23,248 bytes, median savings 4,231 bytes and 507 duplicate action
+menus removed.
+
+`agent:prompt-shadow-compare` and `agent:prompt-repeat-baseline` remain
+non-mutating provider experiments over recorded bundles. They never contact the
+Player Environment Host or create a run. The current provider comparison was blocked by the
+network, so no strategy-equivalence claim exists.
+
+State guides explain schema semantics and visible constraints only. They must
+not become per-screen strategy scripts. Strategy, memory and learning remain
+outside the C1 connector freeze.

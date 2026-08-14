@@ -5,6 +5,7 @@ export type RawGameState = JsonObject;
 export interface GameExecutionResult {
   accepted: boolean;
   outcome?: "accepted" | "rejected" | "unknown";
+  rejectionCode?: string;
   settlementAuthority?: "adapter_confirmed" | "client_observation_required";
   confirmedStateToken?: string;
   response: JsonValue;
@@ -15,8 +16,8 @@ export interface AdapterCapabilities {
   canExecuteActions: boolean;
   canListLegalActions: boolean;
   actionResults: "none" | "partial" | "complete";
-  legalActionAuthority?: "local_reconstruction" | "bridge_advertised" | "mixed";
-  protocols?: Array<"sts2mcp_v1" | "bridge_v2">;
+  legalActionAuthority?: "player_environment";
+  protocols?: Array<"player_environment">;
 }
 
 export interface AdapterDescriptor {

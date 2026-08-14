@@ -74,7 +74,7 @@ export interface PromptRepeatBaseline {
 
 /**
  * Calls a provider twice against one already-recorded observation. It does not
- * open the Gateway, create a run, write artifacts, submit an action, or poll
+ * open the Player Environment Host, create a run, write artifacts, submit an action, or poll
  * command completion. It is evidence for a later semantic review only.
  */
 export async function compareRecordedPromptWithShadow(
@@ -129,7 +129,7 @@ export async function compareRecordedPromptWithShadow(
     },
     limitations: [
       "provider outputs are sequential samples, not a causal quality result",
-      "no action was submitted and no Gateway or command lifecycle was opened",
+      "no action was submitted and no Player Environment Host or command lifecycle was opened",
       "action agreement does not prove strategic correctness",
       "reason text is intentionally not emitted; semantic review needs controlled access to recorded evidence"
     ]
@@ -139,7 +139,7 @@ export async function compareRecordedPromptWithShadow(
 /**
  * Measures provider variation on one exact full Prompt before interpreting a
  * projection disagreement. Like the paired comparison, it is non-executing and
- * does not open the Gateway or write any local artifact.
+ * does not open the Player Environment Host or write any local artifact.
  */
 export async function repeatRecordedPromptVariant(
   request: RecordedPromptComparisonRequest & { readonly sampleCount: number; readonly variant: "full" | "shadow" },
@@ -191,7 +191,7 @@ export async function repeatRecordedPromptVariant(
     },
     limitations: [
       "repeat samples estimate provider variation only for this recorded prompt variant",
-      "no action was submitted and no Gateway or command lifecycle was opened",
+      "no action was submitted and no Player Environment Host or command lifecycle was opened",
       "repeat agreement does not prove strategic correctness or projection fidelity"
     ]
   };
@@ -227,11 +227,17 @@ async function readRecordedPrompt(request: RecordedPromptComparisonRequest): Pro
   if (!isJsonObject(parsedUserPrompt.currentState) || !Array.isArray(parsedUserPrompt.allowedActions)) {
     throw new Error(`Recorded prompt lacks currentState or allowedActions: ${runId}/${decisionId}`);
   }
+  const context = isJsonObject(parsedUserPrompt.currentState.context)
+    ? parsedUserPrompt.currentState.context
+    : undefined;
+  const surface = isJsonObject(parsedUserPrompt.currentState.surface)
+    ? parsedUserPrompt.currentState.surface
+    : undefined;
   return {
     systemPrompt: value.systemPrompt,
     userPrompt: value.userPrompt,
-    contextKind: stringOrUnknown(parsedUserPrompt.contextKind),
-    surfaceKind: stringOrUnknown(parsedUserPrompt.surfaceKind),
+    contextKind: stringOrUnknown(parsedUserPrompt.contextKind ?? context?.kind),
+    surfaceKind: stringOrUnknown(parsedUserPrompt.surfaceKind ?? surface?.kind),
     actionAuthority: stringOrUnknown(parsedUserPrompt.actionAuthority),
     currentState: parsedUserPrompt.currentState,
     allowedActions: parsedUserPrompt.allowedActions.filter(isJsonValue)

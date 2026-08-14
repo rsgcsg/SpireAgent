@@ -1,0 +1,54 @@
+name: Bug report
+description: Report a reproducible Agent, provider, consumer integration or documentation defect.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not paste API keys, `.env.local`, proprietary game binaries or full provider output.
+  - type: input
+    id: revision
+    attributes:
+      label: Branch and exact commit
+      placeholder: branch / 40-character SHA
+    validations:
+      required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Suspected layer
+      options:
+        - Unknown
+        - Agent or prompt
+        - Re consumer or supervision
+        - Connector client integration
+        - External Connector or game environment
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: identity
+    attributes:
+      label: Non-secret identity
+      description: Paste the relevant Agent revision and redacted Connector protocol/runtime identity from `npm run doctor`; remove local paths if desired.
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Include the game state, command and exact failure/stop. A run ID is enough when maintainers have the local evidence separately.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence level
+      description: State whether this is source, test, build, installed, loaded or exact-runtime Live evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true

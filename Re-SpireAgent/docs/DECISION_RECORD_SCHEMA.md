@@ -1,39 +1,32 @@
 # Decision Record Schema
 
-Current schema version: 2. Version 1 remains local historical evidence and is replay-readable as stored JSON, but its old normalized projection is not silently reinterpreted as v2.
+Current decision-record schema: `2`. Current normalized-state schema: `32`.
+Older local records remain readable as historical JSON; they are not silently
+reinterpreted as current Player Environment evidence.
 
-Each tick creates one append-only `DecisionRecord`, including non-execution outcomes. Large evidence has stable relative references:
+Each tick appends one `DecisionRecord`, including non-execution outcomes:
 
-- `preState`: raw ref, normalized state, diagnostics, full-raw stale-guard hash, and normalized projection hash
-- `allowedActions`: IDs plus local executable payloads used for audit
-- `prompt`: prompt ref, versions, hashes, byte counts
-- `llm`: provider/model, all attempts, raw content, parsed decision, optional
-  typed normalizations, validation
-- `execution`: selected ID, local payload, stale-state result, adapter response/error
-- `settlement`: next-decision-checkpoint status, polls, elapsed time, error,
-  plus optional transient-observation count and last safe error code/message;
-  after Gateway completion, an actionable checkpoint must repeat with the same
-  full state hash before another model call, while non-actionable or coherent
-  unsupported successors remain immediately typed and non-authorizing
-- `runtimeGuard`: optional exact-transition cycle evidence; a second identical pre-state/action/post-state transition stops the bounded run without rewriting the successful action outcome
-- `postState`: raw ref, normalized state, diagnostics, full-raw stale-guard hash, and normalized projection hash
-- `outcome`: the terminal classification for this tick
+- `preState`: raw reference, normalized state and stale-guard hashes;
+- `allowedActions`: local opaque choices and their exact `bound_action_id`;
+- `prompt`: versions, hashes and byte counts;
+- `llm`: provider/model attempts, parsed decision and validation;
+- `execution`: selected local choice, submission result and error;
+- `settlement`: bounded successor polling and stable-checkpoint status;
+- `runtimeGuard`: repeated-transition evidence used only for liveness;
+- `postState`: successor evidence when available;
+- `outcome`: terminal classification for the tick.
 
-Core outcomes distinguish observation failure, invalid/non-actionable/no-action state, dry run, provider failure, invalid decision, stale state, execution failure, settled execution, confirmed Bridge execution with the next checkpoint still pending, and unsettled execution. `executed_checkpoint_pending` is allowed only after an opaque Bridge v2 command has completed and a different valid but not yet stable state was observed; the bounded run continues with a fresh read and never retries the action. A v1 acknowledgement, unchanged state, read error, or unknown command outcome cannot use that classification. Adapter results may additionally classify the command as `accepted`, `rejected`, or `unknown`; unknown is never interpreted as safe rejection or retried automatically.
+`delivered` proves only native input delivery. Re then observes successor
+Snapshots without reconstructing native completion. `not_delivered` invalidates
+the old action. `unknown`, transport uncertainty or receipt mismatch stops
+without retry. Read-only transient Snapshot races may obtain a fresh Snapshot;
+mutation uncertainty is never treated as a safe rejection.
 
-An `observation_failed` record caused by the typed
-`state_changed_during_composite_read` race contains no prompt or execution. A
-bounded run may continue to a new tick after that exact safe race; generic
-transport/decoding observation failures and all pre-execution read failures
-remain terminal.
+`metadata.json` records the adapter endpoint, protocol/artifact/runtime/game/
+Modset identity when available, provider configuration excluding secrets,
+Agent version, schema versions and declared evidence provenance. Historical
+metadata lacking current identity fields is explicitly identity-incomplete.
 
-A valid JSON response whose only contract excess is `reasonBrief` longer than
-240 characters remains executable after deterministic truncation. The attempt
-records `normalizations=["reason_brief_truncated_to_contract_limit"]`, while
-the original provider payload and raw response text remain available for
-audit. This exception never repairs JSON, unknown/extra fields, confidence,
-`selectedActionId`, action legality, stale state, execution or completion.
-
-`metadata.json` records adapter endpoint/capabilities, negotiated protocol/build/surface facts when available, provider model/thinking/output cap, agent version, schema versions, and declared evidence provenance; it never records the API key. Provenance is one of `ordinary_gameplay`, `operator_positioned`, `console_assisted`, `fixture`, or `unrecorded`. It is coverage metadata, not authority or qualification. Historical metadata without the field remains readable as `unrecorded`. Current normalized records contain separate semantic `context`, active interaction `surface`, `actionAuthority`, preserved Bridge diagnostics, a visibility/Inspection catalog, optional state-bound coherent observation evidence, player-visible surface evidence, and strict Bridge action entity bindings. Schema 30 adds formal semantic/current-authority identities and removes contract/identity shadows plus control histories from normalized state. Explicit visible root identities such as `screen_entity_id` participate in binding integrity just like item-level `entity_id` values.
-
-The record is evidence of what this process observed and attempted. It is not proof that MCP exposed complete game truth or that a strategic choice was good.
+The record proves only what this process observed, selected and submitted. It
+does not prove complete UI coverage, strategic quality, a loaded artifact or a
+successful journey by itself.

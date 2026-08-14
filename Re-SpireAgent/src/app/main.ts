@@ -1,8 +1,8 @@
-import { loadEnvironment, readRuntimeConfig } from "../config/env.js";
-import { buildAllowedActions } from "../domain/actions/buildAllowedActions.js";
-import { Sts2McpHybridAdapter } from "../integrations/sts2mcp/hybridAdapter.js";
+import { loadEnvironment, readDataDirectory, readRuntimeConfig } from "../config/env.js";
+import { buildPlayerEnvironmentAllowedActions } from "../domain/actions/buildPlayerEnvironmentAllowedActions.js";
+import { Sts2PlayerEnvironmentAdapter } from "../integrations/sts2Connector/playerEnvironmentAdapter.js";
 import { DeepSeekDecisionProvider } from "../llm/deepseekProvider.js";
-import { normalizeCurrentState } from "../normalization/normalizeCurrentState.js";
+import { normalizePlayerEnvironmentCurrentState } from "../normalization/normalizePlayerEnvironmentCurrentState.js";
 import { createBaselineReport } from "../evaluation/baselineReport.js";
 import { auditPromptArtifacts } from "../prompting/promptAudit.js";
 import { compareRecordedPromptWithShadow, repeatRecordedPromptVariant } from "../prompting/promptShadowComparison.js";
@@ -10,6 +10,7 @@ import { listRunIds, readRunMetadata, readRunRecords, readRunSummary } from "../
 import { classifyRunTermination, runLoop } from "../runtime/runLoop.js";
 import { parseCliInvocation } from "./cliArgs.js";
 import { runConnectorCanary } from "./connectorCanary.js";
+import { installGracefulShutdown } from "./gracefulShutdown.js";
 import { createRuntime } from "./runtimeFactory.js";
 
 async function main(): Promise<void> {
@@ -20,15 +21,15 @@ async function main(): Promise<void> {
   }
 
   loadEnvironment();
-  const config = readRuntimeConfig();
+  const dataDir = readDataDirectory();
 
   if (invocation.command === "replay") {
-    await replay(config.runtime.dataDir, invocation.runId, invocation.decisionId);
+    await replay(dataDir, invocation.runId, invocation.decisionId);
     return;
   }
 
   if (invocation.command === "prompt-audit") {
-    const result = await auditPromptArtifacts(config.runtime.dataDir, {
+    const result = await auditPromptArtifacts(dataDir, {
       ...(invocation.runId ? { runId: invocation.runId } : {}),
       ...(invocation.limitRuns ? { limitRuns: invocation.limitRuns } : {})
     });
@@ -37,10 +38,12 @@ async function main(): Promise<void> {
   }
 
   if (invocation.command === "baseline-report") {
-    const result = await createBaselineReport(config.runtime.dataDir, invocation.runId);
+    const result = await createBaselineReport(dataDir, invocation.runId);
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     return;
   }
+
+  const config = readRuntimeConfig();
 
   if (invocation.command === "prompt-shadow-compare") {
     const provider = new DeepSeekDecisionProvider(config.deepseek);
@@ -67,16 +70,17 @@ async function main(): Promise<void> {
   }
 
   if (invocation.command === "inspect") {
-    const adapter = new Sts2McpHybridAdapter(config.mcp.baseUrl, config.mcp.timeoutMs, {
-      startupWaitMs: config.mcp.startupWaitMs,
-      startupPollMs: config.mcp.startupPollMs,
-      commandPollMs: config.mcp.commandPollMs,
-      commandTimeoutMs: config.mcp.commandTimeoutMs
+    const adapter = new Sts2PlayerEnvironmentAdapter(config.connector.baseUrl, config.connector.timeoutMs, {
+      startupWaitMs: config.connector.startupWaitMs,
+      startupPollMs: config.connector.startupPollMs
     });
     await adapter.initialize();
     const raw = await adapter.readCurrentState();
-    const envelope = normalizeCurrentState(raw, adapter.describe());
-    const allowedActions = buildAllowedActions(envelope.currentState, envelope.stateHash);
+    const envelope = normalizePlayerEnvironmentCurrentState(raw, adapter.describe());
+    const allowedActions = buildPlayerEnvironmentAllowedActions(
+      envelope.currentState,
+      envelope.stateHash
+    );
     process.stdout.write(`${JSON.stringify({
       adapter: adapter.describe(),
       stateHash: envelope.stateHash,
@@ -95,6 +99,7 @@ async function main(): Promise<void> {
   }
 
   const runtime = await createRuntime(config);
+  const removeSignalHandlers = installGracefulShutdown(runtime.release);
   try {
     if (invocation.command === "tick") {
       const result = await runtime.orchestrator.runTick(1, { dryRun: invocation.dryRun });
@@ -137,6 +142,7 @@ async function main(): Promise<void> {
       return;
     }
   } finally {
+    removeSignalHandlers();
     await runtime.release();
   }
 }
@@ -178,7 +184,7 @@ function printTick(runId: string, result: {
 }
 
 function printHelp(): void {
-  process.stdout.write(`RE-P1 commands:\n  npm run agent:inspect\n  npm run agent:connector-canary -- --action-id <advertised-id>\n  npm run agent:tick -- --dry-run\n  npm run agent:tick\n  npm run agent:run -- --max-ticks 20 --delay-ms 250\n    (the npm script opts into one Gateway-advertised run entry; the loop remains one-game bounded)\n  npm run agent:replay -- --run-id <id> [--decision-id <id>]\n  npm run agent:baseline-report [--run-id <id>]\n  npm run agent:prompt-audit [--run-id <id> | --limit-runs <positive-count>]\n  npm run agent:prompt-shadow-compare -- --run-id <id> --decision-id <id>\n  npm run agent:prompt-repeat-baseline -- --run-id <id> --decision-id <id> --samples <2-5> [--variant full|shadow]\n`);
+  process.stdout.write(`RE-P1 commands:\n  npm run agent:inspect\n  npm run agent:connector-canary -- --action-id <advertised-id>\n  npm run agent:tick -- --dry-run\n  npm run agent:tick\n  npm run agent:run -- --max-ticks 20 --delay-ms 250\n    (the npm script opts into one Player Environment-advertised run entry; the loop remains one-game bounded)\n  npm run agent:replay -- --run-id <id> [--decision-id <id>]\n  npm run agent:baseline-report [--run-id <id>]\n  npm run agent:prompt-audit [--run-id <id> | --limit-runs <positive-count>]\n  npm run agent:prompt-shadow-compare -- --run-id <id> --decision-id <id>\n  npm run agent:prompt-repeat-baseline -- --run-id <id> --decision-id <id> --samples <2-5> [--variant full|shadow]\n`);
 }
 
 main().catch((error) => {

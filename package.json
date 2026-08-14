@@ -2,33 +2,21 @@
   "name": "spireagent-workspace",
   "version": "0.0.0",
   "private": true,
-  "description": "Workspace entrypoint for Re-SpireAgent and the STS2 Live Gateway.",
+  "description": "SpireAgent consumer, evaluation and product workspace.",
   "type": "module",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "check": "npm --prefix Re-SpireAgent run check",
+    "bootstrap": "npm --prefix Re-SpireAgent ci",
+    "doctor": "node tools/consumer-doctor.mjs",
+    "check": "npm run check:agent && npm run check:docs && npm run check:connector-requirements && npm run check:run-identity",
     "check:agent": "npm --prefix Re-SpireAgent run check",
     "test:agent": "npm --prefix Re-SpireAgent test",
     "build:agent": "npm --prefix Re-SpireAgent run build",
-    "check:docs": "node tools/check-active-markdown-links.mjs && npm run check:connector-inventory && npm run check:connector-adaptation && npm run check:connector-clean-closure",
-    "check:connector-inventory": "node tools/check-connector-operation-inventory.mjs",
-    "check:connector-adaptation": "node tools/check-connector-adaptation-contracts.mjs",
-    "check:connector-clean-closure": "node tools/check-connector-clean-closure.mjs",
-    "check:connector-compatibility-fixtures": "node tools/test-connector-compatibility-grader.mjs",
-    "check:connector-permission-fixtures": "node tools/test-connector-permission-transition-assertion.mjs",
-    "check:connector-qualification": "node tools/test-connector-qualification-ledger.mjs",
-    "check:connector-profiles": "node tools/test-connector-environment-profiles.mjs",
-    "check:connector-migration": "node tools/test-connector-migration-orchestrator.mjs",
-    "audit:connector-permission-transition": "node tools/assert-connector-permission-transition.mjs",
-    "audit:connector-compatibility": "node tools/run-connector-compatibility-audit.mjs",
-    "audit:connector-operation-bindings": "node tools/run-operation-binding-audit.mjs",
-    "qualification:ledger": "node tools/connector-qualification-ledger.mjs",
-    "migration:profiles": "node tools/connector-environment-profiles.mjs",
-    "migration:cycle": "node tools/connector-migration-orchestrator.mjs",
-    "connector": "node tools/connector.mjs",
-    "check:connector-cli": "node tools/test-connector-cli.mjs",
-    "check:connector-run-identity": "node tools/test-connector-run-identity-audit.mjs"
+    "check:docs": "node tools/check-active-markdown-links.mjs && npm run check:current-truth",
+    "check:current-truth": "node tools/check-current-truth.mjs",
+    "check:connector-requirements": "node tools/check-connector-requirements.mjs",
+    "check:run-identity": "node tools/test-run-identity-audit.mjs"
   }
 }

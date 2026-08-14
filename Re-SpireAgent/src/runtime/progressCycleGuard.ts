@@ -3,13 +3,11 @@ import type { NormalizedCurrentState } from "../domain/state/index.js";
 import { stateHash } from "./stateHash.js";
 
 const TRANSPORT_IDENTITY_KEYS = new Set([
-  "actionId",
-  "bridgeStateId",
-  "expectedStateId",
-  "inspectionId",
-  "observationId",
-  "observedStateId",
-  "stateId"
+  "boundActionId",
+  "choiceId",
+  "interactionId",
+  "expectedSnapshotId",
+  "snapshotId"
 ]);
 
 export interface RepeatedSemanticTransition {
@@ -22,24 +20,24 @@ export interface RepeatedSemanticTransition {
   suppressedReturnActionHashes: string[];
 }
 
-export interface CycleActionFilterResult {
-  actions: AllowedAction[];
+export interface CycleActionFilterResult<TAction extends { kind: string }> {
+  actions: AllowedAction<TAction>[];
   excludedActionHashes: string[];
 }
 
 /**
- * Detects repeated business-state transitions even when Bridge state/action
- * identities are correctly regenerated for every UI lifecycle step.
+ * Detects repeated business-state transitions even when transport identities
+ * are correctly regenerated for every UI lifecycle step.
  */
-export class ProgressCycleGuard {
+export class ProgressCycleGuard<TAction extends { kind: string }> {
   private readonly occurrences = new Map<string, number>();
   private readonly transitions = new Map<string, Array<{ actionHash: string; postHash: string }>>();
   private readonly suppressedActions = new Map<string, Set<string>>();
 
   filterActions(
     state: NormalizedCurrentState,
-    actions: AllowedAction[]
-  ): CycleActionFilterResult {
+    actions: AllowedAction<TAction>[]
+  ): CycleActionFilterResult<TAction> {
     const blocked = this.suppressedActions.get(semanticProgressHash(state));
     if (!blocked?.size) return { actions, excludedActionHashes: [] };
 
@@ -58,7 +56,7 @@ export class ProgressCycleGuard {
 
   observe(
     pre: NormalizedCurrentState,
-    action: AllowedAction,
+    action: AllowedAction<TAction>,
     post: NormalizedCurrentState
   ): RepeatedSemanticTransition | undefined {
     const preProgressHash = semanticProgressHash(pre);
@@ -102,10 +100,10 @@ export function semanticProgressHash(state: NormalizedCurrentState): string {
   return stateHash(stripTransportIdentity(state));
 }
 
-export function semanticActionHash(action: AllowedAction): string {
-  const transport = action.action.kind === "bridge_v2_action"
-    ? { kind: action.action.kind, bridgeActionKind: action.action.bridgeActionKind }
-    : action.action;
+export function semanticActionHash<TAction extends { kind: string }>(
+  action: AllowedAction<TAction>
+): string {
+  const transport = stripTransportIdentity(action.action);
   return stateHash({
     kind: action.kind,
     label: action.label,

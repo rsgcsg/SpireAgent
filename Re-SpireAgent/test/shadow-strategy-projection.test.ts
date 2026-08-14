@@ -2,92 +2,86 @@ import { describe, expect, it } from "vitest";
 import { buildShadowStrategyProjection } from "../src/prompting/shadowStrategyProjection.js";
 import type { JsonObject } from "../src/shared/json.js";
 
-describe("shadow strategy projection", () => {
-  it("removes governance and repeated facts without mutating complete evidence", () => {
+describe("strategy projection", () => {
+  it("separates Player Environment evidence from the finite model menu without mutating it", () => {
     const currentState: JsonObject = {
-      normalizedSchemaVersion: 29,
-      actionAuthority: "bridge_advertised",
-      player: { runDeck: [{ id: "STRIKE" }], drawPile: [] },
-      bridgeInspectionFacts: {
-        runDeck: [{ id: "STRIKE" }],
-        drawPile: [],
-        shopCatalog: { cards: [{ id: "BASH", price: 99 }] }
-      },
-      bridgeObservation: { coherent: true, inspectionKinds: ["run_deck", "shop_catalog"] },
-      bridgeVisibility: {
-        playerVisibleClosureStatus: "partial_catalog",
-        missing: ["linked_details"],
-        hiddenByPolicy: ["draw_order"]
-      },
-      bridgeDiagnostics: [{ code: "audit-only" }],
-      bridgeInspectionCatalog: [{ kind: "run_deck" }],
-      surface: { kind: "shop_inventory", legalActions: [{ id: "surface-action" }] }
+      normalizedSchemaVersion: 32,
+      sourceStateType: "player_environment:shop_inventory",
+      actionAuthority: "player_environment",
+      player: { hp: 30, gold: 99 },
+      surface: {
+        kind: "player_environment",
+        snapshotId: "snapshot-1",
+        interactionKind: "shop_inventory",
+        reads: [{ readId: "read:shop_catalog", kind: "shop_catalog" }],
+        completeness: {
+          status: "complete",
+          missing: [],
+          hiddenByPolicy: ["future_inventory"]
+        },
+        boundActions: [{ boundActionId: "buy-card" }]
+      }
     };
     const original = JSON.stringify(currentState);
 
     const result = buildShadowStrategyProjection({
       contextKind: "shop",
-      surfaceKind: "shop_inventory",
-      actionAuthority: "bridge_advertised",
+      surfaceKind: "player_environment",
+      actionAuthority: "player_environment",
       currentState,
-      allowedActions: [{ id: "allowed-action", kind: "purchase_shop_card", label: "Buy Bash" }]
+      allowedActions: [{ id: "buy-card", kind: "purchase", label: "Buy card" }]
     });
     const state = result.modelPayload.currentState as JsonObject;
-    const boundary = result.modelPayload.informationBoundary as JsonObject;
 
     expect(JSON.stringify(currentState)).toBe(original);
-    expect(state.bridgeDiagnostics).toBeUndefined();
-    expect(state.bridgeVisibility).toBeUndefined();
-    expect((state.surface as JsonObject).legalActions).toBeUndefined();
-    expect((state.inspectionFacts as JsonObject).runDeck).toBeUndefined();
-    expect((state.inspectionFacts as JsonObject).drawPile).toBeUndefined();
-    expect((state.inspectionFacts as JsonObject).shopCatalog).toEqual({ cards: [{ id: "BASH", price: 99 }] });
-    expect(boundary).toEqual({
-      playerVisibleClosureStatus: "partial_catalog",
-      missing: ["linked_details"],
-      hiddenByPolicy: ["draw_order"],
-      coherentObservation: true,
-      observedFactGroups: ["drawPile", "runDeck", "shopCatalog"]
+    expect(state.normalizedSchemaVersion).toBeUndefined();
+    expect(state.sourceStateType).toBeUndefined();
+    expect(state.actionAuthority).toBeUndefined();
+    expect((state.surface as JsonObject).boundActions).toBeUndefined();
+    expect(result.modelPayload.informationBoundary).toEqual({
+      completeness: {
+        status: "complete",
+        missing: [],
+        hiddenByPolicy: ["future_inventory"]
+      },
+      availableReads: [{ readId: "read:shop_catalog", kind: "shop_catalog" }]
     });
-    expect(result.deduplicatedFactGroups).toEqual([
-      "player.runDeck=inspection.runDeck",
-      "player.drawPile=inspection.drawPile"
-    ]);
     expect(result.omittedEvidenceFields).toEqual(expect.arrayContaining([
-      "bridgeDiagnostics",
-      "bridgeVisibility",
-      "bridgeInspectionFacts",
-      "surface.legalActions"
+      "normalizedSchemaVersion",
+      "sourceStateType",
+      "actionAuthority",
+      "surface.boundActions"
     ]));
+    expect(result.deduplicatedFactGroups).toEqual([]);
     expect(result.sourceNormalizedStateHash).toMatch(/^sha256:[a-f0-9]{64}$/);
     expect(result.projectionHash).toMatch(/^sha256:[a-f0-9]{64}$/);
-    expect(result.userPrompt).not.toContain("surface-action");
-    expect(result.userPrompt).toContain("allowed-action");
+    expect(result.userPrompt).not.toContain("boundActionId");
+    expect(result.userPrompt).toContain("buy-card");
   });
 
-  it("keeps a usable compact payload when no bridge sidecars exist", () => {
+  it("keeps a compact payload when no reads are available", () => {
     const result = buildShadowStrategyProjection({
       contextKind: "combat",
-      surfaceKind: "combat_turn",
-      actionAuthority: "local_reconstruction",
-      currentState: { player: { hp: 30 }, surface: { kind: "combat_turn", legalActions: [] } },
+      surfaceKind: "player_environment",
+      actionAuthority: "player_environment",
+      currentState: { player: { hp: 30 }, surface: { kind: "player_environment", reads: [], boundActions: [] } },
       allowedActions: []
     });
 
-    expect(result.modelPayload.informationBoundary).toBeUndefined();
+    expect(result.modelPayload.informationBoundary).toEqual({ availableReads: [] });
     expect(result.modelPayload.currentState).toEqual({
       player: { hp: 30 },
-      surface: { kind: "combat_turn" }
+      surface: { kind: "player_environment", reads: [] }
     });
   });
 
-  it("is deterministic for the same full evidence and allowed actions", () => {
+  it("is deterministic for the same environment evidence and finite choices", () => {
     const input = {
       contextKind: "map",
-      surfaceKind: "map_navigation",
-      actionAuthority: "bridge_advertised",
-      currentState: { player: { hp: 45 }, surface: { kind: "map_navigation", legalActions: [] } },
-      allowedActions: [{ id: "action:map", kind: "choose_map_node" }]
+      surfaceKind: "player_environment",
+      actionAuthority: "player_environment",
+      currentState: { player: { hp: 45 }, surface: { kind: "player_environment", reads: [], boundActions: [] } },
+      allowedActions: [{ id: "choose-node", kind: "choose", label: "Choose node" }]
     };
 
     const first = buildShadowStrategyProjection(input);

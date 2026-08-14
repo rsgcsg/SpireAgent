@@ -1,8 +1,7 @@
 import type { AllowedAction } from "../domain/actions/allowedAction.js";
-import type { ExecutableGameAction } from "../domain/actions/action.js";
 import type { StateEnvelope } from "../domain/state/index.js";
 import type { GameAdapter, GameExecutionResult, RawGameState } from "../game-io/adapter.js";
-import type { SettlementResult, SettlementWatcher } from "./settlementWatcher.js";
+import type { SuccessorObservationResult, SuccessorWatcher } from "./successorWatcher.js";
 
 export type AdvertisedActionExecution =
   | {
@@ -17,6 +16,12 @@ export type AdvertisedActionExecution =
       readonly error: string;
     }
   | {
+      readonly stage: "adapter_stale";
+      readonly outcome: "not_executed_stale_state";
+      readonly adapterResult: GameExecutionResult;
+      readonly error: string;
+    }
+  | {
       readonly stage: "adapter_terminal";
       readonly outcome: "execution_failed" | "executed_unsettled";
       readonly adapterResult: GameExecutionResult;
@@ -26,21 +31,21 @@ export type AdvertisedActionExecution =
       readonly stage: "settlement";
       readonly outcome: "executed_and_settled" | "executed_checkpoint_pending" | "executed_unsettled";
       readonly adapterResult: GameExecutionResult;
-      readonly settlement: SettlementResult;
+      readonly settlement: SuccessorObservationResult;
       readonly error?: string;
     };
 
 /**
  * The single Re-side execution boundary for an action advertised by the
- * current observation. It adds no game legality: the Gateway remains the
- * authority and revalidates again when the command is submitted.
+ * current observation. It adds no game legality: the Player Environment Host
+ * remains the authority and revalidates again when the action is submitted.
  */
-export async function executeAdvertisedAction(input: {
+export async function executeAdvertisedAction<TAction extends { kind: string }>(input: {
   readonly pre: StateEnvelope;
-  readonly selectedAction: AllowedAction;
-  readonly adapter: GameAdapter<RawGameState, ExecutableGameAction, GameExecutionResult>;
+  readonly selectedAction: AllowedAction<TAction>;
+  readonly adapter: GameAdapter<RawGameState, TAction, GameExecutionResult>;
   readonly normalize: (raw: unknown) => StateEnvelope;
-  readonly settlement: SettlementWatcher;
+  readonly settlement: SuccessorWatcher<TAction>;
 }): Promise<AdvertisedActionExecution> {
   let latest: StateEnvelope;
   try {
@@ -74,6 +79,14 @@ export async function executeAdvertisedAction(input: {
   }
 
   if (!adapterResult.accepted) {
+    if (adapterResult.outcome === "rejected" && adapterResult.rejectionCode === "stale_state") {
+      return {
+        stage: "adapter_stale",
+        outcome: "not_executed_stale_state",
+        adapterResult,
+        error: "Player Environment rejected the action because its snapshot binding became stale"
+      };
+    }
     const unknown = adapterResult.outcome === "unknown";
     return {
       stage: "adapter_terminal",
@@ -85,17 +98,18 @@ export async function executeAdvertisedAction(input: {
     };
   }
 
-  const settlement = await input.settlement.waitForNextState(
+  const settlement = await input.settlement.waitForReadySuccessor(
     input.pre,
     input.selectedAction.action,
     adapterResult.settlementAuthority,
-    adapterResult.confirmedStateToken
+    adapterResult.confirmedStateToken,
+    input.selectedAction.kind
   );
-  const bridgeCheckpointPending = adapterResult.settlementAuthority === "adapter_confirmed"
+  const successorCheckpointPending = adapterResult.settlementAuthority === "adapter_confirmed"
     && settlement.status !== "settled";
   const outcome = settlement.status === "settled"
     ? "executed_and_settled"
-    : bridgeCheckpointPending
+    : successorCheckpointPending
       ? "executed_checkpoint_pending"
       : "executed_unsettled";
   return {

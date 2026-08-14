@@ -1,6 +1,6 @@
 import type { ExecutableGameAction } from "./action.js";
 
-export interface AllowedAction {
+export interface AllowedAction<TAction extends { kind: string } = ExecutableGameAction> {
   id: string;
   /** Strategic/display kind. The executable transport action remains private. */
   kind: string;
@@ -10,7 +10,7 @@ export interface AllowedAction {
     role: string;
     entityId: string;
   }>;
-  action: ExecutableGameAction;
+  action: TAction;
   sourceStateHash: string;
 }
 
@@ -25,7 +25,9 @@ export interface PromptAllowedAction {
   }>;
 }
 
-export function toPromptAllowedAction(action: AllowedAction): PromptAllowedAction {
+export function toPromptAllowedAction<TAction extends { kind: string }>(
+  action: AllowedAction<TAction>
+): PromptAllowedAction {
   return {
     id: action.id,
     kind: action.kind,

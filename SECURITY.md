@@ -1,44 +1,24 @@
 # Security Policy
 
-## Current Product Status
+## Scope
 
-SpireAgent is a development project. The current STS2 Agent Bridge listens on
-loopback and validates game actions, but it does not yet authenticate clients,
-isolate provider credentials, or provide a consumer-grade installer. Preview.64
-coordinates one runtime-bound mutation controller, but registration metadata
-and lease IDs are not authentication and do not isolate a malicious local
-process. Do not expose port `15526` beyond the local machine.
+This repository handles provider credentials and controls a cooperative local
+Connector client. Keep keys in `Re-SpireAgent/.env.local`, an OS secret store or
+the process environment. Never include keys, run records, provider output or
+game binaries in issues and commits.
 
-The Gateway is the only authority for player-visible facts, advertised opaque
-actions, execute-time validation, and semantic completion. Re-SpireAgent,
-Python MCP, and other clients must not bypass that authority.
+The STS2 Connector loopback endpoint and controller leases are not an
+authentication boundary against a malicious local process. Do not expose the
+endpoint beyond localhost. Host security, hidden-information boundaries,
+native action validation and Connector vulnerabilities are reported to the
+standalone Connector project.
 
-## Secrets And Local Data
+## Agent Safety Boundary
 
-- Keep provider keys only in `Re-SpireAgent/.env.local`, an OS secret store, or
-  the process environment.
-- Never include `.env.local`, API keys, run records, game assemblies, installed
-  DLLs, or mutable runtime state in an issue or commit.
-- Treat third-party Agents and MCP clients as untrusted. The current loopback
-  endpoint is not a security boundary.
+Re must strictly decode the supported package contract, select only an exact
+current BoundAction, preserve stale/controller binding and never retry unknown
+delivery. A package resolver, fixture, prompt or run-evaluation tool cannot
+grant gameplay authority.
 
-## Reporting
-
-For a vulnerability that could expose credentials, permit unauthorized game
-actions, bypass state binding, retry an unknown outcome, or leak hidden game
-information, use GitHub private vulnerability reporting when available. Do not
-publish exploit details or credentials in a public issue.
-
-Include the repository commit, Bridge protocol, game identity, Modset, Bridge
-SHA/MVID/runtime identity, and a redacted reproduction. Do not attach the game
-binary or provider output containing secrets.
-
-## Supported Security Scope
-
-Security fixes target the current `develop` mainline:
-
-- `Re-SpireAgent/`
-- `STS2MCP/`
-
-The material under `archive/` is unsupported historical evidence. It must not
-be deployed as a fallback.
+Use private vulnerability reporting when available for credential exposure,
+unauthorized action delivery, hidden-state leakage or unknown-outcome retry.

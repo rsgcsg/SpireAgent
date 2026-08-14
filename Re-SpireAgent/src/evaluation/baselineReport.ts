@@ -15,14 +15,13 @@ interface BaselineIdentity {
   environment: {
     modsetStatus: string | null;
     modsetFingerprint: string | null;
-    permissionPolicyDigest: string | null;
-    runtimePatchDigest: string | null;
+    environmentFingerprint: string | null;
   };
 }
 
 /**
  * Builds a non-authorizing, content-redacted report from append-only local run
- * evidence. It never opens the Gateway, invokes a provider, or changes policy.
+ * evidence. It never opens the Host, invokes a provider, or changes authority.
  */
 export async function createBaselineReport(dataRoot: string, requestedRunId?: string) {
   const runIds = await listRunIds(dataRoot);
@@ -38,7 +37,7 @@ export async function createBaselineReport(dataRoot: string, requestedRunId?: st
 
 export function buildBaselineReport(
   metadata: RunMetadata,
-  records: readonly DecisionRecord[],
+  records: readonly DecisionRecord<{ kind: string }>[],
   summary: RunSummary | undefined
 ) {
   const negotiated = isJsonObject(metadata.adapter.negotiated) ? metadata.adapter.negotiated : {};
@@ -54,10 +53,14 @@ export function buildBaselineReport(
     connector: {
       adapterId: metadata.adapter.adapterId,
       adapterVersion: metadata.adapter.adapterVersion ?? null,
-      protocolVersion: stringField(negotiated, "bridge_protocol_version"),
-      assemblySha256: stringField(negotiated, "bridge_assembly_file_sha256"),
-      moduleVersionId: stringField(negotiated, "bridge_module_version_id"),
-      runtimeInstanceId: stringField(negotiated, "bridge_runtime_instance_id")
+      protocolVersion: stringField(negotiated, "connector_protocol_version")
+        ?? stringField(negotiated, "bridge_protocol_version"),
+      assemblySha256: stringField(negotiated, "host_artifact_sha256")
+        ?? stringField(negotiated, "bridge_assembly_file_sha256"),
+      moduleVersionId: stringField(negotiated, "host_module_version_id")
+        ?? stringField(negotiated, "bridge_module_version_id"),
+      runtimeInstanceId: stringField(negotiated, "host_runtime_instance_id")
+        ?? stringField(negotiated, "bridge_runtime_instance_id")
     },
     game: {
       version: stringField(negotiated, "game_version"),
@@ -67,11 +70,9 @@ export function buildBaselineReport(
     environment: {
       modsetStatus: stringField(negotiated, "modset_status"),
       modsetFingerprint: stringField(negotiated, "modset_fingerprint"),
+      environmentFingerprint: stringField(negotiated, "environment_fingerprint"),
       compatibilityPolicyId: stringField(negotiated, "compatibility_policy_id"),
       compatibilityPolicyDigest: stringField(negotiated, "compatibility_policy_digest"),
-      permissionMode: stringField(negotiated, "permission_mode"),
-      permissionPolicyId: stringField(negotiated, "permission_policy_id"),
-      permissionPolicyDigest: stringField(negotiated, "permission_policy_digest"),
       runtimePatchStatus: stringField(negotiated, "runtime_patch_status"),
       runtimePatchDigest: stringField(negotiated, "runtime_patch_digest")
     },
@@ -87,14 +88,13 @@ export function buildBaselineReport(
     ...(metadata.evidence.provenance === "unrecorded" ? ["unrecorded_provenance_is_coverage_only"] : []),
     ...(!summary ? ["run_summary_not_recorded"] : []),
     "strategic_quality_not_evaluated",
-    "report_does_not_grant_permission_or_qualification"
+    "report_is_read_only_and_does_not_change_player_environment_authority"
   ];
 
   return {
     schemaVersion: 1 as const,
     source: "local_run_artifacts_read_only" as const,
-    authorizationEffect: "none" as const,
-    qualificationEffect: "none" as const,
+    authorityEffect: "none" as const,
     runId: metadata.runId,
     identityStatus: missingIdentityFields.length === 0 ? "exact" as const : "incomplete" as const,
     identityDigest: `sha256:${createHash("sha256").update(JSON.stringify(identity)).digest("hex")}`,
@@ -102,7 +102,6 @@ export function buildBaselineReport(
     identity,
     evidence: {
       provenance: metadata.evidence.provenance,
-      qualificationUse: metadata.evidence.qualificationUse,
       startedAt: metadata.startedAt,
       endedAt: summary?.endedAt ?? null,
       termination: summary?.termination ?? "not_recorded",
@@ -145,7 +144,7 @@ export function buildBaselineReport(
   };
 }
 
-function selectedActionKind(record: DecisionRecord): string {
+function selectedActionKind(record: DecisionRecord<{ kind: string }>): string {
   if (!record.execution.selectedActionId) return "not_selected";
   return record.allowedActions.find((action) => action.id === record.execution.selectedActionId)?.kind ?? "unknown_selected_action";
 }
@@ -171,8 +170,7 @@ function findMissingIdentityFields(identity: BaselineIdentity): string[] {
     ["game.mainAssemblyHash", identity.game.mainAssemblyHash],
     ["environment.modsetStatus", identity.environment.modsetStatus],
     ["environment.modsetFingerprint", identity.environment.modsetFingerprint],
-    ["environment.permissionPolicyDigest", identity.environment.permissionPolicyDigest],
-    ["environment.runtimePatchDigest", identity.environment.runtimePatchDigest]
+    ["environment.environmentFingerprint", identity.environment.environmentFingerprint]
   ];
   return required.filter(([, value]) => value === null || value === "").map(([path]) => path);
 }
