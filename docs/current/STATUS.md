@@ -10,23 +10,25 @@ tests and Connector SDK are owned by
 ## Consumer Contract
 
 - accepted Player Environment protocol: `1.0-rc.2`;
-- Connector client: `@rsgcsg/sts2-connector-client@1.0.0-rc.1`;
-- immutable package source: Connector GitHub release `v1.0.0-rc.1`;
+- Connector client: `@rsgcsg/sts2-connector-client@1.0.0-rc.2`;
+- immutable package source: Connector GitHub release `v1.0.0-rc.2`;
 - requirements authority: [`connector-requirements.json`](../../connector-requirements.json);
 - Re imports strict wire validators, REST and controller coordination from the
   Connector package;
 - Re owns only normalization, finite model-choice projection, provider calls,
   progress supervision, recording and evaluation.
 
-The public Connector prerelease is tag/source
-`v1.0.0-rc.1` / `a5db1aea0aabfde457383012b4cae9aa41c92a74`, protocol
+The recommended public Connector prerelease is tag/source
+`v1.0.0-rc.2` / `547c9addac624f7df363a93a3873ee1c2062ecc3`, protocol
 `1.0-rc.2`, DLL SHA-256
-`d28bffe134b3716d5acbf22599fc3e2d93cc6307979c4ed19d6b3cec0f8e1752`
-and MVID `5b24fa87-bb21-499f-b5c9-7fccc1714d34`. It was cold-loaded on
+`cf7ed1454437cb796f5931b361f655222d2f3f2e3da3a21f038a752694645cc6`
+and MVID `6824e21d-7486-40fd-a131-43e789fdc8d2`. It was cold-loaded on
 `v0.111.0/41cef1ea` with the exact Connector-only Modset and completed targeted
 controller/idempotency/stale/Read/native-page gates, a fresh ordinary Journey
-to `game_over`, and an actual rollback/cold-load/restore roundtrip. Canonical
-runtime evidence and release assets remain owned by the Connector release.
+to `game_over`, an actual rollback/cold-load/restore roundtrip, and an
+archive-extracted identity check. RC1 is retained only as superseded
+predecessor evidence. Canonical runtime evidence and release assets remain
+owned by the Connector release.
 
 ## Runtime Evidence Boundary
 

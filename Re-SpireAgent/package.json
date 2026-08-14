@@ -26,7 +26,7 @@
     "agent:prompt-repeat-baseline": "tsx src/app/main.ts prompt-repeat-baseline"
   },
   "dependencies": {
-    "@rsgcsg/sts2-connector-client": "https://github.com/rsgcsg/STS2-Connector/releases/download/v1.0.0-rc.1/rsgcsg-sts2-connector-client-1.0.0-rc.1.tgz",
+    "@rsgcsg/sts2-connector-client": "https://github.com/rsgcsg/STS2-Connector/releases/download/v1.0.0-rc.2/rsgcsg-sts2-connector-client-1.0.0-rc.2.tgz",
     "dotenv": "^16.6.1",
     "zod": "^3.25.76"
   },
