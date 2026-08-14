@@ -26,14 +26,9 @@ action. Unknown delivery is never retried.
 
 ## Development Setup
 
-The current pre-release workspace uses sibling checkouts until the first public
-Connector package is published:
-
-```text
-workspace/
-|- SpireAgent/
-`- STS2-Connector/
-```
+The Agent consumes the immutable Connector SDK asset declared in
+`connector-requirements.json`. A normal clone does not need Connector source or
+a particular sibling directory layout.
 
 ```bash
 cd SpireAgent
@@ -43,8 +38,8 @@ npm run doctor
 npm run check
 ```
 
-Install and verify the real-game Connector with its own release or repository
-tools. Start STS2, then:
+Install the matching real-game Host from the Connector release and verify its
+loaded identity with the Connector tools. Start STS2, then:
 
 ```bash
 cd Re-SpireAgent

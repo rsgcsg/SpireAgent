@@ -23,8 +23,10 @@ sibling checkouts; ordinary users consume releases.
   distinct axes.
 - Cross-repository CI must obtain the exact declared package; it must not infer
   compatibility from a branch.
-- The temporary sibling package source is allowed only before the first public
-  package publication and is reported as an open release blocker.
+- The production dependency is the immutable SDK asset attached to the
+  declared Connector release. A sibling SDK may be installed with `--no-save`
+  only for coordinated local development and must not enter committed package
+  metadata or CI.
 
 ## Safety
 

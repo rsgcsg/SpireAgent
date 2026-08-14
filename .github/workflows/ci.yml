@@ -21,11 +21,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: SpireAgent
-      - uses: actions/checkout@v4
-        with:
-          repository: rsgcsg/STS2-Connector
-          ref: v1.0.0-rc.1
-          path: STS2-Connector
       - uses: actions/setup-node@v4
         with:
           node-version: 20

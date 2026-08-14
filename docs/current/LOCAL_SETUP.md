@@ -15,9 +15,10 @@ npm run doctor
 Keep provider keys in `.env.local` or the process environment. Do not commit
 run data or provider responses.
 
-Ordinary Agent development consumes a released STS2 Connector and does not
-need Connector source. During coordinated A+C development, use sibling
-checkouts:
+Ordinary Agent development consumes the immutable SDK tarball recorded in
+`Re-SpireAgent/package-lock.json` and does not need Connector source.
+
+For coordinated A+C development, sibling checkouts are optional:
 
 ```text
 workspace/
@@ -25,9 +26,9 @@ workspace/
 `- STS2-Connector/
 ```
 
-The pre-release dependency in `Re-SpireAgent/package.json` names that sibling
-source explicitly. Once the package release exists, replace it with the exact
-version declared by `connector-requirements.json`; do not consume a branch.
+Temporarily install a local SDK with `npm --prefix Re-SpireAgent install
+--no-save ../STS2-Connector/sdk/typescript`. Do not commit the resulting local
+resolution. Run `npm run bootstrap` to return to the immutable release asset.
 
 ## Run
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { existsSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -9,18 +10,18 @@ const requirements = JSON.parse(readFileSync(path.join(root, "connector-requirem
 const agentPackage = JSON.parse(readFileSync(path.join(root, "Re-SpireAgent/package.json"), "utf8"));
 const clientRoot = path.join(root, "Re-SpireAgent/node_modules/@rsgcsg/sts2-connector-client");
 
-if (existsSync(path.join(root, "STS2MCP"))) failures.push("SpireAgent still owns an active STS2MCP source tree");
+const trackedConnectorSource = execFileSync("git", ["ls-files", "STS2MCP"], {
+  cwd: root,
+  encoding: "utf8"
+}).trim();
+if (trackedConnectorSource) failures.push("SpireAgent still owns a tracked STS2MCP source tree");
 if (existsSync(path.join(root, "contracts/player-environment-contract.json"))) {
   failures.push("SpireAgent still owns a duplicate Player Environment contract");
 }
 
 const dependency = agentPackage.dependencies?.[requirements.client.package];
-const acceptedDependency = new Set([
-  requirements.client.version,
-  "file:../../STS2-Connector/sdk/typescript"
-]);
-if (!acceptedDependency.has(dependency)) {
-  failures.push(`Re dependency ${String(dependency)} does not match the released or explicit sibling development source`);
+if (dependency !== requirements.client.package_url) {
+  failures.push(`Re dependency ${String(dependency)} does not match the declared immutable release asset`);
 }
 if (!existsSync(path.join(clientRoot, "package.json"))) {
   failures.push("Connector client package is not installed; run npm ci in Re-SpireAgent");

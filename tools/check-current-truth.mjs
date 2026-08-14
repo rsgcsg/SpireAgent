@@ -1,17 +1,27 @@
 #!/usr/bin/env node
 import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import path from "node:path";
 
 const root = process.cwd();
 const failures = [];
 const read = (relative) => readFileSync(path.join(root, relative), "utf8");
+const isTracked = (relative) => execFileSync("git", ["ls-files", "--error-unmatch", relative], {
+  cwd: root,
+  encoding: "utf8",
+  stdio: ["ignore", "pipe", "ignore"]
+}).trim().length > 0;
 
 for (const forbidden of [
   "STS2MCP",
   "contracts/player-environment-contract.json",
   "tools/connector.mjs"
 ]) {
-  if (existsSync(path.join(root, forbidden))) failures.push(`active C ownership remains at ${forbidden}`);
+  try {
+    if (isTracked(forbidden)) failures.push(`active C ownership remains at ${forbidden}`);
+  } catch {
+    // Untracked local residues are not repository ownership.
+  }
 }
 
 const requirements = JSON.parse(read("connector-requirements.json"));

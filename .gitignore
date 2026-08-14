@@ -7,6 +7,8 @@
 # ignored rather than archived or committed as part of the current mainline.
 /data/
 /memory/
+/.kilo/
+/STS2MCP/
 /.env
 /.env.local
 /.env.local.*
