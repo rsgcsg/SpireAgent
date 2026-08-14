@@ -39,7 +39,7 @@ export function playerEnvironmentSnapshot(input: {
   };
   const actions = input.actions ?? [{ id: "end-turn", verb: "end_turn", label: "End turn" }];
   return {
-    protocol_version: "1.0-rc.2",
+    protocol_version: "1.0.0",
     schema: "sts2.player-environment/snapshot-1",
     snapshot_id: snapshotId,
     sequence: input.sequence ?? 1,

@@ -1,6 +1,6 @@
 # Current Status
 
-Baseline date: 2026-08-14
+Baseline date: 2026-08-15
 
 SpireAgent now owns the Agent, evaluation and product-integration layers. The
 real-game Host, Player Environment contract, REST/MCP transports, Connector
@@ -9,24 +9,24 @@ tests and Connector SDK are owned by
 
 ## Consumer Contract
 
-- accepted Player Environment protocol: `1.0-rc.2`;
-- Connector client: `@rsgcsg/sts2-connector-client@1.0.0-rc.2`;
-- immutable package source: Connector GitHub release `v1.0.0-rc.2`;
+- accepted Player Environment protocol: `1.0.0`;
+- Connector client: `@rsgcsg/sts2-connector-client@1.0.0`;
+- immutable package source: Connector GitHub release `v1.0.0`;
 - requirements authority: [`connector-requirements.json`](../../connector-requirements.json);
 - Re imports strict wire validators, REST and controller coordination from the
   Connector package;
 - Re owns only normalization, finite model-choice projection, provider calls,
   progress supervision, recording and evaluation.
 
-The recommended public Connector prerelease is tag/source
-`v1.0.0-rc.2` / `547c9addac624f7df363a93a3873ee1c2062ecc3`, protocol
-`1.0-rc.2`, DLL SHA-256
-`cf7ed1454437cb796f5931b361f655222d2f3f2e3da3a21f038a752694645cc6`
-and MVID `6824e21d-7486-40fd-a131-43e789fdc8d2`. It was cold-loaded on
+The recommended stable Connector is tag/source
+`v1.0.0` / `c38d4ad2e9d6eb029f8853ed852cce1152bc6d50`, protocol
+`1.0.0`, DLL SHA-256
+`5014224ce8a1f5a61455f21d6873a87052eac533acffce04ac3fb75195bff185`
+and MVID `68f7a9aa-c293-4897-94cd-1e59ab6dd180`. It was cold-loaded on
 `v0.111.0/41cef1ea` with the exact Connector-only Modset and completed targeted
 controller/idempotency/stale/Read/native-page gates, a fresh ordinary Journey
 to `game_over`, an actual rollback/cold-load/restore roundtrip, and an
-archive-extracted identity check. RC1 is retained only as superseded
+archive-extracted identity check. RC1/RC2 are retained only as superseded
 predecessor evidence. Canonical runtime evidence and release assets remain
 owned by the Connector release.
 
@@ -46,5 +46,6 @@ They are predecessor evidence, not current implementation instructions.
   completion.
 - SpireAgent does not support a fallback connector or locally reconstructed
   game legality.
-- The RC evidence does not qualify arbitrary game versions, Mods, Headless,
+- The stable exact-artifact evidence does not qualify arbitrary game versions,
+  Mods, Headless,
   training, search or transient presentation history.

@@ -61,7 +61,7 @@ function metadata(withRevision: boolean): RunMetadata {
       endpoint: "http://127.0.0.1:15526",
       capabilities: {},
       negotiated: {
-        connector_protocol_version: "1.0-rc.2",
+        connector_protocol_version: "1.0.0",
         host_artifact_sha256: "b".repeat(64),
         host_module_version_id: "mvid",
         host_runtime_instance_id: "epoch",

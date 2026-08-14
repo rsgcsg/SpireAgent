@@ -1,8 +1,8 @@
 # Re Player Environment Integration
 
-Re consumes `@rsgcsg/sts2-connector-client@1.0.0-rc.2` and strictly accepts
-protocol `1.0-rc.2`. The committed dependency resolves the immutable SDK asset
-from Connector release `v1.0.0-rc.2`; it does not read a sibling source tree.
+Re consumes `@rsgcsg/sts2-connector-client@1.0.0` and strictly accepts
+protocol `1.0.0`. The committed dependency resolves the immutable SDK asset
+from Connector release `v1.0.0`; it does not read a sibling source tree.
 
 ```text
 Connector Snapshot
